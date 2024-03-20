@@ -1,22 +1,14 @@
 import React from "react";
+// import Nav from "react-bootstrap/Nav";
 import Form from "react-bootstrap/Form";
+import Button from "react-bootstrap/Button";
+// import Stack from "react-bootstrap/Stack";
+// import Image from "react-bootstrap/Image";
 import Row from "react-bootstrap/Row";
 import Col from "react-bootstrap/Col";
-import Button from "react-bootstrap/Button";
-import Image from "react-bootstrap/Image";
-import swapLogo from "bootstrap-icons/icons/arrow-left-right.svg";
-import networkLogo from "bootstrap-icons/icons/share-fill.svg";
-import matrixLogo from "bootstrap-icons/icons/grid-3x3.svg";
-import downloadLogo from "bootstrap-icons/icons/download.svg";
-import hamburgerLogo from "bootstrap-icons/icons/list.svg";
-import { AgGridReact } from "ag-grid-react"; // AG Grid Component
-import "ag-grid-community/styles/ag-grid.css"; // Mandatory CSS required by the grid
-import "ag-grid-community/styles/ag-theme-quartz.css"; // Optional Theme applied to the grid
+// import searchLogo from "bootstrap-icons/icons/search.svg";
 
-export default function Main() {
-    // const [crossSpecies, setCrossSpecies] = React.useState(false);
-    // const [documented, setDocumented] = React.useState(true);
-    // const [expression, setExpression] = React.useState(false);
+export default function Sidebar() {
     const [formData, setFormData] = React.useState({
         tfs: "",
         genes: "",
@@ -34,30 +26,6 @@ export default function Main() {
         homolog: "",
     });
 
-    const [rowData, setRowData] = React.useState([
-        { TF: "Pdr1p", Genes: "PAU8" },
-        { TF: "Pdr1p", Genes: "SEO1" },
-        { TF: "Pdr1p", Genes: "YAL066W" },
-        { TF: "Haa1p", Genes: "YBR090C" },
-        { TF: "Haa1p", Genes: "GSR1" },
-        { TF: "Haa1p", Genes: "MAK5" },
-        { TF: "Msn2p", Genes: "SEO1" },
-        { TF: "Msn2p", Genes: "YALO64W" },
-        { TF: "Msn2p", Genes: "FLO9" },
-    ]);
-
-    const [colDefs, setColDefs] = React.useState([
-        { field: "TF" },
-        { field: "Genes" },
-    ]);
-    const defaultColDef = React.useMemo(() => {
-        return {
-            filter: "agTextColumnFilter",
-            floatingFilter: true,
-            flex: 1,
-        };
-    }, []);
-
     function handleForm(event) {
         const { id, value, checked, type } = event.target;
         console.log(id);
@@ -73,33 +41,35 @@ export default function Main() {
     }
 
     return (
-        <Form onSubmit={handleQuery}>
-            <Row className="border-bottom mb-3">
-                <Col className="ms-3">
-                    <Form.Group className="mb-3" controlId="tfs">
-                        <Form.Label>TFs</Form.Label>
-                        <Form.Control
-                            as="textarea"
-                            onChange={handleForm}
-                            rows={6}
-                        />
-                    </Form.Group>
-                    <Button variant="secondary" type="submit">
-                        Search
-                    </Button>
-                </Col>
-                <Col>
-                    <Form.Group className="mb-3" controlId="genes">
-                        <Form.Label>Target Genes</Form.Label>
-                        <Form.Control
-                            as="textarea"
-                            onChange={handleForm}
-                            rows={6}
-                        />
-                    </Form.Group>
-                </Col>
-                <Col>
-                    <h6 className="mb-3">Evidence</h6>
+        <Row className="border-end pe-2 ms-2">
+            <Form onSubmit={handleQuery}>
+                <Button className="ms-3 mb-3" type="submit">
+                    Search
+                </Button>
+                <Row>
+                    <Col className="ms-3">
+                        <Form.Group className="mb-3" controlId="tfs">
+                            <Form.Label>TFs</Form.Label>
+                            <Form.Control
+                                as="textarea"
+                                onChange={handleForm}
+                                rows={4}
+                            />
+                        </Form.Group>
+                    </Col>
+                    <Col>
+                        <Form.Group className="mb-3" controlId="genes">
+                            <Form.Label>Target Genes</Form.Label>
+                            <Form.Control
+                                as="textarea"
+                                onChange={handleForm}
+                                rows={4}
+                            />
+                        </Form.Group>
+                    </Col>
+                </Row>
+                <Row className="ms-2 mb-2">
+                    <h5 className="mb-3">Evidence</h5>
                     <Form.Check
                         onChange={handleForm}
                         className="mb-3"
@@ -152,13 +122,13 @@ export default function Main() {
                         label={"Potential"}
                         checked={formData.potential}
                     />
-                </Col>
-                <Col>
-                    <h6>Environmental Condition</h6>
+                </Row>
+                <Row>
+                    <h5>Environmental Condition</h5>
                     <Form.Select
                         onChange={handleForm}
                         id="envconGroup"
-                        className="mt-3 mb-3"
+                        className="mb-3"
                         aria-label="Environmental Condition Filter"
                         disabled={!formData.documented}
                     >
@@ -167,11 +137,11 @@ export default function Main() {
                         <option value="2">Two</option>
                         <option value="3">Three</option>
                     </Form.Select>
-                    <h6>Synteny</h6>
+                    <h5>Synteny</h5>
                     <Form.Select
                         onChange={handleForm}
                         id="synteny"
-                        className="mt-3 mb-3"
+                        className="mb-3"
                         aria-label="Synteny Filter"
                     >
                         <option value="0">BLAST Best-Scores</option>
@@ -185,8 +155,6 @@ export default function Main() {
                             BLAST Best-Scores + at least 3 neighbor
                         </option>
                     </Form.Select>
-                </Col>
-                <Col>
                     <Form.Check
                         onClick={handleForm}
                         className="mb-3"
@@ -196,7 +164,7 @@ export default function Main() {
                     />
                     {formData.crossSpecies && (
                         <>
-                            <h6>Homologous Relations</h6>
+                            <h5>Homologous Relations</h5>
                             <Form.Select
                                 onChange={handleForm}
                                 id="homolog"
@@ -210,72 +178,44 @@ export default function Main() {
                             </Form.Select>
                         </>
                     )}
-                </Col>
-            </Row>
-            <Row>
-                <Col>
-                    <img
-                        className="ms-5"
-                        src={swapLogo}
-                        alt="swap"
-                        width="26"
-                        height="26"
-                    />
-                    <img
-                        className="ms-5"
-                        src={networkLogo}
-                        alt="network"
-                        width="26"
-                        height="26"
-                    />
-                    <img
-                        className="ms-5"
-                        src={matrixLogo}
-                        alt="network"
-                        width="26"
-                        height="26"
-                    />
-                    <img
-                        className="ms-5"
-                        src={downloadLogo}
-                        alt="network"
-                        width="26"
-                        height="26"
-                    />
-                </Col>
-                <Col>
-                    {/* <Button
-                        className="ms-5 me-3 float-end"
-                        variant="outline-light"
-                    >
-                        <img
-                            src={hamburgerLogo}
-                            alt="network"
-                            width="26"
-                            height="26"
-                        />
-                    </Button> */}
-                    <Image
-                        className="ms-5 me-4 float-end"
-                        src={hamburgerLogo}
-                        alt="hamburger"
-                        width="25"
-                        height="25"
-                    />
-                </Col>
-            </Row>
-            <Row>
-                <div
-                    className="ag-theme-quartz mt-3" // applying the grid theme
-                    style={{ width: 900, height: 400 }} // the grid will fill the size of the parent container
-                >
-                    <AgGridReact
-                        rowData={rowData}
-                        columnDefs={colDefs}
-                        defaultColDef={defaultColDef}
-                    />
-                </div>
-            </Row>
-        </Form>
+                </Row>
+            </Form>
+        </Row>
+        // <Nav defaultActiveKey="/" className="flex-column ms-3">
+        //     <Form>
+        //         <Stack direction="horizontal" gap={3}>
+        //             <Form.Control type="text" placeholder="Search" />
+        //             <Button variant="outline-secondary" type="submit">
+        //                 <Image src={searchLogo} alt="quick-search" fluid />
+        //             </Button>
+        //         </Stack>
+        //     </Form>
+        //     <Nav.Link
+        //         className="mb-3 text-secondary text-decoration-underline"
+        //         href="/"
+        //     >
+        //         Advanced search
+        //     </Nav.Link>
+        //     <Nav.Item className="mb-3 bg-body-secondary rounded">
+        //         <Nav.Link className="text-secondary-emphasis" href="/">
+        //             Regulations
+        //         </Nav.Link>
+        //     </Nav.Item>
+        //     <Nav.Item className="mb-3 bg-body-secondary rounded">
+        //         <Nav.Link className="text-secondary-emphasis" eventKey="link-1">
+        //             Sequences
+        //         </Nav.Link>
+        //     </Nav.Item>
+        //     <Nav.Item className="mb-3 bg-body-secondary rounded">
+        //         <Nav.Link className="text-secondary-emphasis" eventKey="link-2">
+        //             About
+        //         </Nav.Link>
+        //     </Nav.Item>
+        //     <Nav.Item className="mb-3 bg-body-secondary rounded">
+        //         <Nav.Link className="text-secondary-emphasis" eventKey="link-3">
+        //             Help
+        //         </Nav.Link>
+        //     </Nav.Item>
+        // </Nav>
     );
 }

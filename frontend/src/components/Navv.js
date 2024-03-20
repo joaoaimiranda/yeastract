@@ -28,7 +28,28 @@ export default function Navv() {
     const speciesMenu = React.useMemo(mapSpecies, []);
 
     return (
-        <Navbar expand="lg" className="bg-body-tertiary mb-3">
+        // <Navbar expand="lg" className="bg-body-tertiary">
+        //     <Container>
+        //         <Navbar.Brand href="#">YEASTRACT+</Navbar.Brand>
+        //         <Navbar.Toggle aria-controls="basic-navbar-nav" />
+        //         <Navbar.Collapse id="basic-navbar-nav">
+        //             <Nav className="me-auto">
+        //                 <NavDropdown
+        //                     title={value}
+        //                     id="species-dropdown"
+        //                     onSelect={handleChange}
+        //                 >
+        //                     {speciesMenu}
+        //                 </NavDropdown>
+        //                 <Nav.Link href="#">Regulations</Nav.Link>
+        //                 <Nav.Link href="#link">Sequences</Nav.Link>
+        //                 <Nav.Link href="#link">About</Nav.Link>
+        //                 <Nav.Link href="#link">Help</Nav.Link>
+        //             </Nav>
+        //         </Navbar.Collapse>
+        //     </Container>
+        // </Navbar>
+        <Navbar expand="lg" className="bg-secondary bg-gradient mb-3">
             <Container>
                 <Nav className="me-auto">
                     <NavDropdown

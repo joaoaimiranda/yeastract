@@ -60,7 +60,7 @@ function App() {
                         <Col xs={2}>
                             <Sidebar />
                         </Col>
-                        <Col xd={10}>
+                        <Col xs={10}>
                             <Main />
                         </Col>
                     </>
