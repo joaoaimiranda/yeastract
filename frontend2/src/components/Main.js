@@ -10,10 +10,8 @@ import {
     Select,
     SelectItem,
     Button,
-    Input,
-    Link,
 } from "@nextui-org/react";
-import species from "./Species";
+import constants from "../constants";
 
 export default function Main() {
     // const [crossSpecies, setCrossSpecies] = React.useState(false);
@@ -33,11 +31,6 @@ export default function Main() {
         synteny: "BLAST Best-Scores",
         homolog: "",
     });
-
-    const [searchFormData, setSearchFormData] = React.useState("");
-    const [currentSpecies, setCurrentSpecies] = React.useState(
-        "SaccharomycescerevisiaeS288c"
-    );
 
     const envcons = ["x", "y", "z"];
     const syntenies = [
@@ -82,11 +75,16 @@ export default function Main() {
     function handleQuery(event) {
         event.preventDefault();
         console.log(formData);
-    }
-
-    function handleSearch(event) {
-        event.preventDefault();
-        console.log(searchFormData);
+        //     fetch(`${constants.baseUrl}/associations/genes`, {
+        //         method: "POST",
+        //         headers: {
+        //             Accept: "application/json",
+        //             "Content-Type": "application/json",
+        //         },
+        //         body: JSON.stringify(formData),
+        //     })
+        //         .then((res) => res.json())
+        //         .then((data) => console.log(data));
     }
 
     const gridRef = React.useRef();
@@ -97,244 +95,169 @@ export default function Main() {
 
     return (
         <>
-            <h1 className="text-4xl text-center p-3 font-ntr">YEASTRACT+</h1>
-            <div className="grid grid-cols-6 gap-4">
-                <div className="flex flex-col p-5">
-                    <Select
-                        label="Species"
-                        className="max-w-xs mb-6"
-                        id="species"
-                        name="species"
-                        defaultSelectedKeys={[currentSpecies]}
-                        onChange={(e) => setCurrentSpecies(e.target.value)}
+            <h1 className="text-xl font-bold text-center mb-6">Regulations</h1>
+            <form
+                className="flex flex-row space-x-16 p-3 border-b border-gray-500"
+                onSubmit={handleQuery}
+            >
+                <RadioGroup
+                    size="sm"
+                    label="Query mode"
+                    id="query"
+                    name="query"
+                    defaultValue={formData.query}
+                    onChange={handleForm}
+                >
+                    <Radio value="rank-none">Search by TFs/Genes</Radio>
+                    <Radio value="rank-tf">Rank by TF</Radio>
+                    <Radio value="rank-go">Rank by GO</Radio>
+                    <Radio value="rank-tfbs">Rank by Unique TFBS</Radio>
+                </RadioGroup>
+                <span>
+                    <Textarea
+                        variant="bordered"
+                        id="tfs"
+                        name="tfs"
+                        label="TFs"
+                        className="max-w-40 mb-10"
+                        minRows={5}
+                        defaultValue={formData.tfs}
+                        onChange={handleForm}
+                    />
+                    <Button type="submit" onSubmit={handleQuery}>
+                        Search
+                    </Button>
+                </span>
+                <span>
+                    <Textarea
+                        variant="bordered"
+                        id="genes"
+                        name="genes"
+                        label="Genes"
+                        className="max-w-40 mb-10"
+                        minRows={5}
+                        defaultValue={formData.genes}
+                        onChange={handleForm}
+                    />
+                    <Button onPress={onBtnExport}>Download</Button>
+                </span>
+                <RadioGroup
+                    size="sm"
+                    label="Evidence"
+                    id="evidence"
+                    name="evidence"
+                    defaultValue={formData.evidence}
+                    onChange={handleForm}
+                >
+                    <Radio value="documented">Documented</Radio>
+                    <RadioGroup
+                        size="sm"
+                        className="ml-6"
+                        id="documented"
+                        name="documented"
+                        defaultValue={formData.documented}
+                        isDisabled={formData.evidence !== "documented"}
+                        onChange={handleForm}
                     >
-                        {species.map((x) => (
+                        <Radio value="binding">Binding</Radio>
+                        <Radio value="expression">Expression</Radio>
+
+                        <Checkbox
+                            size="sm"
+                            className="ml-3"
+                            id="activator"
+                            name="activator"
+                            isSelected={formData.activator}
+                            onChange={handleForm}
+                        >
+                            Activator
+                        </Checkbox>
+                        <Checkbox
+                            size="sm"
+                            className="ml-3"
+                            id="inhibitor"
+                            name="inhibitor"
+                            isSelected={formData.inhibitor}
+                            onChange={handleForm}
+                        >
+                            Inhibitor
+                        </Checkbox>
+                        <Checkbox
+                            size="sm"
+                            className="ml-3"
+                            id="noexprinfo"
+                            name="noexprinfo"
+                            isSelected={formData.noexprinfo}
+                            onChange={handleForm}
+                        >
+                            No information
+                        </Checkbox>
+                        <Radio value="binding or expression">
+                            Binding or Expression
+                        </Radio>
+                        <Radio value="binding and expression">
+                            Binding and Expression
+                        </Radio>
+                    </RadioGroup>
+                    <Radio value="potential">Potential</Radio>
+                </RadioGroup>
+                <span className="min-w-80">
+                    <Select
+                        variant="bordered"
+                        label="Environmental Condition"
+                        className="max-w-xs mb-6"
+                        id="envconGroup"
+                        name="envconGroup"
+                        onChange={handleForm}
+                    >
+                        {envcons.map((x) => (
                             <SelectItem key={x} value={x}>
                                 {x}
                             </SelectItem>
                         ))}
                     </Select>
-                    <form onSubmit={handleSearch}>
-                        <Input
-                            defaultValue={searchFormData}
-                            placeholder="Search"
-                            onChange={(e) => setSearchFormData(e.target.value)}
-                        />
-                    </form>
-                    <Link
-                        href="/"
-                        underline="always"
-                        className="justify-center mt-1 mb-6"
-                        color="foreground"
+                    <Select
+                        variant="bordered"
+                        label="Synteny"
+                        className="max-w-xs mb-6"
+                        id="synteny"
+                        name="synteny"
+                        defaultSelectedKeys={[formData.synteny]}
+                        onChange={handleForm}
                     >
-                        Advanced Search
-                    </Link>
-                    <Link
-                        href="/"
-                        size="lg"
-                        color="foreground"
-                        isBlock
-                        className="mb-3"
+                        {syntenies.map((x) => (
+                            <SelectItem key={x} value={x}>
+                                {x}
+                            </SelectItem>
+                        ))}
+                    </Select>
+                    <Select
+                        variant="bordered"
+                        label="Homologous Relations"
+                        className="max-w-xs  mb-6"
+                        id="homolog"
+                        name="homolog"
+                        onChange={handleForm}
                     >
-                        Regulations
-                    </Link>
-                    <Link
-                        href="/"
-                        size="lg"
-                        color="foreground"
-                        isBlock
-                        className="mb-3"
-                    >
-                        Sequences
-                    </Link>
-                    <Link
-                        href="/"
-                        size="lg"
-                        color="foreground"
-                        isBlock
-                        className="mb-3"
-                    >
-                        About
-                    </Link>
-                    <Link
-                        href="/"
-                        size="lg"
-                        color="foreground"
-                        isBlock
-                        className="mb-3"
-                    >
-                        Help
-                    </Link>
-                </div>
-                <div className="col-span-5 p-6">
-                    <h1 className="text-xl font-bold text-center mb-6">
-                        Regulations
-                    </h1>
-                    <form
-                        className="flex flex-row space-x-16 p-3 border-b border-gray-500"
-                        onSubmit={handleQuery}
-                    >
-                        <RadioGroup
-                            size="sm"
-                            label="Query mode"
-                            id="query"
-                            name="query"
-                            defaultValue={formData.query}
-                            onChange={handleForm}
-                        >
-                            <Radio value="rank-none">Search by TFs/Genes</Radio>
-                            <Radio value="rank-tf">Rank by TF</Radio>
-                            <Radio value="rank-go">Rank by GO</Radio>
-                            <Radio value="rank-tfbs">Rank by Unique TFBS</Radio>
-                            <Radio value="matrix">Regulation Matrix</Radio>
-                        </RadioGroup>
-                        <span>
-                            <Textarea
-                                variant="bordered"
-                                id="tfs"
-                                name="tfs"
-                                label="TFs"
-                                className="max-w-40 mb-10"
-                                minRows={5}
-                                defaultValue={formData.tfs}
-                                onChange={handleForm}
-                            />
-                            <Button type="submit" onSubmit={handleQuery}>
-                                Search
-                            </Button>
-                        </span>
-                        <span>
-                            <Textarea
-                                variant="bordered"
-                                id="genes"
-                                name="genes"
-                                label="Genes"
-                                className="max-w-40 mb-10"
-                                minRows={5}
-                                defaultValue={formData.genes}
-                                onChange={handleForm}
-                            />
-                            <Button onPress={onBtnExport}>Download</Button>
-                        </span>
-                        <RadioGroup
-                            size="sm"
-                            label="Evidence"
-                            id="evidence"
-                            name="evidence"
-                            defaultValue={formData.evidence}
-                            onChange={handleForm}
-                        >
-                            <Radio value="documented">Documented</Radio>
-                            <RadioGroup
-                                size="sm"
-                                className="ml-6"
-                                id="documented"
-                                name="documented"
-                                defaultValue={formData.documented}
-                                isDisabled={formData.evidence !== "documented"}
-                                onChange={handleForm}
-                            >
-                                <Radio value="binding">Binding</Radio>
-                                <Radio value="expression">Expression</Radio>
+                        {homologs.map((x) => (
+                            <SelectItem key={x} value={x}>
+                                {x}
+                            </SelectItem>
+                        ))}
+                    </Select>
+                </span>
+            </form>
 
-                                <Checkbox
-                                    size="sm"
-                                    className="ml-3"
-                                    id="activator"
-                                    name="activator"
-                                    isSelected={formData.activator}
-                                    onChange={handleForm}
-                                >
-                                    Activator
-                                </Checkbox>
-                                <Checkbox
-                                    size="sm"
-                                    className="ml-3"
-                                    id="inhibitor"
-                                    name="inhibitor"
-                                    isSelected={formData.inhibitor}
-                                    onChange={handleForm}
-                                >
-                                    Inhibitor
-                                </Checkbox>
-                                <Checkbox
-                                    size="sm"
-                                    className="ml-3"
-                                    id="noexprinfo"
-                                    name="noexprinfo"
-                                    isSelected={formData.noexprinfo}
-                                    onChange={handleForm}
-                                >
-                                    No information
-                                </Checkbox>
-                                <Radio value="binding or expression">
-                                    Binding or Expression
-                                </Radio>
-                                <Radio value="binding and expression">
-                                    Binding and Expression
-                                </Radio>
-                            </RadioGroup>
-                            <Radio value="potential">Potential</Radio>
-                        </RadioGroup>
-                        <span className="min-w-80">
-                            <Select
-                                variant="bordered"
-                                label="Environmental Condition"
-                                className="max-w-xs mb-6"
-                                id="envconGroup"
-                                name="envconGroup"
-                                onChange={handleForm}
-                            >
-                                {envcons.map((x) => (
-                                    <SelectItem key={x} value={x}>
-                                        {x}
-                                    </SelectItem>
-                                ))}
-                            </Select>
-                            <Select
-                                variant="bordered"
-                                label="Synteny"
-                                className="max-w-xs mb-6"
-                                id="synteny"
-                                name="synteny"
-                                defaultSelectedKeys={[formData.synteny]}
-                                onChange={handleForm}
-                            >
-                                {syntenies.map((x) => (
-                                    <SelectItem key={x} value={x}>
-                                        {x}
-                                    </SelectItem>
-                                ))}
-                            </Select>
-                            <Select
-                                variant="bordered"
-                                label="Homologous Relations"
-                                className="max-w-xs  mb-6"
-                                id="homolog"
-                                name="homolog"
-                                onChange={handleForm}
-                            >
-                                {homologs.map((x) => (
-                                    <SelectItem key={x} value={x}>
-                                        {x}
-                                    </SelectItem>
-                                ))}
-                            </Select>
-                        </span>
-                    </form>
-
-                    <div
-                        className="ag-theme-quartz mt-6 ml-6 "
-                        style={{ width: 900, height: 400 }}
-                    >
-                        <AgGridReact
-                            ref={gridRef}
-                            rowData={rowData}
-                            columnDefs={colDefs}
-                            defaultColDef={defaultColDef}
-                        />
-                    </div>
-                </div>
+            <div
+                className="ag-theme-quartz mt-6 ml-6 "
+                style={{ width: 900, height: 400 }}
+            >
+                <AgGridReact
+                    ref={gridRef}
+                    rowData={rowData}
+                    columnDefs={colDefs}
+                    defaultColDef={defaultColDef}
+                />
             </div>
         </>
     );

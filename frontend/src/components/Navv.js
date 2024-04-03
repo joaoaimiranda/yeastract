@@ -1,10 +1,9 @@
 import React from "react";
-// import Container from "react-bootstrap/Container";
-// import Nav from "react-bootstrap/Nav";
-// import Navbar from "react-bootstrap/Navbar";
+import Container from "react-bootstrap/Container";
+import Nav from "react-bootstrap/Nav";
+import Navbar from "react-bootstrap/Navbar";
 import NavDropdown from "react-bootstrap/NavDropdown";
 import species from "./Species";
-import { Menubar } from "primereact/menubar";
 
 export default function Navv() {
     const [value, setValue] = React.useState("SaccharomycescerevisiaeS288c");
@@ -28,15 +27,7 @@ export default function Navv() {
 
     const speciesMenu = React.useMemo(mapSpecies, []);
 
-    const items = [
-        { label: "Regulations" },
-        { label: "Sequences" },
-        { label: "About" },
-        { label: "Help" },
-    ];
-
     return (
-        <Menubar className="mb-3" model={items} />
         // <Navbar expand="lg" className="bg-body-tertiary">
         //     <Container>
         //         <Navbar.Brand href="#">YEASTRACT+</Navbar.Brand>
@@ -58,19 +49,19 @@ export default function Navv() {
         //         </Navbar.Collapse>
         //     </Container>
         // </Navbar>
-        // <Navbar expand="lg" className="bg-secondary bg-gradient mb-3">
-        //     <Container>
-        //         <Nav className="me-auto">
-        //             <NavDropdown
-        //                 title={value}
-        //                 id="dropdown"
-        //                 onSelect={handleChange}
-        //             >
-        //                 {speciesMenu}
-        //             </NavDropdown>
-        //         </Nav>
-        //         <Navbar.Brand href="#">YEASTRACT+</Navbar.Brand>
-        //     </Container>
-        // </Navbar>
+        <Navbar expand="lg" className="bg-secondary bg-gradient mb-3">
+            <Container>
+                <Nav className="me-auto">
+                    <NavDropdown
+                        title={value}
+                        id="dropdown"
+                        onSelect={handleChange}
+                    >
+                        {speciesMenu}
+                    </NavDropdown>
+                </Nav>
+                <Navbar.Brand href="#">YEASTRACT+</Navbar.Brand>
+            </Container>
+        </Navbar>
     );
 }
