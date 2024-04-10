@@ -50,14 +50,14 @@ export default function Layout() {
                 >
                     Advanced Search
                 </Link>
-                <Link href="/" size="lg" color="foreground" className="mb-3">
+                <Link href="/" size="lg" color="foreground" className="mb-5">
                     Regulations
                 </Link>
                 <Link
                     href="/sequences"
                     size="lg"
                     color="foreground"
-                    className="mb-3"
+                    className="mb-5"
                 >
                     Sequences
                 </Link>
@@ -65,7 +65,7 @@ export default function Layout() {
                     href="/about"
                     size="lg"
                     color="foreground"
-                    className="mb-3"
+                    className="mb-5"
                 >
                     About
                 </Link>
@@ -73,7 +73,7 @@ export default function Layout() {
                     href="/help"
                     size="lg"
                     color="foreground"
-                    className="mb-3"
+                    className="mb-5"
                 >
                     Help
                 </Link>

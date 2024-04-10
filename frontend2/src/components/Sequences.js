@@ -1,10 +1,22 @@
-import { Button, Input, Select, SelectItem, Textarea } from "@nextui-org/react";
+import {
+    Button,
+    Input,
+    Select,
+    SelectItem,
+    Textarea,
+    Dropdown,
+    DropdownTrigger,
+    DropdownMenu,
+    DropdownItem,
+} from "@nextui-org/react";
 import React from "react";
 import species from "./Species";
 
 export default function Sequences() {
+    const [query, setQuery] = React.useState(
+        "Search for DNA motif(s) on promoter regions"
+    );
     const [formData, setFormData] = React.useState({
-        query: "Search for DNA motif(s) on promoter regions",
         motif: "",
         genes: "",
         substitutions: 0,
@@ -34,6 +46,7 @@ export default function Sequences() {
 
     function handleForm(event) {
         const { name, value, checked, type } = event.target;
+        console.log(event.target);
         setFormData((prevData) => ({
             ...prevData,
             [name]: type === "checkbox" ? checked : value,
@@ -47,13 +60,13 @@ export default function Sequences() {
 
     return (
         <>
-            <h1 className="text-xl font-bold text-center mb-6">Sequences</h1>
+            <h1 className="text-xl font-bold text-center mb-6">{query}</h1>
             <form
                 className="flex flex-row space-x-16 p-3 border-b border-gray-500"
                 onSubmit={handleQuery}
             >
-                <span>
-                    <Select
+                <span className="flex flex-col">
+                    {/* <Select
                         variant="bordered"
                         className="max-w-xs mb-6"
                         id="query"
@@ -69,62 +82,74 @@ export default function Sequences() {
                                 {q}
                             </SelectItem>
                         ))}
-                    </Select>
-                    <Button type="submit">Search</Button>
+                    </Select> */}
+                    <Dropdown id="query" name="query">
+                        <DropdownTrigger>
+                            <Button variant="bordered">Change Query</Button>
+                        </DropdownTrigger>
+                        <DropdownMenu
+                            aria-label="query-selector"
+                            onAction={(key) => setQuery(key)}
+                        >
+                            {queries.map((item) => (
+                                <DropdownItem key={item} value={item}>
+                                    {item}
+                                </DropdownItem>
+                            ))}
+                        </DropdownMenu>
+                    </Dropdown>
+                    {query !== "TF-Consensus List" && (
+                        <Button className="self-start mt-10" type="submit">
+                            Search
+                        </Button>
+                    )}
                 </span>
-                <span>
-                    <Textarea
-                        isDisabled={
-                            formData.query === "Promoter Analysis" ||
-                            formData.query === "TF-Consensus List" ||
-                            formData.query === "Upstream Sequence"
-                        }
-                        id="motif"
-                        name="motif"
-                        label="DNA Motif"
-                        className="max-w-40 mb-10"
-                        minRows={3}
-                        defaultValue={formData.motif}
-                        onChange={handleForm}
-                    />
-                    <Select
-                        isDisabled={
-                            formData.query === "Promoter Analysis" ||
-                            formData.query === "TF-Consensus List" ||
-                            formData.query === "Upstream Sequence"
-                        }
-                        variant="bordered"
-                        label="Substitutions"
-                        className="max-w-xs mb-6"
-                        id="substitutions"
-                        name="substitutions"
-                        defaultSelectedKeys={[formData.substitutions]}
-                        onChange={handleForm}
-                    >
-                        {[0, 1, 2].map((x) => (
-                            <SelectItem key={x} value={x}>
-                                {x}
-                            </SelectItem>
-                        ))}
-                    </Select>
-                </span>
-                <Textarea
-                    isDisabled={
-                        formData.query ===
-                            "Search described TF Binding Sites by a given DNA motif" ||
-                        formData.query === "Find TF Binding Site(s)" ||
-                        formData.query === "TF-Consensus List"
-                    }
-                    id="genes"
-                    name="genes"
-                    label="ORF/Gene"
-                    className="max-w-40 mb-10"
-                    minRows={5}
-                    defaultValue={formData.genes}
-                    onChange={handleForm}
-                />
+                {query !== "Promoter Analysis" &&
+                    query !== "TF-Consensus List" &&
+                    query !== "Upstream Sequence" && (
+                        <span>
+                            <Textarea
+                                id="motif"
+                                name="motif"
+                                label="DNA Motif"
+                                className="max-w-40 mb-10"
+                                minRows={3}
+                                defaultValue={formData.motif}
+                                onChange={handleForm}
+                            />
+                            <Select
+                                variant="bordered"
+                                label="Substitutions"
+                                className="max-w-xs mb-6"
+                                id="substitutions"
+                                name="substitutions"
+                                defaultSelectedKeys={[formData.substitutions]}
+                                onChange={handleForm}
+                            >
+                                {[0, 1, 2].map((x) => (
+                                    <SelectItem key={x} value={x}>
+                                        {x}
+                                    </SelectItem>
+                                ))}
+                            </Select>
+                        </span>
+                    )}
+                {query !==
+                    "Search described TF Binding Sites by a given DNA motif" &&
+                    query !== "Find TF Binding Site(s)" &&
+                    query !== "TF-Consensus List" && (
+                        <Textarea
+                            id="genes"
+                            name="genes"
+                            label="ORF/Gene"
+                            className="max-w-40 mb-10"
+                            minRows={5}
+                            defaultValue={formData.genes}
+                            onChange={handleForm}
+                        />
+                    )}
                 {/* QUERY-DEPENDENT OPTIONS*/}
-                {formData.query === "Find TF Binding Site(s)" && (
+                {query === "Find TF Binding Site(s)" && (
                     <Textarea
                         id="sequence"
                         name="sequence"
@@ -135,7 +160,7 @@ export default function Sequences() {
                         onChange={handleForm}
                     />
                 )}
-                {formData.query === "Promoter Analysis" && (
+                {query === "Promoter Analysis" && (
                     <>
                         <span>
                             <Select
@@ -186,7 +211,7 @@ export default function Sequences() {
                         </Select>
                     </>
                 )}
-                {formData.query === "Upstream Sequence" && (
+                {query === "Upstream Sequence" && (
                     <span>
                         <Input
                             className="mb-6 max-w-20"

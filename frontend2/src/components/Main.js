@@ -41,21 +41,11 @@ export default function Main() {
     ];
     const homologs = ["c. albicans", "c. auris", "c. glabrata"];
 
-    const [rowData, setRowData] = React.useState([
-        { TF: "Pdr1p", Genes: "PAU8" },
-        { TF: "Pdr1p", Genes: "SEO1" },
-        { TF: "Pdr1p", Genes: "YAL066W" },
-        { TF: "Haa1p", Genes: "YBR090C" },
-        { TF: "Haa1p", Genes: "GSR1" },
-        { TF: "Haa1p", Genes: "MAK5" },
-        { TF: "Msn2p", Genes: "SEO1" },
-        { TF: "Msn2p", Genes: "YALO64W" },
-        { TF: "Msn2p", Genes: "FLO9" },
-    ]);
+    const [rowData, setRowData] = React.useState([]);
 
     const [colDefs, setColDefs] = React.useState([
-        { field: "TF" },
-        { field: "Genes" },
+        { field: "tf" },
+        { field: "gene" },
     ]);
     const defaultColDef = React.useMemo(() => {
         return {
@@ -75,17 +65,21 @@ export default function Main() {
     function handleQuery(event) {
         event.preventDefault();
         console.log(formData);
-        //     fetch(`${constants.baseUrl}/associations/genes`, {
-        //         method: "POST",
-        //         headers: {
-        //             Accept: "application/json",
-        //             "Content-Type": "application/json",
-        //         },
-        //         body: JSON.stringify(formData),
-        //     })
-        //         .then((res) => res.json())
-        //         .then((data) => console.log(data));
+        fetch(`${constants.baseUrl}/associations/search`, {
+            method: "POST",
+            headers: {
+                Accept: "application/json",
+                "Content-Type": "application/json",
+            },
+            body: JSON.stringify(formData),
+        })
+            .then((res) => res.json())
+            .then((data) => setRowData(data.links));
     }
+
+    // fetch(`${constants.baseUrl}/utils/species`)
+    //     .then((res) => res.json())
+    //     .then((data) => console.log(data));
 
     const gridRef = React.useRef();
 
