@@ -65,16 +65,41 @@ export default function Main() {
     function handleQuery(event) {
         event.preventDefault();
         console.log(formData);
-        fetch(`${constants.baseUrl}/associations/search`, {
-            method: "POST",
-            headers: {
-                Accept: "application/json",
-                "Content-Type": "application/json",
-            },
-            body: JSON.stringify(formData),
-        })
-            .then((res) => res.json())
-            .then((data) => setRowData(data.links));
+        if (formData.query === "rank-none") {
+            fetch(`${constants.baseUrl}/associations/search`, {
+                method: "POST",
+                headers: {
+                    Accept: "application/json",
+                    "Content-Type": "application/json",
+                },
+                body: JSON.stringify(formData),
+            })
+                .then((res) => res.json())
+                .then((data) => {
+                    setColDefs([{ field: "tf" }, { field: "gene" }]);
+                    setRowData(data);
+                });
+        } else if (formData.query === "rank-tf") {
+            fetch(`${constants.baseUrl}/associations/ranktf`, {
+                method: "POST",
+                headers: {
+                    Accept: "application/json",
+                    "Content-Type": "application/json",
+                },
+                body: JSON.stringify(formData),
+            })
+                .then((res) => res.json())
+                .then((data) => {
+                    setColDefs([
+                        { field: "tf" },
+                        { field: "setPer" },
+                        { field: "dbPer" },
+                        { field: "genes" },
+                    ]);
+                    setRowData(data);
+                    console.log(data);
+                });
+        }
     }
 
     // fetch(`${constants.baseUrl}/utils/species`)
@@ -133,7 +158,6 @@ export default function Main() {
                         defaultValue={formData.genes}
                         onChange={handleForm}
                     />
-                    <Button onPress={onBtnExport}>Download</Button>
                 </span>
                 <RadioGroup
                     size="sm"
@@ -246,6 +270,9 @@ export default function Main() {
                 className="ag-theme-quartz mt-6 ml-6 "
                 style={{ width: 900, height: 400 }}
             >
+                <Button className="mb-6" onPress={onBtnExport}>
+                    Download
+                </Button>
                 <AgGridReact
                     ref={gridRef}
                     rowData={rowData}
