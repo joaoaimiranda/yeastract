@@ -166,7 +166,10 @@ function rankGO(req, res, next) {
     }
     geneIdList = geneNames.map((element) => getID(element));
     Promise.all(geneIdList)
-        .then((ids) => getGOids(ids, params.ontology))
+        .then(async (ids) => {
+            const res = await getGOids(ids, params.ontology);
+            return Promise.all(res);
+        })
         .then((values) => res.status(200).json(values));
 }
 
@@ -181,7 +184,10 @@ async function getID(element) {
         dbaccess.query(q1),
         dbaccess.query(q2),
         dbaccess.query(q3),
-    ]).then((value) => value[0][0]["orfid"]);
+    ]).then((value) => {
+        if (value[0][0]["orfid"] !== undefined) return value[0][0]["orfid"];
+        else throw new Error("Database query error");
+    });
 }
 
 async function getRegulationsByTF(
