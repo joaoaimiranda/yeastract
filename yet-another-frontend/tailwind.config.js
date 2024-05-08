@@ -9,4 +9,20 @@ module.exports = {
         },
     },
     plugins: [require("daisyui")],
+    daisyui: {
+        themes: [
+            {
+                mytheme: {
+                    primary: "#5fcdff",
+                    secondary: "#d1d5db",
+                    accent: "#37cdbe",
+                    neutral: "#3d4451",
+                    "base-100": "#ffffff",
+                    ".text-color": {
+                        color: "rgb(55 65 81)",
+                    },
+                },
+            },
+        ],
+    },
 };

@@ -15,9 +15,11 @@ export default function Layout() {
     }
 
     return (
-        <div className="grid grid-cols-6 gap-4">
-            <div className="flex flex-col p-5 bg-gray-100">
-                <h1 className="text-4xl p-2 font-ntr">YEASTRACT+</h1>
+        <div className="grid grid-cols-6 h-full">
+            <div className="flex flex-col p-5 h-screen bg-primary shadow-2xl shadow-black">
+                <h1 className="text-4xl mb-2 font-ntr text-color">
+                    YEASTRACT+
+                </h1>
 
                 {/* <Select
                     label="Species"
@@ -34,12 +36,14 @@ export default function Layout() {
                     ))}
                 </Select> */}
                 <label>
-                    <div className="label">
-                        <span className="label-text">Current Species:</span>
+                    <div className="label p-0 mb-2">
+                        <span className="label-text text-color">
+                            Current Species:
+                        </span>
                     </div>
 
                     <select
-                        className="select select-bordered w-full max-w-xs mb-6"
+                        className="select select-bordered w-full max-w-xs mb-8 text-color"
                         id="species"
                         name="species"
                         value={currentSpecies}
@@ -90,7 +94,10 @@ export default function Layout() {
                 >
                     Advanced Search
                 </Link> */}
-                <a href="/advanced-search" className="link mt-1 mb-4 ml-3">
+                <a
+                    href="/advanced-search"
+                    className="link mt-1 mb-8 ml-3 text-sm text-color"
+                >
                     Advanced Search
                 </a>
                 {/* <Link href="/" size="lg" color="foreground" className="mb-5">
@@ -120,18 +127,54 @@ export default function Layout() {
                 >
                     Help
                 </Link> */}
-                <ul className="menu w-full gap-3 text-lg">
+                <ul className="menu w-full gap-3 text-lg p-0">
                     <li>
-                        <a href="/">Regulations</a>
+                        <a
+                            className={`text-color ${
+                                window.location.pathname === "/"
+                                    ? "bg-blue-500"
+                                    : ""
+                            }`}
+                            href="/"
+                        >
+                            Regulations
+                        </a>
                     </li>
                     <li>
-                        <a href="/sequences">Sequences</a>
+                        <a
+                            className={`text-color ${
+                                window.location.pathname === "/sequences"
+                                    ? "bg-blue-500"
+                                    : ""
+                            }`}
+                            href="/sequences"
+                        >
+                            Sequences
+                        </a>
                     </li>
                     <li>
-                        <a href="/about">About</a>
+                        <a
+                            className={`text-color ${
+                                window.location.pathname === "/about"
+                                    ? "bg-blue-500"
+                                    : ""
+                            }`}
+                            href="/about"
+                        >
+                            About
+                        </a>
                     </li>
                     <li>
-                        <a href="/help">Help</a>
+                        <a
+                            className={`text-color ${
+                                window.location.pathname === "/help"
+                                    ? "bg-blue-500"
+                                    : ""
+                            }`}
+                            href="/help"
+                        >
+                            Help
+                        </a>
                     </li>
                 </ul>
             </div>

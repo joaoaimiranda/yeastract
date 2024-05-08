@@ -22,7 +22,11 @@ export default function Main() {
         tfs: "",
         genes: "",
         evidence: "documented",
-        documented: "expression",
+
+        binding: false,
+        expression: true,
+        // and -> false | or -> true
+        and_or: false,
         activator: true,
         inhibitor: true,
         noexprinfo: true,
@@ -114,13 +118,47 @@ export default function Main() {
 
     return (
         <>
-            <h1 className="text-xl font-bold text-center mb-6">Regulations</h1>
+            <h1 className="text-xl font-bold text-center text-color">
+                Regulations
+            </h1>
             <form
-                className="flex flex-row space-x-16 p-3 border-b border-gray-500"
+                className="flex flex-row space-x-8 p-4 border-b border-gray-500"
                 onSubmit={handleQuery}
             >
-                <div>
-                    <label className="label cursor-pointer">
+                <div className="flex flex-col p-3 rounded-lg shadow-md shadow-gray-200">
+                    <div className="flex flex-row gap-6">
+                        <label>
+                            <div className="label p-0 mb-2">
+                                <span className="label-text text-color">
+                                    TFs
+                                </span>
+                            </div>
+                            <textarea
+                                id="tfs"
+                                name="tfs"
+                                value={formData.tfs}
+                                className="textarea textarea-bordered textarea-primary min-h-44 max-h-44 text-color"
+                                onChange={handleForm}
+                            ></textarea>
+                        </label>
+
+                        <label>
+                            <div className="label p-0 mb-2">
+                                <span className="label-text text-color">
+                                    Genes
+                                </span>
+                            </div>
+                            <textarea
+                                id="genes"
+                                name="genes"
+                                value={formData.genes}
+                                className="textarea textarea-bordered textarea-primary min-h-44 max-h-44 text-color"
+                                onChange={handleForm}
+                            ></textarea>
+                        </label>
+                    </div>
+                    <div className="flex mt-auto mb-2">
+                        {/* <label className="label cursor-pointer">
                         <span className="label-text">Search by TFs/Genes</span>
                         <input
                             type="radio"
@@ -167,48 +205,46 @@ export default function Main() {
                             checked={formData.query === "rank-tfbs"}
                             onChange={handleForm}
                         />
-                    </label>
-                </div>
-                <div>
-                    <div className="flex flex-row gap-6 mb-3">
-                        <label>
-                            <div className="label">
-                                <span className="label-text">TFs</span>
-                            </div>
-                            <textarea
-                                id="tfs"
-                                name="tfs"
-                                value={formData.tfs}
-                                className="textarea textarea-bordered"
-                                onChange={handleForm}
-                            ></textarea>
-                        </label>
-
-                        <label>
-                            <div className="label">
-                                <span className="label-text">Genes</span>
-                            </div>
-                            <textarea
-                                id="genes"
-                                name="genes"
-                                value={formData.genes}
-                                className="textarea textarea-bordered"
-                                onChange={handleForm}
-                            ></textarea>
-                        </label>
-                    </div>
-                    <div className="flex flex-row gap-6">
+                    </label> */}
                         <button
-                            className="btn"
+                            className="btn mr-6 "
                             type="submit"
                             onSubmit={handleQuery}
                         >
                             Search
                         </button>
+                        <div className="col-span-2 items-end flex gap-2 ml-auto">
+                            <span className="text-color mb-1">Rank by:</span>
+                            <button
+                                className="btn btn-sm"
+                                type="submit"
+                                onSubmit={handleQuery}
+                            >
+                                TF
+                            </button>
+                            <button
+                                className="btn btn-sm"
+                                type="submit"
+                                onSubmit={handleQuery}
+                            >
+                                GO
+                            </button>
+                            <button
+                                className="btn btn-sm"
+                                type="submit"
+                                onSubmit={handleQuery}
+                            >
+                                TFBS
+                            </button>
+                        </div>
                     </div>
                 </div>
-                <div>
-                    <label className="label cursor-pointer">
+                {/* <div className="flex flex-row gap-6">
+                        
+                    </div> */}
+                <div className="grid row-span-2 gap-6">
+                    <div className="p-3 content-center rounded-lg shadow-md shadow-gray-200">
+                        {/* <label className="label cursor-pointer mt-5">
                         <span className="label-text">Binding</span>
                         <input
                             type="radio"
@@ -264,9 +300,104 @@ export default function Main() {
                             }
                             onChange={handleForm}
                         />
-                    </label>
+                    </label> */}
+                        <div className="flex flex-col gap-3">
+                            <label>
+                                <div className="label p-0 mb-2 ml-1">
+                                    <span className="label-text text-color">
+                                        Evidence
+                                    </span>
+                                </div>
+                                <div className="grid grid-cols-2 gap-3">
+                                    <input
+                                        id="binding"
+                                        name="binding"
+                                        type="checkbox"
+                                        aria-label="Binding"
+                                        className="btn"
+                                        checked={formData.binding}
+                                        onChange={handleForm}
+                                    />
+                                    <input
+                                        id="expression"
+                                        name="expression"
+                                        type="checkbox"
+                                        aria-label="Expression"
+                                        className="btn"
+                                        checked={formData.expression}
+                                        onChange={handleForm}
+                                    />
+                                </div>
+                            </label>
+                            <div className="self-center">
+                                <label className="cursor-pointer label">
+                                    <span className="label-text mr-2 text-color">
+                                        AND
+                                    </span>
+                                    <input
+                                        id="and_or"
+                                        name="and_or"
+                                        type="checkbox"
+                                        className="toggle bg-primary border-primary hover:bg-blue-500"
+                                        checked={formData.and_or}
+                                        onChange={handleForm}
+                                        disabled={
+                                            !(
+                                                formData.binding &&
+                                                formData.expression
+                                            )
+                                        }
+                                    />
+                                    <span className="label-text ml-2 text-color">
+                                        OR
+                                    </span>
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+                    <div className="p-3 content-end rounded-lg shadow-md shadow-gray-200">
+                        <label>
+                            <div className="label p-0 mb-2 ml-1">
+                                <span className="label-text text-color">
+                                    TF as...
+                                </span>
+                            </div>
+                            <div className="flex flex-row gap-2 mb-2">
+                                <input
+                                    id="activator"
+                                    name="activator"
+                                    type="checkbox"
+                                    aria-label="Activator"
+                                    className="btn"
+                                    checked={formData.activator}
+                                    onChange={handleForm}
+                                    disabled={!formData.expression}
+                                />
+                                <input
+                                    id="inhibitor"
+                                    name="inhibitor"
+                                    type="checkbox"
+                                    aria-label="Inhibitor"
+                                    className="btn"
+                                    checked={formData.inhibitor}
+                                    onChange={handleForm}
+                                    disabled={!formData.expression}
+                                />
+                                <input
+                                    id="noexprinfo"
+                                    name="noexprinfo"
+                                    type="checkbox"
+                                    aria-label="N/A"
+                                    className="btn"
+                                    checked={formData.noexprinfo}
+                                    onChange={handleForm}
+                                    disabled={!formData.expression}
+                                />
+                            </div>
+                        </label>
+                    </div>
                 </div>
-                <div>
+                {/* <div>
                     <label className="label cursor-pointer">
                         <span className="label-text">TF as activator</span>
                         <input
@@ -302,17 +433,17 @@ export default function Main() {
                             onChange={handleForm}
                         />
                     </label>
-                </div>
-                <div>
+                </div> */}
+                <div className="flex flex-col p-3 rounded-lg shadow-md shadow-gray-200">
                     <label>
-                        <div className="label">
-                            <span className="label-text">
-                                Environmental Condition
+                        <div className="label p-0 mb-2">
+                            <span className="label-text text-color">
+                                Environmental Condition Group
                             </span>
                         </div>
 
                         <select
-                            className="select select-bordered select-sm w-full max-w-xs mb-3"
+                            className="select select-bordered select-primary select-sm w-full max-w-xs mb-2 text-color"
                             id="envconGroup"
                             name="envconGroup"
                             value={formData.envconGroup}
@@ -324,12 +455,33 @@ export default function Main() {
                         </select>
                     </label>
                     <label>
-                        <div className="label">
-                            <span className="label-text">Synteny</span>
+                        <div className="label p-0 mb-2">
+                            <span className="label-text text-color">
+                                Subgroup
+                            </span>
                         </div>
 
                         <select
-                            className="select select-bordered select-sm w-full max-w-xs mb-3"
+                            className="select select-bordered select-primary select-sm w-full max-w-xs mb-4 text-color"
+                            id="envconSubgroup"
+                            name="envconSubgroup"
+                            value={formData.envconSubgroup}
+                            onChange={handleForm}
+                        >
+                            {envcons.map((option) => (
+                                <option value={option}>{option}</option>
+                            ))}
+                        </select>
+                    </label>
+                    <label>
+                        <div className="label p-0 mb-2">
+                            <span className="label-text text-color">
+                                Synteny
+                            </span>
+                        </div>
+
+                        <select
+                            className="select select-bordered select-primary select-sm w-full max-w-xs mb-2 text-color"
                             id="synteny"
                             name="synteny"
                             value={formData.synteny}
@@ -341,14 +493,14 @@ export default function Main() {
                         </select>
                     </label>
                     <label>
-                        <div className="label">
-                            <span className="label-text">
+                        <div className="label p-0 mb-2">
+                            <span className="label-text text-color">
                                 Homologous Regulations
                             </span>
                         </div>
 
                         <select
-                            className="select select-bordered select-sm w-full max-w-xs mb-3"
+                            className="select select-bordered select-primary select-sm w-full max-w-xs mb-2 text-color"
                             id="homolog"
                             name="homolog"
                             value={formData.homolog}
@@ -359,59 +511,13 @@ export default function Main() {
                             ))}
                         </select>
                     </label>
-                    {/* <Select
-                        variant="bordered"
-                        label="Environmental Condition"
-                        className="max-w-xs mb-6"
-                        id="envconGroup"
-                        name="envconGroup"
-                        onChange={handleForm}
-                    >
-                        {envcons.map((x) => (
-                            <SelectItem key={x} value={x}>
-                                {x}
-                            </SelectItem>
-                        ))}
-                    </Select>
-                    <Select
-                        variant="bordered"
-                        label="Synteny"
-                        className="max-w-xs mb-6"
-                        id="synteny"
-                        name="synteny"
-                        defaultSelectedKeys={[formData.synteny]}
-                        onChange={handleForm}
-                    >
-                        {syntenies.map((x) => (
-                            <SelectItem key={x} value={x}>
-                                {x}
-                            </SelectItem>
-                        ))}
-                    </Select>
-                    <Select
-                        variant="bordered"
-                        label="Homologous Relations"
-                        className="max-w-xs  mb-6"
-                        id="homolog"
-                        name="homolog"
-                        onChange={handleForm}
-                    >
-                        {homologs.map((x) => (
-                            <SelectItem key={x} value={x}>
-                                {x}
-                            </SelectItem>
-                        ))}
-                    </Select> */}
                 </div>
             </form>
 
             <div
-                className="ag-theme-quartz mt-6 ml-6 "
+                className="ag-theme-quartz mt-6 ml-4 "
                 style={{ width: 900, height: 400 }}
             >
-                {/* <Button className="mb-6" onPress={onBtnExport}>
-                    Download
-                </Button> */}
                 <button className="btn mb-6" onClick={onBtnExport}>
                     Download
                 </button>

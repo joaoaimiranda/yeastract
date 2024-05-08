@@ -24,8 +24,8 @@ export default function Sequences() {
         tfbs_species: "",
         ortholog_species: [],
         synteny: "BLAST Best-Scores",
-        from: "-1000",
-        to: "-1",
+        from: -1000,
+        to: -1,
     });
 
     const queries = [
@@ -61,31 +61,33 @@ export default function Sequences() {
 
     return (
         <>
-            <h1 className="text-xl font-bold text-center mb-6">{query}</h1>
-            <form
-                className="flex flex-row space-x-16 p-3 border-b border-gray-500"
-                onSubmit={handleQuery}
-            >
-                <div>
-                    {/* <Select
-                        variant="bordered"
-                        className="max-w-xs mb-6"
-                        id="query"
-                        name="query"
-                        onChange={handleForm}
-                        defaultSelectedKeys={[
-                            "Search for DNA motif(s) on promoter regions",
-                        ]}
-                        aria-label="query selection"
-                    >
-                        {queries.map((q) => (
-                            <SelectItem key={q} value={q}>
-                                {q}
-                            </SelectItem>
-                        ))}
-                    </Select> */}
+            <form onSubmit={handleQuery}>
+                {/* <div className="grid grid-cols-3 gap-3">
+                    <div></div>
+                    <div className="flex flex-row gap-5">
+                        <h1 className="text-xl font-bold text-center mb-6 mt-2">
+                            Sequences
+                        </h1>
+                        <select
+                            className="select select-bordered select-primary max-w-106 text-color"
+                            id="query"
+                            name="query"
+                            value={query}
+                            onChange={(e) => setQuery(e.target.value)}
+                        >
+                            {queries.map((option) => (
+                                <option value={option}>{option}</option>
+                            ))}
+                        </select>
+                    </div>
+                    <div></div>
+                </div> */}
+                <div className="ml-3 flex flex-row gap-5">
+                    <h1 className="text-xl font-bold text-center mb-6 mt-2">
+                        Sequences
+                    </h1>
                     <select
-                        className="select select-bordered w-full mb-6 flex flex-row"
+                        className="select select-bordered select-primary max-w-106 text-color"
                         id="query"
                         name="query"
                         value={query}
@@ -95,138 +97,89 @@ export default function Sequences() {
                             <option value={option}>{option}</option>
                         ))}
                     </select>
-                    {query !== "TF-Consensus List" && (
-                        // <Button className="self-start mt-10" type="submit">
-                        //     Search
-                        // </Button>
-                        <button
-                            className="btn flex flex-row"
-                            type="submit"
-                            onSubmit={handleQuery}
-                        >
-                            Search
-                        </button>
-                    )}
                 </div>
-                {query !== "Promoter Analysis" &&
-                    query !== "TF-Consensus List" &&
-                    query !== "Upstream Sequence" && (
-                        <div>
-                            {/* <Textarea
-                                id="motif"
-                                name="motif"
-                                label="DNA Motif"
-                                className="max-w-40 mb-10"
-                                minRows={3}
-                                defaultValue={formData.motif}
-                                onChange={handleForm}
-                            /> */}
+                <div className="flex flex-row space-x-6 p-3 border-b border-gray-500">
+                    {query !== "Promoter Analysis" &&
+                        query !== "TF-Consensus List" &&
+                        query !== "Upstream Sequence" && (
+                            <>
+                                <label>
+                                    <div className="label p-0 mb-2">
+                                        <span className="label-text text-color">
+                                            DNA Motif
+                                        </span>
+                                    </div>
+                                    <textarea
+                                        id="motif"
+                                        name="motif"
+                                        value={formData.motif}
+                                        className="textarea textarea-bordered textarea-primary text-color"
+                                        onChange={handleForm}
+                                    ></textarea>
+                                </label>
+                                <label>
+                                    <div className="label p-0 mb-2">
+                                        <span className="label-text text-color">
+                                            Substitutions
+                                        </span>
+                                    </div>
+
+                                    <select
+                                        className="select select-bordered select-primary select-sm max-w-24 mb-3 text-color"
+                                        id="substitutions"
+                                        name="substitutions"
+                                        value={formData.substitutions}
+                                        onChange={handleForm}
+                                    >
+                                        {[0, 1, 2].map((option) => (
+                                            <option value={option}>
+                                                {option}
+                                            </option>
+                                        ))}
+                                    </select>
+                                </label>
+                            </>
+                        )}
+                    {query !==
+                        "Search described TF Binding Sites by a given DNA motif" &&
+                        query !== "Find TF Binding Site(s)" &&
+                        query !== "TF-Consensus List" && (
                             <label>
-                                <div className="label">
-                                    <span className="label-text">
-                                        DNA Motif
+                                <div className="label p-0 mb-2">
+                                    <span className="label-text text-color">
+                                        ORF/Gene
                                     </span>
                                 </div>
                                 <textarea
-                                    id="motif"
-                                    name="motif"
-                                    value={formData.motif}
-                                    className="textarea textarea-bordered"
+                                    id="genes"
+                                    name="genes"
+                                    value={formData.genes}
+                                    className="textarea textarea-bordered textarea-primary max-w-24 min-h-36 max-h-36 text-color"
                                     onChange={handleForm}
                                 ></textarea>
                             </label>
-                            {/* <Select
-                                variant="bordered"
-                                label="Substitutions"
-                                className="max-w-xs mb-6"
-                                id="substitutions"
-                                name="substitutions"
-                                defaultSelectedKeys={[formData.substitutions]}
-                                onChange={handleForm}
-                            >
-                                {[0, 1, 2].map((x) => (
-                                    <SelectItem key={x} value={x}>
-                                        {x}
-                                    </SelectItem>
-                                ))}
-                            </Select> */}
-                            <label>
-                                <div className="label">
-                                    <span className="label-text">
-                                        Substitutions
-                                    </span>
-                                </div>
-
-                                <select
-                                    className="select select-bordered select-sm w-full max-w-xs mb-3"
-                                    id="substitutions"
-                                    name="substitutions"
-                                    value={formData.substitutions}
-                                    onChange={handleForm}
-                                >
-                                    {[0, 1, 2].map((option) => (
-                                        <option value={option}>{option}</option>
-                                    ))}
-                                </select>
-                            </label>
-                        </div>
-                    )}
-                {query !==
-                    "Search described TF Binding Sites by a given DNA motif" &&
-                    query !== "Find TF Binding Site(s)" &&
-                    query !== "TF-Consensus List" && (
-                        // <Textarea
-                        //     id="genes"
-                        //     name="genes"
-                        //     label="ORF/Gene"
-                        //     className="max-w-40 mb-10"
-                        //     minRows={5}
-                        //     defaultValue={formData.genes}
-                        //     onChange={handleForm}
-                        // />
+                        )}
+                    {/* QUERY-DEPENDENT OPTIONS */}
+                    {query === "Find TF Binding Site(s)" && (
                         <label>
-                            <div className="label">
-                                <span className="label-text">ORF/Gene</span>
+                            <div className="label p-0 mb-2">
+                                <span className="label-text text-color">
+                                    Sequence (FastA format)
+                                </span>
                             </div>
                             <textarea
-                                id="genes"
-                                name="genes"
-                                value={formData.genes}
-                                className="textarea textarea-bordered"
+                                id="sequence"
+                                name="sequence"
+                                value={formData.sequence}
+                                className="textarea textarea-bordered textarea-primary text-color"
                                 onChange={handleForm}
                             ></textarea>
                         </label>
                     )}
-                {/* QUERY-DEPENDENT OPTIONS */}
-                {query === "Find TF Binding Site(s)" && (
-                    // <Textarea
-                    //     id="sequence"
-                    //     name="sequence"
-                    //     label="Sequence (FastA format)"
-                    //     className="max-w-40 mb-10"
-                    //     minRows={5}
-                    //     defaultValue={formData.sequence}
-                    //     onChange={handleForm}
-                    // />
-                    <label>
-                        <div className="label">
-                            <span className="label-text">
-                                Sequence (FastA format)
-                            </span>
-                        </div>
-                        <textarea
-                            id="sequence"
-                            name="sequence"
-                            value={formData.sequence}
-                            className="textarea textarea-bordered"
-                            onChange={handleForm}
-                        ></textarea>
-                    </label>
-                )}
-                {query === "Promoter Analysis" && (
-                    <>
-                        <span>
-                            {/* <Select
+                    {query === "Promoter Analysis" && (
+                        <>
+                            <span>
+                                {/* <Select
                                 variant="bordered"
                                 label="Consider TFBS from strain:"
                                 className="mb-6"
@@ -240,61 +193,52 @@ export default function Sequences() {
                                         {x}
                                     </SelectItem>
                                 ))}
-                            </Select>
-                            <Select
-                                variant="bordered"
-                                label="Synteny"
-                                className="mb-6"
-                                id="synteny"
-                                name="synteny"
-                                defaultSelectedKeys={[formData.synteny]}
-                                onChange={handleForm}
-                            >
-                                {syntenies.map((x) => (
-                                    <SelectItem key={x} value={x}>
-                                        {x}
-                                    </SelectItem>
-                                ))}
-                            </Select> */}
-                            <label>
-                                <div className="label">
-                                    <span className="label-text">
-                                        Consider TFBS from strain:
-                                    </span>
-                                </div>
+                            </Select>*/}
+                                <label>
+                                    <div className="label p-0 mb-2">
+                                        <span className="label-text text-color">
+                                            Consider TFBS from strain:
+                                        </span>
+                                    </div>
 
-                                <select
-                                    className="select select-bordered select-sm w-full max-w-xs mb-3"
-                                    id="tfbs_species"
-                                    name="tfbs_species"
-                                    value={formData.tfbs_species}
-                                    onChange={handleForm}
-                                >
-                                    {homologs.map((option) => (
-                                        <option value={option}>{option}</option>
-                                    ))}
-                                </select>
-                            </label>
-                            <label>
-                                <div className="label">
-                                    <span className="label-text">Synteny</span>
-                                </div>
+                                    <select
+                                        className="select select-bordered select-primary select-sm w-full max-w-xs mb-3 text-color"
+                                        id="tfbs_species"
+                                        name="tfbs_species"
+                                        value={formData.tfbs_species}
+                                        onChange={handleForm}
+                                    >
+                                        {homologs.map((option) => (
+                                            <option value={option}>
+                                                {option}
+                                            </option>
+                                        ))}
+                                    </select>
+                                </label>
+                                <label>
+                                    <div className="label p-0 mb-2">
+                                        <span className="label-text text-color">
+                                            Synteny
+                                        </span>
+                                    </div>
 
-                                <select
-                                    className="select select-bordered select-sm w-full max-w-xs mb-3"
-                                    id="synteny"
-                                    name="synteny"
-                                    value={formData.synteny}
-                                    onChange={handleForm}
-                                >
-                                    {syntenies.map((option) => (
-                                        <option value={option}>{option}</option>
-                                    ))}
-                                </select>
-                            </label>
-                        </span>
-                        {/* TODO COMPARE GENES WITH ORTHOLOGY IN STRAINS*/}
-                        {/* <Select
+                                    <select
+                                        className="select select-bordered select-primary select-sm w-full max-w-xs mb-3 text-color"
+                                        id="synteny"
+                                        name="synteny"
+                                        value={formData.synteny}
+                                        onChange={handleForm}
+                                    >
+                                        {syntenies.map((option) => (
+                                            <option value={option}>
+                                                {option}
+                                            </option>
+                                        ))}
+                                    </select>
+                                </label>
+                            </span>
+                            {/* TODO COMPARE GENES WITH ORTHOLOGY IN STRAINS*/}
+                            {/* <Select
                             label="Compare genes with orthology in strains:"
                             className="max-w-xs mb-6"
                             id="ortholog_species"
@@ -309,54 +253,55 @@ export default function Sequences() {
                                 </SelectItem>
                             ))}
                         </Select> */}
-                    </>
-                )}
-                {query === "Upstream Sequence" && (
-                    <span>
-                        {/* <Input
-                            className="mb-6 max-w-20"
-                            id="from"
-                            name="from"
-                            label="From:"
-                            defaultValue={formData.from}
-                            onChange={handleForm}
-                        />
-                        <Input
-                            className="max-w-20"
-                            id="to"
-                            name="to"
-                            label="To:"
-                            defaultValue={formData.to}
-                            onChange={handleForm}
-                        /> */}
-                        <label className="w-full max-w-xs">
-                            <div className="label">
-                                <span className="label-text">From:</span>
-                            </div>
-                            <input
-                                type="text"
-                                id="from"
-                                name="from"
-                                value={formData.from}
-                                className="input input-bordered w-full max-w-xs"
-                                onChange={handleForm}
-                            />
-                        </label>
-                        <label className="w-full max-w-xs">
-                            <div className="label">
-                                <span className="label-text">To</span>
-                            </div>
-                            <input
-                                type="text"
-                                id="to"
-                                name="to"
-                                value={formData.to}
-                                className="input input-bordered w-full max-w-xs"
-                                onChange={handleForm}
-                            />
-                        </label>
-                    </span>
-                )}
+                        </>
+                    )}
+                    {query === "Upstream Sequence" && (
+                        <span>
+                            <label>
+                                <div className="label p-0 mb-2">
+                                    <span className="label-text text-color">
+                                        From:
+                                    </span>
+                                </div>
+                                <input
+                                    type="number"
+                                    id="from"
+                                    name="from"
+                                    value={formData.from}
+                                    className="input input-bordered input-primary input-sm max-w-20 text-color"
+                                    onChange={handleForm}
+                                />
+                            </label>
+                            <label>
+                                <div className="label">
+                                    <span className="label-text text-color">
+                                        To
+                                    </span>
+                                </div>
+                                <input
+                                    type="number"
+                                    id="to"
+                                    name="to"
+                                    value={formData.to}
+                                    className="input input-bordered input-primary input-sm max-w-20 text-color"
+                                    onChange={handleForm}
+                                />
+                            </label>
+                        </span>
+                    )}
+                    {query !== "TF-Consensus List" && (
+                        // <Button className="self-start mt-10" type="submit">
+                        //     Search
+                        // </Button>
+                        <button
+                            className="btn btn-primary mt-7"
+                            type="submit"
+                            onSubmit={handleQuery}
+                        >
+                            Search
+                        </button>
+                    )}
+                </div>
             </form>
         </>
     );
