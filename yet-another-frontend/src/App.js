@@ -10,12 +10,34 @@ import Help from "./components/Help";
 function App() {
     // const [sidebar, setSidebar] = React.useState(true);
 
+    const [currentSpecies, setCurrentSpecies] = React.useState(
+        "dsonfdjflayigbaluis"
+    );
+
+    // const speciesList = React.useMemo(async () => {
+
+    //     const list = await res;
+    //     console.log(list);
+    //     return list;
+    // }, []);
+
     return (
         <BrowserRouter>
             <Routes>
-                <Route path="/" element={<Layout />}>
-                    <Route index element={<Main />} />
-                    <Route path="sequences" element={<Sequences />} />
+                <Route
+                    path="/"
+                    element={
+                        <Layout
+                            species={currentSpecies}
+                            setSpecies={setCurrentSpecies}
+                        />
+                    }
+                >
+                    <Route index element={<Main species={currentSpecies} />} />
+                    <Route
+                        path="sequences"
+                        element={<Sequences species={currentSpecies} />}
+                    />
                     <Route path="about" element={<About />} />
                     <Route path="help" element={<Help />} />
                     <Route path="*" element={<div>not found</div>} />

@@ -11,8 +11,19 @@
 // } from "@nextui-org/react";
 import React from "react";
 // import species from "./Species";
+// import { AgGridReact } from "ag-grid-react";
+import "ag-grid-community/styles/ag-grid.css";
+import "ag-grid-community/styles/ag-theme-quartz.css";
+import {
+    motifOnPromoter,
+    tfbsByMotif,
+    tfbsOnSeq,
+    seqRetrieval,
+    promoterAnalysis,
+    tfConsensus,
+} from "../services/remoteServices";
 
-export default function Sequences() {
+export default function Sequences(props) {
     const [query, setQuery] = React.useState(
         "Search for DNA motif(s) on promoter regions"
     );
@@ -27,6 +38,27 @@ export default function Sequences() {
         from: -1000,
         to: -1,
     });
+
+    const [tmpResults, setTmpResults] = React.useState("");
+
+    // const [rowData, setRowData] = React.useState([]);
+
+    // const [colDefs, setColDefs] = React.useState([
+    //     { headerName: "TF", field: "tf" },
+    //     { headerName: "Gene", field: "gene" },
+    // ]);
+    // const defaultColDef = React.useMemo(() => {
+    //     return {
+    //         filter: "agTextColumnFilter",
+    //         flex: 1,
+    //     };
+    // }, []);
+
+    // const gridRef = React.useRef();
+
+    // const onBtnExport = React.useCallback(() => {
+    //     gridRef.current.api.exportDataAsCsv();
+    // }, []);
 
     const queries = [
         "Search for DNA motif(s) on promoter regions",
@@ -47,16 +79,74 @@ export default function Sequences() {
 
     function handleForm(event) {
         const { name, value, checked, type } = event.target;
-        console.log(event.target);
         setFormData((prevData) => ({
             ...prevData,
             [name]: type === "checkbox" ? checked : value,
         }));
     }
 
-    function handleQuery(event) {
+    async function handleQuery(event) {
         event.preventDefault();
         console.log(formData);
+        if (query === "Search for DNA motif(s) on promoter regions") {
+            const res = await motifOnPromoter({
+                motif: formData.motif,
+                substitutions: formData.substitutions,
+                genes: formData.genes,
+                species: props.species,
+            });
+            console.log(res);
+            setTmpResults(JSON.stringify(res));
+            // setColDefs([{headerName: "ORF", field: "orf"}, {headerName: "# Occurences for DNA Motifs"}])
+        } else if (
+            query === "Search described TF Binding Sites by a given DNA motif"
+        ) {
+            const res = await tfbsByMotif({
+                motif: formData.motif,
+                substitutions: formData.substitutions,
+                species: props.species,
+            });
+            console.log(res);
+            let str = "";
+            for (let x of res[1]) {
+                str += JSON.stringify(x) + "\n";
+            }
+            setTmpResults(str);
+        } else if (query === "Find TF Binding Site(s)") {
+            const res = await tfbsOnSeq({
+                motif: formData.motif,
+                substitutions: formData.substitutions,
+                sequence: formData.sequence,
+                species: props.species,
+            });
+            console.log(res);
+        } else if (query === "Promoter Analysis") {
+            const res = await promoterAnalysis({
+                genes: formData.genes,
+                tfbs_species: formData.tfbs_species,
+                synteny: formData.synteny,
+                ortholog_species: formData.ortholog_species,
+                species: props.species,
+            });
+            console.log(res);
+        } else if (query === "TF-Consensus List") {
+            const res = await tfConsensus(props.species);
+            console.log(res);
+            setTmpResults(JSON.stringify(res));
+        } else if (query === "Upstream Sequence") {
+            const res = await seqRetrieval({
+                genes: formData.genes,
+                from: formData.from,
+                to: formData.to,
+                species: props.species,
+            });
+            console.log(res);
+            let str = "";
+            for (let key of Object.keys(res)) {
+                str += key + ":\n" + res[key] + "\n";
+            }
+            setTmpResults(str);
+        } else console.log("Unknown query name");
     }
 
     return (
@@ -82,12 +172,10 @@ export default function Sequences() {
                     </div>
                     <div></div>
                 </div> */}
-                <div className="ml-3 flex flex-row gap-5">
-                    <h1 className="text-xl font-bold text-center mb-6 mt-2">
-                        Sequences
-                    </h1>
+                <div className="ml-3 flex flex-row justify-center gap-5 mb-5">
+                    <h1 className="text-xl font-bold">Sequences</h1>
                     <select
-                        className="select select-bordered select-primary max-w-106 text-color"
+                        className="select select-sm select-bordered select-primary max-w-106 text-color"
                         id="query"
                         name="query"
                         value={query}
@@ -98,7 +186,7 @@ export default function Sequences() {
                         ))}
                     </select>
                 </div>
-                <div className="flex flex-row space-x-6 p-3 border-b border-gray-500">
+                <div className="flex flex-row justify-center space-x-6 p-3 border-b border-gray-500">
                     {query !== "Promoter Analysis" &&
                         query !== "TF-Consensus List" &&
                         query !== "Upstream Sequence" && (
@@ -303,6 +391,21 @@ export default function Sequences() {
                     )}
                 </div>
             </form>
+            {/* <div
+                className="ag-theme-quartz mt-6 ml-4 "
+                style={{ width: 900, height: 400 }}
+            >
+                <button className="btn mb-6" onClick={onBtnExport}>
+                    Download
+                </button>
+                <AgGridReact
+                    ref={gridRef}
+                    rowData={rowData}
+                    columnDefs={colDefs}
+                    defaultColDef={defaultColDef}
+                />
+            </div> */}
+            <p>{tmpResults}</p>
         </>
     );
 }

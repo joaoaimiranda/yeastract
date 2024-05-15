@@ -3,18 +3,17 @@ import {
     getRegulationsByTF,
     getRegulationsByGene,
     getRegulationsByTFAndGene,
+    getAllRegulations,
     getAllGenesByTF,
     getIDs,
     getGOids,
-    getAllIDs,
+    getHomoIDs,
 } from "../db/repository.js";
 
 export async function searchRegulations(params) {
     if (
-        params.query === undefined ||
         params.tfs === undefined ||
         params.genes === undefined ||
-        params.evidence === undefined ||
         params.documented === undefined ||
         params.activator === undefined ||
         params.inhibitor === undefined ||
@@ -22,7 +21,7 @@ export async function searchRegulations(params) {
         params.envconGroup === undefined ||
         params.envconSubgroup === undefined ||
         params.synteny === undefined ||
-        params.homolog === undefined
+        params.species === undefined
     ) {
         // res.status(400).send("Bad Request");
         throw new Error("Bad Request");
@@ -33,17 +32,14 @@ export async function searchRegulations(params) {
 
     // case search all regulations
     if (tfNames[0] === "" && geneNames[0] === "") {
-        const idList = await getAllIDs(params.species);
-        // MAYBE FIXME DOUBLE ID LIST
-        const regs = await getRegulationsByTFAndGene(
-            idList,
-            idList,
+        const regs = await getAllRegulations(
             params.envconGroup,
             params.envconSubgroup,
             params.evidence,
             params.activator,
             params.inhibitor,
-            params.noexprinfo
+            params.noexprinfo,
+            params.species
         );
         return regs;
     }
@@ -64,16 +60,26 @@ export async function searchRegulations(params) {
         //         )
         //     )
         //     .then((values) => res.status(200).json(values));
-        const regs = await getRegulationsByTF(
-            idList.join(", "),
-            params.envconGroup,
-            params.envconSubgroup,
-            params.evidence,
-            params.activator,
-            params.inhibitor,
-            params.noexprinfo
-        );
-        return regs;
+
+        // standard, no homologous relations
+        if (params.homolog === undefined || params.homolog === "") {
+            const regs = await getRegulationsByTF(
+                idList.join(", "),
+                params.envconGroup,
+                params.envconSubgroup,
+                params.evidence,
+                params.activator,
+                params.inhibitor,
+                params.noexprinfo
+            );
+            return regs;
+
+            // homologous relations
+        } else {
+            // prettier-ignore
+            const homoIds = await getHomoIDs(ids, params.species, params.homolog, params.synteny);
+            // TODO
+        }
     }
     // case Search for TFs
     else if (tfNames[0] === "") {
@@ -139,10 +145,8 @@ export async function searchRegulations(params) {
 }
 export async function rankTF(params) {
     if (
-        params.query === undefined ||
         params.tfs === undefined ||
         params.genes === undefined ||
-        params.evidence === undefined ||
         params.documented === undefined ||
         params.activator === undefined ||
         params.inhibitor === undefined ||
@@ -150,7 +154,8 @@ export async function rankTF(params) {
         params.envconGroup === undefined ||
         params.envconSubgroup === undefined ||
         params.synteny === undefined ||
-        params.homolog === undefined
+        params.homolog === undefined ||
+        params.species === undefined
     ) {
         throw new Error("Bad Request");
     }
@@ -218,7 +223,7 @@ export async function rankTF(params) {
 
 async function getRankByTfs(regs, tfIDs, hypern) {
     let ranks = [];
-    for (id of tfIDs) {
+    for (let id of tfIDs) {
         const dbNum = await getAllGenesByTF(id);
 
         const idRegs = regs.filter((row) => row["tfid"] === id);

@@ -2,7 +2,7 @@ import { query, querySingleRow, querySingleValue } from "./dbaccess.js";
 
 export async function getIDs(names, species) {
     let res = [];
-    for (n of names) {
+    for (let n of names) {
         const id = await getID(n, species);
         res.push(id);
     }
@@ -35,6 +35,28 @@ export async function getID(element, species) {
     }
     return -1;
 }
+
+export async function getHomoIDs(
+    ids,
+    currentSpecies,
+    homoSpecies,
+    synteny,
+    reverse = false
+) {
+    const species = reverse ? homoSpecies : currentSpecies;
+    const q =
+        "select O.orfid,O.orf,O.gene,P.protein, H.orfiddest, " +
+        "Homo.orf as homoorf,Homo.gene as homogene from orfgene as O, " +
+        "protein as P, orthologs as H left join orfgene as Homo on " +
+        `H.orfiddest=Homo.orfid where O.orfid in (${ids}) ` +
+        `and P.tfid=O.orfid and H.classif=${synteny} ` +
+        "and O.orfid=H.orfidsrc and H.orfiddest in (select distinct " +
+        `orfid from orfgene where species in ('${species}'))`;
+    const res = await query(q);
+    console.log(res);
+    return res;
+}
+
 // prettier-ignore
 export async function getRegulationsByTF(ids, biggroup, subgroup, evidence, pos, neg, NA) {
     const q =
@@ -49,6 +71,20 @@ export async function getRegulationsByTF(ids, biggroup, subgroup, evidence, pos,
         if (row["gene"] === "Uncharacterized") row["gene"] = row["orf"];
         return { gene: row["gene"], tf: row["protein"] };
     });
+}
+export async function getMegaRegulationsByTF(ids) {
+    const q =
+        "select distinct O.gene, O.orf, P.protein, D.association, E.code, G.biggroup, G.subgroup" +
+        " from regulation as R left outer join orfgene as O" +
+        " on R.targetid=O.orfid left outer join protein as P ON R.tfid=P.tfid" +
+        " left outer join regulationdata as D on R.regulationid=D.regulationid" +
+        " left outer join evidencecodeBSRG as E on D.evidencecodeid=E.evidencecodeid" +
+        " left outer join envcondition as C on D.envconditionid=C.envconditionid" +
+        " left outer join envconditiongroups as G on C.groupid=G.groupid" +
+        ` where R.tfid in (${ids})`;
+
+    const res = await query(q);
+    return res;
 }
 // prettier-ignore
 export async function getRegulationsByGene(ids, biggroup, subgroup, evidence, pos, neg, NA) {
@@ -88,20 +124,24 @@ export async function getRegulations(tfIds, geneIds, biggroup, subgroup, evidenc
     return res;
 }
 
-// export async function getAllRegulations(biggroup, subgroup, evidence, pos, neg, NA) {
+//prettier-ignore
+export async function getAllRegulations(biggroup, subgroup, evidence, pos, neg, NA, species) {
 
-//     const envconQuery = getEnvconQuery(biggroup, subgroup, false);
-//     const evidenceQuery = getEvidenceQuery(evidence, pos, neg, NA, false);
+    // const envconQuery = getEnvconQuery(biggroup, subgroup, false);
+    // const evidenceQuery = getEvidenceQuery(evidence, pos, neg, NA, false);
 
-//     let q = "select distinct R.tfid, O.gene, O.orf, P.protein from regulation as R left outer join orfgene as O" +
-//         " on R.targetid=O.orfid left outer join protein as P ON R.tfid=P.tfid";
-//     if (envconQuery !== "" && evidenceQuery !== "") q += ` where ${envconQuery} and ${evidenceQuery}`;
-//     else if (envconQuery !== "") q += ` where ${envconQuery}`;
-//     else if (evidenceQuery !== "") q += ` where ${evidenceQuery}`;
+    const q = "select distinct R.tfid, O.gene, O.orf, P.protein from regulation as R left outer join orfgene as O" +
+        " on R.targetid=O.orfid left outer join protein as P ON R.tfid=P.tfid" +
+        ` where R.tfid in (select orfid from orfgene where species in ('${species}')` +
+        getEnvconQuery(biggroup, subgroup) +
+        getEvidenceQuery(evidence, pos, neg, NA);
+    // if (envconQuery !== "" && evidenceQuery !== "") q += ` where ${envconQuery} and ${evidenceQuery}`;
+    // else if (envconQuery !== "") q += ` where ${envconQuery}`;
+    // else if (evidenceQuery !== "") q += ` where ${evidenceQuery}`;
 
-//     const res = await query(q);
-//     return res;
-// }
+    const res = await query(q);
+    return res;
+}
 
 function getEnvconQuery(biggroup, subgroup, and = true) {
     if (!biggroup) return "";
@@ -185,7 +225,7 @@ export async function getGOids(geneIds, ontology) {
     //           ]["genes"].push(row["orfid"])
     //         : terms.push({ goid: row["goid"], genes: [row["orfid"]] });
     // });
-    for (row of res) {
+    for (let row of res) {
         terms.some((element) => element["goid"] === row["goid"])
             ? terms[
                   terms.findIndex((element) => element["goid"] === row["goid"])
@@ -212,7 +252,7 @@ export async function getGOids(geneIds, ontology) {
     //     };
     // });
     let gos = [];
-    for (row of terms) {
+    for (let row of terms) {
         const q_count =
             "select count(distinct orfid) as assoc from goorflist where " +
             `goid='${row["goid"]}' and orfid in (select distinct orfid from orfgene ` +
@@ -235,8 +275,12 @@ export async function getGOids(geneIds, ontology) {
     return gos;
 }
 
-export async function upstreamSequence(ids) {
-    const q = `select orfid,promoterseq from orfgene where orfid in (${ids})`;
+export async function getSequence(ids, species = null) {
+    //possible problem if species = array
+    const speciesQ = species ? ` and species in ('${species}')` : "";
+    const q =
+        `select orf,gene,promoterseq from orfgene where orfid in (${ids})` +
+        speciesQ;
     const res = await query(q);
     return res;
 }
@@ -255,7 +299,7 @@ export async function getMotifsFromDB(
 
     const res = await query(q);
     let ret = [];
-    for (const row of res) {
+    for (let row of res) {
         if (ret.some((element) => element["seq"] === row["IUPACseq"])) {
             ret.find((element) => element["seq"] === row["IUPACseq"])[
                 "tfs"
@@ -395,4 +439,10 @@ export async function getPossibleMatches(
         reactionname: reactionname_res.map((row) => row["reactionname"]),
         reactionstr: reactionstr_res.map((row) => row["reaction_str"]),
     };
+}
+
+export async function getSpecies() {
+    const q = "select distinct species from orfgene";
+    const res = await query(q);
+    return res.map((row) => row["species"]);
 }

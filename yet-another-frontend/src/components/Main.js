@@ -11,17 +11,22 @@ import "ag-grid-community/styles/ag-theme-quartz.css";
 //     SelectItem,
 //     Button,
 // } from "@nextui-org/react";
-import constants from "../constants";
+import {
+    searchRegulations,
+    rankTF,
+    rankGO,
+    rankTFBS,
+} from "../services/remoteServices";
 
-export default function Main() {
+export default function Main(props) {
     // const [crossSpecies, setCrossSpecies] = React.useState(false);
     // const [documented, setDocumented] = React.useState(true);
     // const [expression, setExpression] = React.useState(false);
     const [formData, setFormData] = React.useState({
-        query: "rank-none",
+        // query: "rank-none",
         tfs: "",
         genes: "",
-        evidence: "documented",
+        // evidence: "documented",
 
         binding: false,
         expression: true,
@@ -48,8 +53,8 @@ export default function Main() {
     const [rowData, setRowData] = React.useState([]);
 
     const [colDefs, setColDefs] = React.useState([
-        { field: "tf" },
-        { field: "gene" },
+        { headerName: "TF", field: "tf" },
+        { headerName: "Gene", field: "gene" },
     ]);
     const defaultColDef = React.useMemo(() => {
         return {
@@ -66,43 +71,77 @@ export default function Main() {
         }));
     }
 
-    function handleQuery(event) {
+    async function handleQuery(event) {
         event.preventDefault();
-        console.log(formData);
-        if (formData.query === "rank-none") {
-            fetch(`${constants.baseUrl}/associations/search`, {
-                method: "POST",
-                headers: {
-                    Accept: "application/json",
-                    "Content-Type": "application/json",
-                },
-                body: JSON.stringify(formData),
-            })
-                .then((res) => res.json())
-                .then((data) => {
-                    setColDefs([{ field: "tf" }, { field: "gene" }]);
-                    setRowData(data);
-                });
-        } else if (formData.query === "rank-tf") {
-            fetch(`${constants.baseUrl}/associations/ranktf`, {
-                method: "POST",
-                headers: {
-                    Accept: "application/json",
-                    "Content-Type": "application/json",
-                },
-                body: JSON.stringify(formData),
-            })
-                .then((res) => res.json())
-                .then((data) => {
-                    setColDefs([
-                        { field: "tf" },
-                        { field: "setPer" },
-                        { field: "dbPer" },
-                        { field: "genes" },
-                    ]);
-                    setRowData(data);
-                    console.log(data);
-                });
+        const query = event.nativeEvent.submitter.name;
+        let documented = "";
+        if (formData.binding && formData.expression)
+            documented = formData.and_or
+                ? "binding or expression"
+                : "binding and expression";
+        else if (formData.binding) documented = "binding";
+        else if (formData.expression) documented = "expression";
+
+        if (query === "rank-none") {
+            if (documented === "") return; //not accepted
+            const reverseCols = formData.tfs.trim() === "";
+            const res = await searchRegulations({
+                ...formData,
+                documented: documented,
+                species: props.species,
+            });
+            console.log(res);
+            if (reverseCols)
+                setColDefs([
+                    { headerName: "Gene", field: "gene" },
+                    { headerName: "TF", field: "tf" },
+                ]);
+            else
+                setColDefs([
+                    { headerName: "TF", field: "tf" },
+                    { headerName: "Gene", field: "gene" },
+                ]);
+            setRowData(res);
+        } else if (query === "rank-tf") {
+            if (documented === "") return; //not accepted
+            const res = await rankTF({
+                ...formData,
+                documented: documented,
+                species: props.species,
+            });
+            console.log(res);
+            setColDefs([
+                { headerName: "TF", field: "tf" },
+                { headerName: "% in user set", field: "setPer" },
+                { headerName: "% in species", field: "dbPer" },
+                { headerName: "Target Genes", field: "genes" },
+            ]);
+            setRowData(res);
+        } else if (query === "rank-go") {
+            const res = await rankGO({
+                genes: formData.genes,
+                // ontology: formData.ontology,
+                species: props.species,
+            });
+            console.log(res);
+            setColDefs([
+                { headerName: "GO ID", field: "goid" },
+                { headerName: "GO Term", field: "term" },
+                { headerName: "Depth level", field: "depth" },
+                { headerName: "% in user set", field: "setPer" },
+                { headerName: "% in species", field: "dbPer" },
+                { headerName: "Genes", field: "gene" },
+            ]);
+            setRowData(res);
+        } else if (query === "rank-tfbs") {
+            if (formData.homolog === "") return; //not accepted
+            const res = await rankTFBS({
+                ...formData,
+                species: props.species,
+            });
+            console.log(res);
+        } else {
+            console.log("Unknown query name");
         }
     }
 
@@ -117,47 +156,50 @@ export default function Main() {
     }, []);
 
     return (
-        <>
+        <div>
             <h1 className="text-xl font-bold text-center text-color">
                 Regulations
             </h1>
             <form
-                className="flex flex-row space-x-8 p-4 border-b border-gray-500"
+                className="flex flex-col lg:flex-row justify-center gap-2 lg:gap-8 p-4 border-b border-gray-500"
                 onSubmit={handleQuery}
             >
-                <div className="flex flex-col p-3 rounded-lg shadow-md shadow-gray-200">
-                    <div className="flex flex-row gap-6">
-                        <label>
-                            <div className="label p-0 mb-2">
-                                <span className="label-text text-color">
-                                    TFs
-                                </span>
-                            </div>
-                            <textarea
-                                id="tfs"
-                                name="tfs"
-                                value={formData.tfs}
-                                className="textarea textarea-bordered textarea-primary min-h-44 max-h-44 text-color"
-                                onChange={handleForm}
-                            ></textarea>
-                        </label>
-
-                        <label>
-                            <div className="label p-0 mb-2">
-                                <span className="label-text text-color">
-                                    Genes
-                                </span>
-                            </div>
-                            <textarea
-                                id="genes"
-                                name="genes"
-                                value={formData.genes}
-                                className="textarea textarea-bordered textarea-primary min-h-44 max-h-44 text-color"
-                                onChange={handleForm}
-                            ></textarea>
-                        </label>
+                <div className="flex flex-col p-3 max-w-sm self-center rounded-lg shadow-md shadow-gray-200">
+                    <div className="flex flex-row justify-center gap-9">
+                        <div>
+                            <label>
+                                <div className="label p-0 mb-2">
+                                    <span className="label-text text-color">
+                                        TFs
+                                    </span>
+                                </div>
+                                <textarea
+                                    id="tfs"
+                                    name="tfs"
+                                    value={formData.tfs}
+                                    className="textarea textarea-bordered textarea-primary min-h-44 max-h-44 max-w-40 text-color"
+                                    onChange={handleForm}
+                                ></textarea>
+                            </label>
+                        </div>
+                        <div>
+                            <label>
+                                <div className="label p-0 mb-2">
+                                    <span className="label-text text-color">
+                                        Genes
+                                    </span>
+                                </div>
+                                <textarea
+                                    id="genes"
+                                    name="genes"
+                                    value={formData.genes}
+                                    className="textarea textarea-bordered textarea-primary min-h-44 max-h-44 max-w-40 text-color"
+                                    onChange={handleForm}
+                                ></textarea>
+                            </label>
+                        </div>
                     </div>
-                    <div className="flex mt-auto mb-2">
+                    <div className="grid grid-cols-4 mt-auto mb-2 gap-2">
                         {/* <label className="label cursor-pointer">
                         <span className="label-text">Search by TFs/Genes</span>
                         <input
@@ -206,37 +248,21 @@ export default function Main() {
                             onChange={handleForm}
                         />
                     </label> */}
-                        <button
-                            className="btn mr-6 "
-                            type="submit"
-                            onSubmit={handleQuery}
-                        >
-                            Search
+                        <button className="btn" type="submit" name="rank-none">
+                            Regulations
                         </button>
-                        <div className="col-span-2 items-end flex gap-2 ml-auto">
-                            <span className="text-color mb-1">Rank by:</span>
-                            <button
-                                className="btn btn-sm"
-                                type="submit"
-                                onSubmit={handleQuery}
-                            >
-                                TF
-                            </button>
-                            <button
-                                className="btn btn-sm"
-                                type="submit"
-                                onSubmit={handleQuery}
-                            >
-                                GO
-                            </button>
-                            <button
-                                className="btn btn-sm"
-                                type="submit"
-                                onSubmit={handleQuery}
-                            >
-                                TFBS
-                            </button>
-                        </div>
+                        {/* <div className="col-span-2 items-end flex gap-2 ml-auto"> */}
+                        {/* <span className="text-color mb-1">Rank by:</span> */}
+                        <button className="btn" type="submit" name="rank-tf">
+                            Rank TF
+                        </button>
+                        <button className="btn" type="submit" name="rank-go">
+                            Rank GO
+                        </button>
+                        <button className="btn" type="submit" name="rank-tfbs">
+                            Rank TFBS
+                        </button>
+                        {/* </div> */}
                     </div>
                 </div>
                 {/* <div className="flex flex-row gap-6">
@@ -355,14 +381,14 @@ export default function Main() {
                             </div>
                         </div>
                     </div>
-                    <div className="p-3 content-end rounded-lg shadow-md shadow-gray-200">
+                    <div className="p-3 rounded-lg shadow-md shadow-gray-200">
                         <label>
-                            <div className="label p-0 mb-2 ml-1">
-                                <span className="label-text text-color">
+                            <div className="label p-0 mb-2 ml-1 justify-center">
+                                <span className="label-text text-color ">
                                     TF as...
                                 </span>
                             </div>
-                            <div className="flex flex-row gap-2 mb-2">
+                            <div className="flex flex-row justify-center gap-2 mb-2">
                                 <input
                                     id="activator"
                                     name="activator"
@@ -434,7 +460,7 @@ export default function Main() {
                         />
                     </label>
                 </div> */}
-                <div className="flex flex-col p-3 rounded-lg shadow-md shadow-gray-200">
+                <div className="flex flex-col p-3 items-center rounded-lg shadow-md shadow-gray-200">
                     <label>
                         <div className="label p-0 mb-2">
                             <span className="label-text text-color">
@@ -443,7 +469,7 @@ export default function Main() {
                         </div>
 
                         <select
-                            className="select select-bordered select-primary select-sm w-full max-w-xs mb-2 text-color"
+                            className="select select-bordered select-primary select-sm w-56 mb-2 text-color"
                             id="envconGroup"
                             name="envconGroup"
                             value={formData.envconGroup}
@@ -462,7 +488,7 @@ export default function Main() {
                         </div>
 
                         <select
-                            className="select select-bordered select-primary select-sm w-full max-w-xs mb-4 text-color"
+                            className="select select-bordered select-primary select-sm w-56 mb-4 text-color"
                             id="envconSubgroup"
                             name="envconSubgroup"
                             value={formData.envconSubgroup}
@@ -481,7 +507,7 @@ export default function Main() {
                         </div>
 
                         <select
-                            className="select select-bordered select-primary select-sm w-full max-w-xs mb-2 text-color"
+                            className="select select-bordered select-primary select-sm w-56 mb-2 text-color"
                             id="synteny"
                             name="synteny"
                             value={formData.synteny}
@@ -500,7 +526,7 @@ export default function Main() {
                         </div>
 
                         <select
-                            className="select select-bordered select-primary select-sm w-full max-w-xs mb-2 text-color"
+                            className="select select-bordered select-primary select-sm w-56 mb-2 text-color"
                             id="homolog"
                             name="homolog"
                             value={formData.homolog}
@@ -528,6 +554,6 @@ export default function Main() {
                     defaultColDef={defaultColDef}
                 />
             </div>
-        </>
+        </div>
     );
 }

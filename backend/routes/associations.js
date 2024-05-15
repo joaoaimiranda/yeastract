@@ -1,3 +1,4 @@
+import { getMegaRegulationsByTF } from "../db/repository.js";
 import {
     searchRegulations,
     rankTF,
@@ -6,38 +7,54 @@ import {
 import { Router } from "express";
 const router = Router();
 
-router.post("/search", (req, res, next) => {
+router.post("/search", async (req, res, next) => {
     try {
-        const result = searchRegulations(req.body);
+        const result = await searchRegulations(req.body);
         res.status(200).json(result);
     } catch (err) {
+        console.log(err);
         if (err.message === "Bad Request")
             res.status(400).send("Request Body format not accepted");
         else res.status(500).send("Internal Server Error");
     }
 });
 
-router.post("/ranktf", (req, res, next) => {
+router.post("/ranktf", async (req, res, next) => {
     try {
-        const result = rankTF(req.body);
+        const result = await rankTF(req.body);
         res.status(200).json(result);
     } catch (err) {
+        console.log(err);
         if (err.message === "Bad Request")
             res.status(400).send("Request Body format not accepted");
         else res.status(500).send("Internal Server Error");
     }
 });
 
-router.post("/rankgo", (req, res, next) => {
+router.post("/rankgo", async (req, res, next) => {
     try {
-        const result = rankGO(req.body);
+        const result = await rankGO(req.body);
         res.status(200).json(result);
     } catch (err) {
+        console.log(err);
         if (err.message === "Bad Request")
             res.status(400).send("Request Body format not accepted");
         else if (err.message === "No genes provided")
             res.status(400).send("No genes provided");
         else res.status(500).send("Internal Server Error");
+    }
+});
+
+router.get("/lmao", async (req, res, next) => {
+    try {
+        const result = await getMegaRegulationsByTF(
+            "97724, 101481, 99897, 99852"
+        );
+        console.log(result.length);
+        res.status(200).json(result);
+    } catch (err) {
+        console.log(err);
+        res.status(500).send("oops");
     }
 });
 

@@ -1,4 +1,9 @@
-import { getIDs, upstreamSequence, getMotifsFromDB } from "../db/repository.js";
+import {
+    getIDs,
+    getSequence,
+    getMotifsFromDB,
+    getAllIDs,
+} from "../db/repository.js";
 
 export async function motifOnPromoter(params) {
     if (
@@ -21,14 +26,13 @@ export async function motifOnPromoter(params) {
     }
 
     let inputMotif = [];
-    for (c of consensus) {
+    for (let c of consensus) {
         const m = c.trim();
         if (m.length !== 0) {
             const [motif, good] = motifIUPACcompress(m);
             if (good) inputMotif.push(motif);
         }
     }
-    console.log(typeof params.substitutions);
 
     const geneIdList = await getIDs(geneNames, params.species);
     // Promise.all(geneIdList)
@@ -55,27 +59,22 @@ export async function tfbsByMotif(params) {
     if (!good) throw new Error("Invalid Motif");
 
     const dbCons = await getMotifsFromDB();
+
     let ret1 = [];
     let ret2 = [];
-    for (const dbRes of dbCons) {
+    for (let dbRes of dbCons) {
         const seq = dbRes["seq"];
         const tmp_ret1 = { seq: seq, tfs: dbRes["tfs"], F: null, R: null };
         const tmp_ret2 = { seq: seq, tfs: dbRes["tfs"], F: null, R: null };
         const matches1 = shiftAnd(motif, seq, params.substitutions);
         if (!objectEmpty(matches1)) tmp_ret1["F"] = matches1;
-        const matches2 = shiftAnd(
-            motifComplement(motif),
-            seq,
-            params.substitutions
-        );
+        // prettier-ignore
+        const matches2 = shiftAnd(motifComplement(motif), seq, params.substitutions);
         if (!objectEmpty(matches2)) tmp_ret1["R"] = matches2;
         const matches3 = shiftAnd(seq, motif, params.substitutions);
         if (!objectEmpty(matches3)) tmp_ret2["F"] = matches3;
-        const matches4 = shiftAnd(
-            seq,
-            motifComplement(motif),
-            params.substitutions
-        );
+        // prettier-ignore
+        const matches4 = shiftAnd(seq, motifComplement(motif), params.substitutions);
         if (!objectEmpty(matches4)) tmp_ret2["R"] = matches4;
 
         if (!(tmp_ret1["F"] === null && tmp_ret1["R"] === null))
@@ -84,28 +83,73 @@ export async function tfbsByMotif(params) {
             ret2.push(tmp_ret2);
     }
     // res.status(200).json([ret1, ret2]);
+
     return [ret1, ret2];
     //what now
 }
 
-async function upstreamSeq(ids) {
+export async function seqRetrieval(params) {
+    if (params.genes === undefined || params.species === undefined) {
+        // res.status(400).send("Bad Request");
+        throw new Error("Bad Request");
+    }
+    const geneNames = params.genes.trim().split(/[\s\t\n\r\0,;|]+/);
+    const from = isNaN(params.from) ? -1000 : Number(params.from);
+    const to = isNaN(params.to) ? -1 : Number(params.to);
+    let idList = [];
+    if (geneNames[0] === "") {
+        idList = await getAllIDs(params.species);
+    } else {
+        idList = await getIDs(geneNames, params.species);
+    }
+    const seqs = await upstreamSeq(idList, from, to);
+    return seqs;
+}
+
+export async function promoterAnalysis(params) {
+    if (
+        params.genes === undefined ||
+        params.species === undefined ||
+        params.tfbs_species === undefined ||
+        params.orthologs === undefined ||
+        params.synteny === undefined
+    ) {
+        throw new Error("Bad Request");
+    }
+    const geneNames = params.genes.trim().split(/[\s\t\n\r\0,;|]+/);
+}
+
+export async function tfConsensus(params) {
+    console.log(params);
+    if (params.species === undefined) {
+        throw new Error("Bad Request");
+    }
+    const consList = await getMotifsFromDB(true, params.species);
+    return consList;
+}
+
+async function upstreamSeq(ids, from = -1000, to = -1) {
     if (ids.length === 0) return [];
-    const res = await upstreamSequence(ids);
+    const size = to - from + 1;
+    const start = from + 1000;
+    const res = await getSequence(ids);
+
     let seqs = {};
-    res.forEach((row) => {
+    for (let row of res) {
         const lines = row["promoterseq"].split("\n");
         lines.shift();
-        const seq = lines.join().substring(0, 1000);
-        seqs[row["orfid"]] = seq;
-    });
+        const seq = lines.join("").substring(start, size);
+        const id = row["gene"] !== "Uncharacterized" ? row["gene"] : row["orf"];
+        seqs[id] = seq;
+    }
     return seqs;
 }
 
 function tfBindingSites(motifs, sequences, subst = 0) {
-    retObj = {};
-    for (m of motifs) {
+    let retObj = {};
+    for (let m of motifs) {
         const matches = getMatches(recursiveSplit(m), sequences, subst);
-        for (orfid of Object.keys(matches)) {
+        for (let orfid of Object.keys(matches)) {
             if (!retObj[orfid]) retObj[orfid] = [];
             retObj[orfid].push({ motif: m, matches: matches[orfid] });
         }
@@ -176,7 +220,7 @@ function motifIUPACcompress(m) {
 function getMatches(boxesList, sequences, subst) {
     let retObj = {};
 
-    for (orfid of Object.keys(sequences)) {
+    for (let orfid of Object.keys(sequences)) {
         const seq = sequences[orfid];
         let matchesF = [];
         let matchesR = [];
@@ -205,11 +249,11 @@ function getMatches(boxesList, sequences, subst) {
                         subst
                     );
 
-                    for (oldkey of Object.keys(matchesF[i])) {
+                    for (let oldkey of Object.keys(matchesF[i])) {
                         let newkey = oldkey + offsetF;
                         let keep = false;
                         let newlen;
-                        for (pos of Object.keys(matchesF[i - 2])) {
+                        for (let pos of Object.keys(matchesF[i - 2])) {
                             const size = matchesF[i - 2][pos];
                             const gap = newkey - size - pos;
                             if (gap >= minGap && gap <= maxGap) {
@@ -240,11 +284,11 @@ function getMatches(boxesList, sequences, subst) {
                         subst
                     );
 
-                    for (oldkey of Object.keys(matchesR[i])) {
+                    for (let oldkey of Object.keys(matchesR[i])) {
                         let newkey = oldkey + offsetR;
                         let keep = false;
                         let newlen;
-                        for (pos of Object.keys(matchesR[i - 2])) {
+                        for (let pos of Object.keys(matchesR[i - 2])) {
                             const size = matchesR[i - 2][pos];
                             const gap = newkey - size - pos;
                             if (gap >= minGap && gap <= maxGap) {
@@ -306,7 +350,7 @@ function recursiveSplit(motif) {
         motifList = [str];
     }
     let k = 0;
-    for (box of motifList) {
+    for (let box of motifList) {
         if (!box.includes("{")) {
             boxesList.push(box);
             if (gap[0][k].length !== 0) {
@@ -316,7 +360,7 @@ function recursiveSplit(motif) {
         } else {
             // recursive call
             const aux = shiftAndWrapper(box);
-            for (subaux of aux) {
+            for (let subaux of aux) {
                 boxesList.push(...subaux);
             }
             if (gap[0][k].length !== 0) {
@@ -333,9 +377,9 @@ function recursiveSplit(motif) {
 function shiftAnd(pat, seq, subst = 0) {
     const pattern = pat.trim().toUpperCase();
     const pSize = pattern.length;
-    const nBoxes = 1;
+    // const nBoxes = 1;
     const b = pSize - 1;
-    const p = 1 * 8;
+    const p = 1 * 4;
     const boxEndBits = 0x01 << b % p;
     const boxBeginBits = (boxEndBits << 1) | 1;
 
@@ -421,49 +465,54 @@ function shiftAnd(pat, seq, subst = 0) {
 }
 
 function IUPACcomplement(seq) {
-    for (let i = 0; i < seq.length; i++) {
+    const n = seq.length;
+    let comp = "";
+    for (let i = 0; i < n + 1; i++) {
         switch (seq[i]) {
             case "A":
-                seq[i] = "T";
+                comp = comp.concat("T");
                 break;
             case "T":
-                seq[i] = "A";
+                comp = comp.concat("A");
                 break;
             case "G":
-                seq[i] = "C";
+                comp = comp.concat("C");
                 break;
             case "C":
-                seq[i] = "G";
+                comp = comp.concat("G");
                 break;
 
             case "R":
-                seq[i] = "Y";
+                comp = comp.concat("Y");
                 break;
             case "Y":
-                seq[i] = "R";
+                comp = comp.concat("R");
                 break;
             case "M":
-                seq[i] = "K";
+                comp = comp.concat("K");
                 break;
             case "K":
-                seq[i] = "M";
+                comp = comp.concat("M");
                 break;
 
             case "D":
-                seq[i] = "H";
+                comp = comp.concat("H");
                 break;
             case "H":
-                seq[i] = "D";
+                comp = comp.concat("D");
                 break;
             case "V":
-                seq[i] = "B";
+                comp = comp.concat("B");
                 break;
             case "B":
-                seq[i] = "V";
+                comp = comp.concat("V");
                 break;
+
+            default:
+                comp = comp.concat(seq[i]);
         }
     }
-    return seq;
+    return comp;
 }
 
 function motifComplement(motif) {
@@ -524,7 +573,7 @@ function motifComplement(motif) {
 
             // N, W, S
             default:
-                comp = comp.concat(motif[i]);
+                comp = comp.concat(motif[n - i]);
         }
     }
     return comp;
