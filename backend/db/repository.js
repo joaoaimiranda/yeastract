@@ -130,14 +130,32 @@ export async function getAllRegulations(biggroup, subgroup, evidence, pos, neg, 
     // const envconQuery = getEnvconQuery(biggroup, subgroup, false);
     // const evidenceQuery = getEvidenceQuery(evidence, pos, neg, NA, false);
 
-    const q = "select distinct R.tfid, O.gene, O.orf, P.protein from regulation as R left outer join orfgene as O" +
+    const q = "select distinct O.gene, O.orf, P.protein from regulation as R left outer join orfgene as O" +
         " on R.targetid=O.orfid left outer join protein as P ON R.tfid=P.tfid" +
-        ` where R.tfid in (select orfid from orfgene where species in ('${species}')` +
+        ` where R.tfid in (select orfid from orfgene where species in ('${species}'))` +
         getEnvconQuery(biggroup, subgroup) +
         getEvidenceQuery(evidence, pos, neg, NA);
     // if (envconQuery !== "" && evidenceQuery !== "") q += ` where ${envconQuery} and ${evidenceQuery}`;
     // else if (envconQuery !== "") q += ` where ${envconQuery}`;
     // else if (evidenceQuery !== "") q += ` where ${evidenceQuery}`;
+
+    const res = await query(q);
+    return res.map((row) => {
+        if (row["gene"] === "Uncharacterized") row["gene"] = row["orf"];
+        return { gene: row["gene"], tf: row["protein"] };
+    });
+}
+
+export async function getMegaAllRegulations(species) {
+    const q =
+        "select distinct O.gene, O.orf, P.protein, D.association, E.code, G.biggroup, G.subgroup" +
+        " from regulation as R left outer join orfgene as O" +
+        " on R.targetid=O.orfid left outer join protein as P ON R.tfid=P.tfid" +
+        " left outer join regulationdata as D on R.regulationid=D.regulationid" +
+        " left outer join evidencecodeBSRG as E on D.evidencecodeid=E.evidencecodeid" +
+        " left outer join envcondition as C on D.envconditionid=C.envconditionid" +
+        " left outer join envconditiongroups as G on C.groupid=G.groupid" +
+        ` where R.tfid in (select orfid from orfgene where species in ('${species}'))`;
 
     const res = await query(q);
     return res;
@@ -198,7 +216,7 @@ function getAssocTypeQuery(pos, neg, NA) {
 export async function getAllGenesByTF(id) {
     const q =
         "select count(distinct R.targetid) as numGenes from " +
-        `regulation as R where R.tfid='${id}'`;
+        `regulation as R where R.tfid=${id}`;
     const res = await querySingleValue(q);
     if (res === null) return -1;
     return res;
@@ -211,11 +229,11 @@ export async function getTotalNumDBGenes(species) {
     return res;
 }
 
-export async function getGOids(geneIds, ontology) {
+export async function getGOids(geneIds, species, ontology = "process") {
     // prettier-ignore
     const q =
-        "select G.goid, orfid from goorflist as T, geneontology as G " +
-        `where orfid in (${geneIds.join(", ")}) and G.goid=T.goid and G.onto='${ontology}'`;
+        "select G.goid, O.orf, O.gene from geneontology as G, goorflist as T left outer join orfgene as O on T.orfid=O.orfid " +
+        `where T.orfid in (${geneIds.join(", ")}) and G.goid=T.goid and G.onto='${ontology}'`;
     const res = await query(q);
     let terms = [];
     // res.forEach((row) => {
@@ -225,12 +243,13 @@ export async function getGOids(geneIds, ontology) {
     //           ]["genes"].push(row["orfid"])
     //         : terms.push({ goid: row["goid"], genes: [row["orfid"]] });
     // });
+    // prettier-ignore
     for (let row of res) {
         terms.some((element) => element["goid"] === row["goid"])
             ? terms[
                   terms.findIndex((element) => element["goid"] === row["goid"])
-              ]["genes"].push(row["orfid"])
-            : terms.push({ goid: row["goid"], genes: [row["orfid"]] });
+              ]["genes"].push(row["gene"] === "Uncharacterized" ? row["orf"] : row["gene"])
+            : terms.push({ goid: row["goid"], genes: [row["gene"] === "Uncharacterized" ? row["orf"] : row["gene"]] });
     }
     // return terms.map(async (row) => {
     //     const q2 =
@@ -256,7 +275,7 @@ export async function getGOids(geneIds, ontology) {
         const q_count =
             "select count(distinct orfid) as assoc from goorflist where " +
             `goid='${row["goid"]}' and orfid in (select distinct orfid from orfgene ` +
-            "where species in ('Saccharomyces cerevisiae S288c'))" +
+            `where species in ('${species}'))` +
             ` and goid in (select distinct goid from geneontology where onto='${ontology}')`;
         const q_ontology = `select term, depth from geneontology where goid='${row["goid"]}' and onto='${ontology}'`;
 
@@ -316,10 +335,18 @@ export async function multiSearch(
     term,
     species = "Saccharomyces cerevisiae S288c"
 ) {
-    const q_orf = `select orfid from orfgene where orf='${term}' and species='${species}'`;
-    const q_gene = `select orfid from orfgene where gene='${term}' and species='${species}'`;
-    const q_alias = `select O.orfid from orfgene as O, alias as A where A.alias='${term}' and A.orfid=O.orfid and O.species='${species}'`;
-    const q_prot = `select O.orfid from orfgene as O, protein as P where P.tfid=O.orfid and P.protein='${term}' and O.species='${species}'`;
+    let orfgene = term.trim();
+    if (orfgene.length > 0) {
+        switch (orfgene[orfgene.length - 1]) {
+            case "p":
+            case "P":
+                orfgene = orfgene.substring(0, orfgene.length - 1);
+        }
+    }
+    const q_orf = `select orf from orfgene where orf='${orfgene}' and species='${species}'`;
+    const q_gene = `select orf from orfgene where gene='${orfgene}' and species='${species}'`;
+    const q_alias = `select O.orf from orfgene as O, alias as A where A.alias='${orfgene}' and A.orfid=O.orfid and O.species='${species}'`;
+    const q_prot = `select O.orf from orfgene as O, protein as P where P.tfid=O.orfid and P.protein='${term}' and O.species='${species}'`;
 
     // return Promise.any([
     //     querySingleValue(q1),
@@ -350,51 +377,7 @@ export async function multiSearch(
             }
         }
     }
-    return -1;
-}
-
-export async function getORFinfo(orfid) {
-    const q_orf = `select * from orfgene where orfid=${orfid}`;
-    const q_protein = `select protein from protein where tfid='${orfid}'`;
-    const q_desc =
-        `select D.description from orfgene as O, description as D ` +
-        `where D.descriptionid=O.descriptionid and O.orfid='${orfid}'`;
-    const q_alias = `select alias from alias where orfid='${orfid}'`;
-
-    const orf = await querySingleRow(q_orf);
-    const prot = await querySingleValue(q_protein);
-    const desc = await querySingleValue(q_desc);
-    const alias_res = await query(q_alias);
-
-    // const orf = orf_res[0];
-    let allele = "";
-    if (orf["alleleid"] !== null) {
-        const q_allele = `select orf as allele from orfgene where orfid='${orf["allele"]}'`;
-        allele = await querySingleValue(q_allele);
-        // allele = allele_res[0]["allele"];
-    }
-    // const prot = prot_res[0];
-    // const desc = desc_res[0];
-
-    const ret = {};
-    ret["orfname"] = orf["orf"];
-    ret["genename"] = orf["gene"];
-    ret["promotersequence"] = orf["promoterseq"];
-    ret["genesequence"] = orf["geneseq"];
-    ret["coords"] = orf["coords"];
-    const extIndex = orf["gdid"].indexOf(":");
-    ret["ext"] =
-        extIndex !== -1 ? orf["gdid"].substring(extIndex + 1) : orf["gdid"];
-    // FIXME RE-WRITE FOR STRAIN INSTEAD OF SPECIES
-    ret["strain"] = orf["species"];
-    // ret["proteinname"] = prot["protein"];
-    ret["proteinname"] = prot;
-    // ret["description"] = desc["description"];
-    ret["description"] = desc;
-    ret["altname"] = alias_res.map((row) => row["alias"]).join(", ");
-    ret["allele"] = allele;
-
-    return ret;
+    return null;
 }
 
 export async function getPossibleMatches(
@@ -405,7 +388,7 @@ export async function getPossibleMatches(
     const q_gene = `select orf, gene from orfgene where gene like '%${term}%' and species='${species}'`;
     const q_alias = `select A.alias, O.orf, O.gene from orfgene as O, alias as A where A.alias like '%${term}%' and A.orfid=O.orfid and species='${species}'`;
     const q_protein = `select P.protein from protein as P, orfgene as O where P.protein like '%${term}%' and P.tfid=O.orfid and species='${species}'`;
-    const q_desc = `select distinct D.description, O.orf, O.gene from description as D, orfgene as O where D.description like '%${term}%' and D.descriptionid=O.descriptionid and O.species='${species}'`;
+    const q_desc = `select distinct O.orf, O.gene, D.description from description as D, orfgene as O where D.description like '%${term}%' and D.descriptionid=O.descriptionid and O.species='${species}'`;
     const q_func = `select distinct term from geneontology where onto='function' and term like '%${term}%'`;
     const q_process = `select distinct term from geneontology where onto='process' and term like '%${term}%'`;
     const q_component = `select distinct term from geneontology where onto='component' and term like '%${term}%'`;
@@ -431,18 +414,160 @@ export async function getPossibleMatches(
         orf: orf_res,
         gene: gene_res,
         alias: alias_res,
-        protein: protein_res.map((row) => row["protein"]),
+        // protein: protein_res.map((row) => row["protein"]),
+        protein: protein_res,
         description: description_res,
-        func: func_res.map((row) => row["term"]),
-        process: process_res.map((row) => row["term"]),
-        component: component_res.map((row) => row["term"]),
-        reactionname: reactionname_res.map((row) => row["reactionname"]),
-        reactionstr: reactionstr_res.map((row) => row["reaction_str"]),
+        // func: func_res.map((row) => row["term"]),
+        Function: func_res,
+        // process: process_res.map((row) => row["term"]),
+        process: process_res,
+        // component: component_res.map((row) => row["term"]),
+        component: component_res,
+        // reactionname: reactionname_res.map((row) => row["reactionname"]),
+        reactionName: reactionname_res,
+        // reactionstr: reactionstr_res.map((row) => row["reaction_str"]),
+        reactionString: reactionstr_res,
     };
+}
+
+export async function getORFinfo(orfid) {
+    const q_orf = `select * from orfgene where orfid=${orfid}`;
+    // const q_protein = `select protein from protein where tfid=${orfid}`;
+    const q_desc =
+        `select D.description from orfgene as O, description as D ` +
+        `where D.descriptionid=O.descriptionid and O.orfid=${orfid}`;
+    const q_alias = `select alias from alias where orfid=${orfid}`;
+
+    const orf = await querySingleRow(q_orf);
+    // const prot = await querySingleValue(q_protein);
+    const desc = await querySingleValue(q_desc);
+    const alias_res = await query(q_alias);
+
+    // const orf = orf_res[0];
+    let allele = "";
+    if (orf["alleleid"] !== null) {
+        const q_allele = `select orf as allele from orfgene where orfid='${orf["allele"]}'`;
+        allele = await querySingleValue(q_allele);
+        // allele = allele_res[0]["allele"];
+    }
+    // const prot = prot_res[0];
+    // const desc = desc_res[0];
+
+    const ret = {};
+    const general = {};
+
+    general["standard_Name"] = orf["gene"];
+    general["systematic_Name"] = orf["orf"];
+    ret["promoter_Sequence"] = orf["promoterseq"];
+    ret["gene_Sequence"] = orf["geneseq"];
+    ret["chr_Coordinates"] = orf["coords"];
+    const extIndex = orf["gdid"].indexOf(":");
+    ret["ext"] =
+        extIndex !== -1 ? orf["gdid"].substring(extIndex + 1) : orf["gdid"];
+    // FIXME RE-WRITE FOR STRAIN INSTEAD OF SPECIES
+    ret["strain"] = orf["species"];
+    // ret["proteinname"] = prot["protein"];
+
+    // ret["protein_Name"] = prot;
+
+    // ret["description"] = desc["description"];
+    general["description"] = desc;
+    ret["alias"] = alias_res.map((row) => row["alias"]).join(", ");
+    if (allele) ret["allele"] = allele;
+
+    return { general: general, locus: ret };
+}
+
+export async function getProteinInfo(tfid) {
+    const q_prot =
+        "select P.*,O.orfid,O.orf,O.gdid from protein as P, orfgene " +
+        `as O where P.tfid=O.orfid and P.tfid=${tfid}`;
+    const q_cons =
+        "select C.IUPACseq from tfconsensus as T, consensus as C, " +
+        `protein as P, orfgene as O where P.tfid=T.tfid and ` +
+        "T.consensusid=C.consensusid and P.tfid=O.orfid and " +
+        `P.tfid=${tfid}`;
+
+    const prot_res = await querySingleRow(q_prot);
+    const cons_res = await query(q_cons);
+
+    const ret = {};
+    ret["protein_name"] = prot_res["protein"];
+    ret["aminoacid_sequence"] = prot_res["aminoacidseq"];
+    // gdid ?
+    ret["TFBS"] = cons_res.map((row) => row["IUPACseq"]);
+    // has_regdoc ?
+    return ret;
+}
+
+export async function getGOinfo(orfid) {
+    const q =
+        "select GO.goid,GO.term,GO.depth,GO.onto from goorflist as OL, " +
+        `geneontology as GO where OL.orfid='${orfid}' ` +
+        "and OL.goid=GO.goid order by GO.depth";
+
+    const res = await query(q);
+
+    const ret = { process: [], function: [], component: [] };
+    for (let row of res) {
+        ret[row["onto"]].push({
+            goid: row["goid"],
+            depth: row["depth"],
+            term: row["term"],
+        });
+    }
+    return ret;
+}
+
+export async function getOrthologInfo(orfid, species) {
+    const homologSpecies = await getHomologSpecies(species);
+    const hspString = "'" + homologSpecies.join("','") + "'";
+    const hList = {};
+    for (let synteny = 0; synteny < 4; synteny++) {
+        let q =
+            "select orf,gene,species from orthologs left outer join orfgene on orfiddest=orfid where " +
+            `orfidsrc=${orfid} and classif=${synteny} and species not in ('${species}')`;
+        // $diff?
+        if (synteny < 3)
+            q +=
+                " and orfiddest not in (select OD.orfid " +
+                "from orthologs as H, orfgene as O, orfgene as OD where " +
+                `H.orfidsrc=O.orfid and O.orfid=${orfid} and ` +
+                `H.orfiddest=OD.orfid and OD.species in (${hspString}) and H.classif>${synteny})`;
+        const res = await query(q);
+        hList[synteny] = res; //.filter((row) => row["species"] !== species);
+    }
+    return hList;
+}
+
+async function getHomologSpecies(species) {
+    const q =
+        "select distinct species from orfgene where orfid in (select " +
+        "distinct orfiddest from orthologs where orfidsrc in (select " +
+        `distinct orfid from orfgene where species='${species}'))`;
+
+    const res = await query(q);
+    const hsp = [];
+    for (let sp of res) {
+        if (sp["species"] !== species)
+            hsp.push(sp["species"].replaceAll("'", "\\'"));
+    }
+    return hsp;
 }
 
 export async function getSpecies() {
     const q = "select distinct species from orfgene";
     const res = await query(q);
     return res.map((row) => row["species"]);
+}
+
+export async function getEnvCons() {
+    const q = "select distinct biggroup,subgroup from envconditiongroups";
+    const res = await query(q);
+    const ec = {};
+    for (let row of res) {
+        if (ec[row["biggroup"]]) ec[row["biggroup"]].push(row["subgroup"]);
+        else ec[row["biggroup"]] = [row["subgroup"]];
+    }
+    return ec;
 }

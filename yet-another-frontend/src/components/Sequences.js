@@ -173,7 +173,7 @@ export default function Sequences(props) {
                     <div></div>
                 </div> */}
                 <div className="ml-3 flex flex-row justify-center gap-5 mb-5">
-                    <h1 className="text-xl font-bold">Sequences</h1>
+                    <h1 className="font-figtree text-xl">Sequences</h1>
                     <select
                         className="select select-sm select-bordered select-primary max-w-106 text-color"
                         id="query"

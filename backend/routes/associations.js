@@ -1,4 +1,4 @@
-import { getMegaRegulationsByTF } from "../db/repository.js";
+import { getMegaAllRegulations } from "../db/repository.js";
 import {
     searchRegulations,
     rankTF,
@@ -47,8 +47,8 @@ router.post("/rankgo", async (req, res, next) => {
 
 router.get("/lmao", async (req, res, next) => {
     try {
-        const result = await getMegaRegulationsByTF(
-            "97724, 101481, 99897, 99852"
+        const result = await getMegaAllRegulations(
+            "Saccharomyces cerevisiae S288c"
         );
         console.log(result.length);
         res.status(200).json(result);

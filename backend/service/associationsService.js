@@ -244,11 +244,7 @@ async function getRankByTfs(regs, tfIDs, hypern) {
 }
 
 export async function rankGO(params) {
-    if (
-        params.genes === undefined ||
-        params.ontology === undefined ||
-        params.species === undefined
-    ) {
+    if (params.genes === undefined || params.species === undefined) {
         throw new Error("Bad Request");
     }
 

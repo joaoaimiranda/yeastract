@@ -1,34 +1,20 @@
 import React from "react";
-import { Outlet } from "react-router-dom";
+import { Outlet, useNavigate } from "react-router-dom";
 // import { Select, SelectItem, Input, Link } from "@nextui-org/react";
 // import species from "./Species";
-import { searchTerm } from "../services/remoteServices";
-import { getSpecies } from "../services/remoteServices";
 
-export default function Layout({ species, setSpecies }) {
+export default function Layout({ species, setSpecies, speciesList }) {
     const [searchFormData, setSearchFormData] = React.useState("");
-    const [speciesList, setSpeciesList] = React.useState([]);
 
-    React.useEffect(() => {
-        async function fetchData() {
-            const res = await getSpecies();
-            const defaultSpecies = res.some(
-                (el) => el === "Saccharomyces cerevisiae S288c"
-            )
-                ? "Saccharomyces cerevisiae S288c"
-                : res[0];
-            setSpecies(defaultSpecies);
-            setSpeciesList(res);
-        }
-        fetchData();
-    }, [setSpecies]);
+    const navigate = useNavigate();
 
-    async function handleSearch(event) {
+    function handleSearch(event) {
         event.preventDefault();
         console.log(searchFormData);
-        if (searchFormData !== "") {
-            const res = await searchTerm(searchFormData, species);
-            console.log(res);
+        if (searchFormData.trim() !== "") {
+            // const res = await searchTerm(searchFormData.trim(), species);
+            // console.log(res);
+            navigate(`/advanced-search?term=${searchFormData.trim()}`);
         }
     }
 
@@ -61,11 +47,11 @@ export default function Layout({ species, setSpecies }) {
                             ></path>
                         </svg>
                     </label>
-                    <h1 className="text-4xl font-ntr text-color mt-1 lg:hidden">
+                    <h1 className="text-2xl font-figtree mt-1 lg:hidden">
                         YEASTRACT+
                     </h1>
                 </div>
-                <div className="container mx-auto mt-2">
+                <div className="max-w-[100vw] container mx-auto mt-2">
                     <Outlet />
                 </div>
             </div>
@@ -76,8 +62,28 @@ export default function Layout({ species, setSpecies }) {
                     aria-label="close sidebar"
                     className="drawer-overlay"
                 ></label>
-                <div className="flex flex-col p-5 h-screen bg-primary ">
-                    <h1 className="text-4xl mb-2 font-ntr text-color hidden lg:block">
+                <div className="flex flex-col p-5 h-screen bg-primary max-w-60">
+                    <label
+                        htmlFor="sidebar-toggle"
+                        aria-label="close sidebar"
+                        className="btn btn-circle btn-ghost self-end lg:hidden"
+                    >
+                        <svg
+                            xmlns="http://www.w3.org/2000/svg"
+                            className="h-6 w-6"
+                            fill="none"
+                            viewBox="0 0 24 24"
+                            stroke="currentColor"
+                        >
+                            <path
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                                strokeWidth="2"
+                                d="M6 18L18 6M6 6l12 12"
+                            />
+                        </svg>
+                    </label>
+                    <h1 className="hidden lg:block font-figtree text-2xl">
                         YEASTRACT+
                     </h1>
 
@@ -103,14 +109,16 @@ export default function Layout({ species, setSpecies }) {
                     </div> */}
 
                     <select
-                        className="select select-sm select-bordered w-full max-w-xs mb-4 text-color"
+                        className="select select-sm select-bordered w-full max-w-xs mb-4 mt-2 text-color"
                         id="species"
                         name="species"
                         value={species}
                         onChange={(e) => setSpecies(e.target.value)}
                     >
                         {speciesList.map((option) => (
-                            <option value={option}>{option}</option>
+                            <option key={option} value={option}>
+                                {option}
+                            </option>
                         ))}
                     </select>
                     {/* </label> */}
@@ -148,53 +156,19 @@ export default function Layout({ species, setSpecies }) {
                             />
                         </label>
                     </form>
-                    {/* <Link
-                    href="/advanced-search"
-                    underline="always"
-                    className="justify-center mt-1 mb-6"
-                    color="foreground"
-                >
-                    Advanced Search
-                </Link> */}
                     <a
                         href="/advanced-search"
                         className="link mt-1 mb-6 ml-3 text-sm text-color"
                     >
                         Advanced Search
                     </a>
-                    {/* <Link href="/" size="lg" color="foreground" className="mb-5">
-                    Regulations
-                </Link>
-                <Link
-                    href="/sequences"
-                    size="lg"
-                    color="foreground"
-                    className="mb-5"
-                >
-                    Sequences
-                </Link>
-                <Link
-                    href="/about"
-                    size="lg"
-                    color="foreground"
-                    className="mb-5"
-                >
-                    About
-                </Link>
-                <Link
-                    href="/help"
-                    size="lg"
-                    color="foreground"
-                    className="mb-5"
-                >
-                    Help
-                </Link> */}
+
                     <ul className="menu w-full gap-1 text-lg p-0">
                         <li>
                             <a
                                 className={`text-color ${
                                     window.location.pathname === "/"
-                                        ? "bg-blue-500"
+                                        ? "active-tab"
                                         : ""
                                 }`}
                                 href="/"
@@ -206,7 +180,7 @@ export default function Layout({ species, setSpecies }) {
                             <a
                                 className={`text-color ${
                                     window.location.pathname === "/sequences"
-                                        ? "bg-blue-500"
+                                        ? "active-tab"
                                         : ""
                                 }`}
                                 href="/sequences"
@@ -218,7 +192,7 @@ export default function Layout({ species, setSpecies }) {
                             <a
                                 className={`text-color ${
                                     window.location.pathname === "/about"
-                                        ? "bg-blue-500"
+                                        ? "active-tab"
                                         : ""
                                 }`}
                                 href="/about"
@@ -230,7 +204,7 @@ export default function Layout({ species, setSpecies }) {
                             <a
                                 className={`text-color ${
                                     window.location.pathname === "/help"
-                                        ? "bg-blue-500"
+                                        ? "active-tab"
                                         : ""
                                 }`}
                                 href="/help"

@@ -16,6 +16,7 @@ import {
     rankTF,
     rankGO,
     rankTFBS,
+    getEnvCons,
 } from "../services/remoteServices";
 
 export default function Main(props) {
@@ -37,24 +38,40 @@ export default function Main(props) {
         noexprinfo: true,
         envconGroup: "",
         envconSubgroup: "",
-        synteny: "BLAST Best-Scores",
+        synteny: 0,
         homolog: "",
     });
 
-    const envcons = ["x", "y", "z"];
+    console.log("refreshed");
+
+    // const envcons = ["x", "y", "z"];
+    const [envcons, setEnvcons] = React.useState({});
+    React.useEffect(() => {
+        async function fetchData() {
+            const res = await getEnvCons();
+            setEnvcons(res);
+        }
+        fetchData();
+    }, []);
+
+    const subgroupOptions = React.useMemo(() => {
+        if (formData.envconGroup === "") return ["---"];
+        else return ["---", ...envcons[formData.envconGroup]];
+    }, [envcons, formData.envconGroup]);
+
     const syntenies = [
-        "BLAST Best-Scores",
-        "BLAST Best-Scores + at least 1 neighbor",
-        "BLAST Best-Scores + at least 2 neighbor",
-        "BLAST Best-Scores + at least 3 neighbor",
+        { option: "BLAST Best-Scores", value: 0 },
+        { option: "BLAST Best-Scores + at least 1 neighbor", value: 1 },
+        { option: "BLAST Best-Scores + at least 2 neighbor", value: 2 },
+        { option: "BLAST Best-Scores + at least 3 neighbor", value: 3 },
     ];
-    const homologs = ["c. albicans", "c. auris", "c. glabrata"];
+    // const homologs = ["c. albicans", "c. auris", "c. glabrata"];
 
     const [rowData, setRowData] = React.useState([]);
 
     const [colDefs, setColDefs] = React.useState([
-        { headerName: "TF", field: "tf" },
-        { headerName: "Gene", field: "gene" },
+        { headerName: "TF", field: "tf", hide: false },
+        { headerName: "Gene", field: "gene", hide: false },
     ]);
     const defaultColDef = React.useMemo(() => {
         return {
@@ -62,6 +79,15 @@ export default function Main(props) {
             flex: 1,
         };
     }, []);
+
+    function handleColumns(event) {
+        const { name, checked } = event.target;
+        setColDefs((prevCols) =>
+            prevCols.map((col) =>
+                col["field"] === name ? { ...col, hide: !checked } : col
+            )
+        );
+    }
 
     function handleForm(event) {
         const { name, value, checked, type } = event.target;
@@ -74,6 +100,7 @@ export default function Main(props) {
     async function handleQuery(event) {
         event.preventDefault();
         const query = event.nativeEvent.submitter.name;
+
         let documented = "";
         if (formData.binding && formData.expression)
             documented = formData.and_or
@@ -91,16 +118,23 @@ export default function Main(props) {
                 species: props.species,
             });
             console.log(res);
+
+            //prettier-ignore
             if (reverseCols)
                 setColDefs([
-                    { headerName: "Gene", field: "gene" },
-                    { headerName: "TF", field: "tf" },
+                    { headerName: "Gene", field: "gene", hide: false, 
+                    cellRenderer: p => <a className="link" href={`/view?orf=${p.data.gene}`}>{p.data.gene}</a> },
+                    { headerName: "TF", field: "tf", hide: false, 
+                    cellRenderer: p => <a className="link" href={`/view?orf=${p.data.tf}`}>{p.data.tf}</a> },
                 ]);
             else
-                setColDefs([
-                    { headerName: "TF", field: "tf" },
-                    { headerName: "Gene", field: "gene" },
-                ]);
+            setColDefs([
+                { headerName: "TF", field: "tf", hide: false, 
+                cellRenderer: p => <a className="link" href={`/view?orf=${p.data.tf}`}>{p.data.tf}</a> },
+                { headerName: "Gene", field: "gene", hide: false, 
+                cellRenderer: p => <a className="link" href={`/view?orf=${p.data.gene}`}>{p.data.gene}</a> },
+                
+            ]);
             setRowData(res);
         } else if (query === "rank-tf") {
             if (documented === "") return; //not accepted
@@ -111,10 +145,23 @@ export default function Main(props) {
             });
             console.log(res);
             setColDefs([
-                { headerName: "TF", field: "tf" },
-                { headerName: "% in user set", field: "setPer" },
-                { headerName: "% in species", field: "dbPer" },
-                { headerName: "Target Genes", field: "genes" },
+                { headerName: "TF", field: "tf", hide: false },
+                { headerName: "% in user set", field: "setPer", hide: false },
+                { headerName: "% in species", field: "dbPer", hide: false },
+                {
+                    headerName: "Target Genes",
+                    field: "genes",
+                    hide: false,
+                    cellRenderer: (p) =>
+                        p.data.genes.map((v) => (
+                            <>
+                                <a className="link" href={`/view?orf=${v}`}>
+                                    {v}
+                                </a>
+                                <span> </span>
+                            </>
+                        )),
+                },
             ]);
             setRowData(res);
         } else if (query === "rank-go") {
@@ -125,12 +172,25 @@ export default function Main(props) {
             });
             console.log(res);
             setColDefs([
-                { headerName: "GO ID", field: "goid" },
-                { headerName: "GO Term", field: "term" },
-                { headerName: "Depth level", field: "depth" },
-                { headerName: "% in user set", field: "setPer" },
-                { headerName: "% in species", field: "dbPer" },
-                { headerName: "Genes", field: "gene" },
+                { headerName: "GO ID", field: "goid", hide: false },
+                { headerName: "GO Term", field: "term", hide: false },
+                { headerName: "Depth level", field: "depth", hide: false },
+                { headerName: "% in user set", field: "setPer", hide: false },
+                { headerName: "% in species", field: "dbPer", hide: false },
+                {
+                    headerName: "Genes",
+                    field: "genes",
+                    hide: false,
+                    cellRenderer: (p) =>
+                        p.data.genes.map((v) => (
+                            <>
+                                <a className="link" href={`/view?orf=${v}`}>
+                                    {v}
+                                </a>
+                                <span> </span>
+                            </>
+                        )),
+                },
             ]);
             setRowData(res);
         } else if (query === "rank-tfbs") {
@@ -157,14 +217,12 @@ export default function Main(props) {
 
     return (
         <div>
-            <h1 className="text-xl font-bold text-center text-color">
-                Regulations
-            </h1>
+            <h1 className="text-center font-figtree text-xl">Regulations</h1>
             <form
-                className="flex flex-col lg:flex-row justify-center gap-2 lg:gap-8 p-4 border-b border-gray-500"
+                className="flex flex-col md:flex-row md:flex-wrap xl:justify-center items-center gap-2 xl:gap-8 p-4 border-b border-gray-500"
                 onSubmit={handleQuery}
             >
-                <div className="flex flex-col p-3 max-w-sm self-center rounded-lg shadow-md shadow-gray-200">
+                <div className="flex flex-col p-3 max-w-sm rounded-lg shadow-md shadow-gray-200">
                     <div className="flex flex-row justify-center gap-9">
                         <div>
                             <label>
@@ -200,54 +258,6 @@ export default function Main(props) {
                         </div>
                     </div>
                     <div className="grid grid-cols-4 mt-auto mb-2 gap-2">
-                        {/* <label className="label cursor-pointer">
-                        <span className="label-text">Search by TFs/Genes</span>
-                        <input
-                            type="radio"
-                            id="rank-none"
-                            name="query"
-                            value="rank-none"
-                            className="radio radio-sm"
-                            checked={formData.query === "rank-none"}
-                            onChange={handleForm}
-                        />
-                    </label>
-                    <label className="label cursor-pointer">
-                        <span className="label-text">Rank by TF</span>
-                        <input
-                            type="radio"
-                            id="rank-tf"
-                            name="query"
-                            value="rank-tf"
-                            className="radio radio-sm"
-                            checked={formData.query === "rank-tf"}
-                            onChange={handleForm}
-                        />
-                    </label>
-                    <label className="label cursor-pointer">
-                        <span className="label-text">Rank by GO</span>
-                        <input
-                            type="radio"
-                            id="rank-go"
-                            name="query"
-                            value="rank-go"
-                            className="radio radio-sm"
-                            checked={formData.query === "rank-go"}
-                            onChange={handleForm}
-                        />
-                    </label>
-                    <label className="label cursor-pointer">
-                        <span className="label-text">Rank by Unique TFBS</span>
-                        <input
-                            type="radio"
-                            id="rank-tfbs"
-                            name="query"
-                            value="rank-tfbs"
-                            className="radio radio-sm"
-                            checked={formData.query === "rank-tfbs"}
-                            onChange={handleForm}
-                        />
-                    </label> */}
                         <button className="btn" type="submit" name="rank-none">
                             Regulations
                         </button>
@@ -265,68 +275,8 @@ export default function Main(props) {
                         {/* </div> */}
                     </div>
                 </div>
-                {/* <div className="flex flex-row gap-6">
-                        
-                    </div> */}
-                <div className="grid row-span-2 gap-6">
+                <div className="grid row-span-2 gap-6 max-w-sm">
                     <div className="p-3 content-center rounded-lg shadow-md shadow-gray-200">
-                        {/* <label className="label cursor-pointer mt-5">
-                        <span className="label-text">Binding</span>
-                        <input
-                            type="radio"
-                            id="binding"
-                            name="documented"
-                            value="binding"
-                            className="radio radio-sm"
-                            checked={formData.documented === "binding"}
-                            onChange={handleForm}
-                        />
-                    </label>
-                    <label className="label cursor-pointer">
-                        <span className="label-text">Expression</span>
-                        <input
-                            type="radio"
-                            id="expression"
-                            name="documented"
-                            value="expression"
-                            className="radio radio-sm"
-                            checked={formData.documented === "expression"}
-                            onChange={handleForm}
-                        />
-                    </label>
-
-                    <label className="label cursor-pointer">
-                        <span className="label-text">
-                            Binding or Expression
-                        </span>
-                        <input
-                            type="radio"
-                            id="binding or expression"
-                            name="documented"
-                            value="binding or expression"
-                            className="radio radio-sm"
-                            checked={
-                                formData.documented === "binding or expression"
-                            }
-                            onChange={handleForm}
-                        />
-                    </label>
-                    <label className="label cursor-pointer">
-                        <span className="label-text">
-                            Binding and Expression
-                        </span>
-                        <input
-                            type="radio"
-                            id="binding and expression"
-                            name="documented"
-                            value="binding and expression"
-                            className="radio radio-sm"
-                            checked={
-                                formData.documented === "binding and expression"
-                            }
-                            onChange={handleForm}
-                        />
-                    </label> */}
                         <div className="flex flex-col gap-3">
                             <label>
                                 <div className="label p-0 mb-2 ml-1">
@@ -423,44 +373,8 @@ export default function Main(props) {
                         </label>
                     </div>
                 </div>
-                {/* <div>
-                    <label className="label cursor-pointer">
-                        <span className="label-text">TF as activator</span>
-                        <input
-                            type="checkbox"
-                            id="activator"
-                            name="activator"
-                            className="checkbox  checkbox-sm"
-                            checked={formData.activator}
-                            onChange={handleForm}
-                        />
-                    </label>
-                    <label className="label cursor-pointer">
-                        <span className="label-text">TF as inhibitor</span>
-                        <input
-                            type="checkbox"
-                            id="inhibitor"
-                            name="inhibitor"
-                            className="checkbox  checkbox-sm"
-                            checked={formData.inhibitor}
-                            onChange={handleForm}
-                        />
-                    </label>
-                    <label className="label cursor-pointer">
-                        <span className="label-text">
-                            No assoc. information
-                        </span>
-                        <input
-                            type="checkbox"
-                            id="noexprinfo"
-                            name="noexprinfo"
-                            className="checkbox  checkbox-sm"
-                            checked={formData.noexprinfo}
-                            onChange={handleForm}
-                        />
-                    </label>
-                </div> */}
-                <div className="flex flex-col p-3 items-center rounded-lg shadow-md shadow-gray-200">
+
+                <div className="flex flex-col p-3 items-center rounded-lg shadow-md shadow-gray-200 max-w-sm">
                     <label>
                         <div className="label p-0 mb-2">
                             <span className="label-text text-color">
@@ -475,8 +389,13 @@ export default function Main(props) {
                             value={formData.envconGroup}
                             onChange={handleForm}
                         >
-                            {envcons.map((option) => (
-                                <option value={option}>{option}</option>
+                            {["---", ...Object.keys(envcons)].map((option) => (
+                                <option
+                                    key={option}
+                                    value={option === "---" ? "" : option}
+                                >
+                                    {option}
+                                </option>
                             ))}
                         </select>
                     </label>
@@ -494,8 +413,13 @@ export default function Main(props) {
                             value={formData.envconSubgroup}
                             onChange={handleForm}
                         >
-                            {envcons.map((option) => (
-                                <option value={option}>{option}</option>
+                            {subgroupOptions.map((option) => (
+                                <option
+                                    key={option}
+                                    value={option === "---" ? "" : option}
+                                >
+                                    {option}
+                                </option>
                             ))}
                         </select>
                     </label>
@@ -513,8 +437,10 @@ export default function Main(props) {
                             value={formData.synteny}
                             onChange={handleForm}
                         >
-                            {syntenies.map((option) => (
-                                <option value={option}>{option}</option>
+                            {syntenies.map((x) => (
+                                <option key={x.value} value={x.value}>
+                                    {x.option}
+                                </option>
                             ))}
                         </select>
                     </label>
@@ -532,27 +458,65 @@ export default function Main(props) {
                             value={formData.homolog}
                             onChange={handleForm}
                         >
-                            {homologs.map((option) => (
-                                <option value={option}>{option}</option>
+                            {[
+                                "---",
+                                ...props.speciesList.filter(
+                                    (el) => el !== props.species
+                                ),
+                            ].map((option) => (
+                                <option
+                                    key={option}
+                                    value={option === "---" ? "" : option}
+                                >
+                                    {option}
+                                </option>
                             ))}
                         </select>
                     </label>
                 </div>
             </form>
-
-            <div
-                className="ag-theme-quartz mt-6 ml-4 "
-                style={{ width: 900, height: 400 }}
-            >
-                <button className="btn mb-6" onClick={onBtnExport}>
+            <div className="px-4 py-2">
+                <button className="btn" onClick={onBtnExport}>
                     Download
                 </button>
-                <AgGridReact
-                    ref={gridRef}
-                    rowData={rowData}
-                    columnDefs={colDefs}
-                    defaultColDef={defaultColDef}
-                />
+                <div className="dropdown dropdown-bottom dropdown-end float-end">
+                    <div tabIndex={0} role="button" className="btn m-1 p-2">
+                        Columns
+                    </div>
+                    <ul
+                        tabIndex={0}
+                        className="dropdown-content z-40 menu p-2 shadow bg-base-100 rounded-box w-52"
+                    >
+                        {colDefs.map((col) => (
+                            <li key={col.field}>
+                                <label className="label cursor-pointer">
+                                    <span className="label-text">
+                                        {col.headerName}
+                                    </span>
+                                    <input
+                                        type="checkbox"
+                                        id={col.field}
+                                        name={col.field}
+                                        defaultChecked={!col.hide}
+                                        className="checkbox checkbox-sm checkbox-primary"
+                                        onChange={handleColumns}
+                                    />
+                                </label>
+                            </li>
+                        ))}
+                    </ul>
+                </div>
+                <div
+                    className="ag-theme-quartz mt-2"
+                    style={{ width: 900, height: 400 }}
+                >
+                    <AgGridReact
+                        ref={gridRef}
+                        rowData={rowData}
+                        columnDefs={colDefs}
+                        defaultColDef={defaultColDef}
+                    />
+                </div>
             </div>
         </div>
     );
