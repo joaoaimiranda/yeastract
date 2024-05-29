@@ -384,49 +384,68 @@ export async function getPossibleMatches(
     term,
     species = "Saccharomyces cerevisiae S288c"
 ) {
-    const q_orf = `select orf, gene from orfgene where orf like '%${term}%' and species='${species}'`;
-    const q_gene = `select orf, gene from orfgene where gene like '%${term}%' and species='${species}'`;
-    const q_alias = `select A.alias, O.orf, O.gene from orfgene as O, alias as A where A.alias like '%${term}%' and A.orfid=O.orfid and species='${species}'`;
-    const q_protein = `select P.protein from protein as P, orfgene as O where P.protein like '%${term}%' and P.tfid=O.orfid and species='${species}'`;
-    const q_desc = `select distinct O.orf, O.gene, D.description from description as D, orfgene as O where D.description like '%${term}%' and D.descriptionid=O.descriptionid and O.species='${species}'`;
-    const q_func = `select distinct term from geneontology where onto='function' and term like '%${term}%'`;
-    const q_process = `select distinct term from geneontology where onto='process' and term like '%${term}%'`;
-    const q_component = `select distinct term from geneontology where onto='component' and term like '%${term}%'`;
-    const q_reactionname =
-        `select reactionname from mreaction where reactionname like '%${term}` +
-        `%' and modid in (select modid from mmodel where species='${species}')`;
-    const q_reactionstr =
-        `select reactionstr from mreaction where reactionstr like '%${term}` +
-        `%' and modid in (select modid from mmodel where species='${species}')`;
+    const q_orf =
+        `select O.orf, O.gene, P.protein, A.alias, D.description from protein as P, orfgene as O ` +
+        `left outer join alias as A on A.orfid=O.orfid left outer join description as D on O.descriptionid=D.descriptionid where O.orfid=P.tfid and ` +
+        `O.species='${species}' and (O.orf like '%${term}%' or O.gene like '%${term}%' or P.protein like '%${term}%' or A.alias like '%${term}%' or D.description like '%${term}%')`;
+    // const q_gene = `select orf, gene from orfgene where gene like '%${term}%' and species='${species}'`;
+    // const q_alias = `select A.alias, O.orf, O.gene from orfgene as O, alias as A where A.alias like '%${term}%' and A.orfid=O.orfid and species='${species}'`;
+    // const q_protein = `select P.protein from protein as P, orfgene as O where P.protein like '%${term}%' and P.tfid=O.orfid and species='${species}'`;
+    // const q_desc = `select distinct O.orf, O.gene, D.description from description as D, orfgene as O where D.description like '%${term}%' and D.descriptionid=O.descriptionid and O.species='${species}'`;
+    const q_go = `select distinct term, onto as ontology from geneontology where term like '%${term}%'`;
+    // const q_func = `select distinct term from geneontology where onto='function' and term like '%${term}%'`;
+    // const q_process = `select distinct term from geneontology where onto='process' and term like '%${term}%'`;
+    // const q_component = `select distinct term from geneontology where onto='component' and term like '%${term}%'`;
+    const q_reaction =
+        `select reactionname, reactionstr from mreaction where reactionname like '%${term}%' or reactionstr like '%${term}%'` +
+        `and modid in (select modid from mmodel where species='${species}')`;
+    // const q_reactionname =
+    //     `select reactionname from mreaction where reactionname like '%${term}` +
+    //     `%' and modid in (select modid from mmodel where species='${species}')`;
+    // const q_reactionstr =
+    //     `select reactionstr from mreaction where reactionstr like '%${term}` +
+    //     `%' and modid in (select modid from mmodel where species='${species}')`;
 
     const orf_res = await query(q_orf);
-    const gene_res = await query(q_gene);
-    const alias_res = await query(q_alias);
-    const protein_res = await query(q_protein);
-    const description_res = await query(q_desc);
-    const func_res = await query(q_func);
-    const process_res = await query(q_process);
-    const component_res = await query(q_component);
-    const reactionname_res = await query(q_reactionname);
-    const reactionstr_res = await query(q_reactionstr);
+    const go_res = await query(q_go);
+    const reaction_res = await query(q_reaction);
+    // const gene_res = await query(q_gene);
+    // const alias_res = await query(q_alias);
+    // const protein_res = await query(q_protein);
+    // const description_res = await query(q_desc);
+    // const func_res = await query(q_func);
+    // const process_res = await query(q_process);
+    // const component_res = await query(q_component);
+    // const reactionname_res = await query(q_reactionname);
+    // const reactionstr_res = await query(q_reactionstr);
+
+    let orf_map = [];
+    // aggregate all alias of an orf/gene into same row
+    for (let row of orf_res) {
+        const i = orf_map.findIndex((el) => el["orf"] === row["orf"]);
+        if (i === -1) orf_map.push({ ...row, alias: [row.alias] });
+        else orf_map[i]["alias"].push(row["alias"]);
+    }
 
     return {
-        orf: orf_res,
-        gene: gene_res,
-        alias: alias_res,
-        // protein: protein_res.map((row) => row["protein"]),
-        protein: protein_res,
-        description: description_res,
-        // func: func_res.map((row) => row["term"]),
-        Function: func_res,
-        // process: process_res.map((row) => row["term"]),
-        process: process_res,
-        // component: component_res.map((row) => row["term"]),
-        component: component_res,
-        // reactionname: reactionname_res.map((row) => row["reactionname"]),
-        reactionName: reactionname_res,
-        // reactionstr: reactionstr_res.map((row) => row["reaction_str"]),
-        reactionString: reactionstr_res,
+        orf: orf_map,
+        gene_Ontology: go_res,
+        reaction: reaction_res,
+        // gene: gene_res,
+        // alias: alias_res,
+        // // protein: protein_res.map((row) => row["protein"]),
+        // protein: protein_res,
+        // description: description_res,
+        // // func: func_res.map((row) => row["term"]),
+        // Function: func_res,
+        // // process: process_res.map((row) => row["term"]),
+        // process: process_res,
+        // // component: component_res.map((row) => row["term"]),
+        // component: component_res,
+        // // reactionname: reactionname_res.map((row) => row["reactionname"]),
+        // reactionName: reactionname_res,
+        // // reactionstr: reactionstr_res.map((row) => row["reaction_str"]),
+        // reactionString: reactionstr_res,
     };
 }
 
@@ -553,6 +572,33 @@ async function getHomologSpecies(species) {
             hsp.push(sp["species"].replaceAll("'", "\\'"));
     }
     return hsp;
+}
+
+export async function getTFBSinfo(id, consensus) {
+    const q =
+        "select distinct TFC.tfconsensusid, P.protein, C.IUPACseq, EC.code, " +
+        "EC.experiment, Pub.*,CD.strain from pubmed as Pub, tfconsensus as TFC, " +
+        "consensus as C, protein as P, consensusdata as CD, " +
+        `evidencecodeBSRG as EC where P.tfid=${id} and ` +
+        `C.IUPACseq='${consensus}' and C.consensusid=TFC.consensusid and ` +
+        "TFC.tfid=P.tfid and TFC.tfconsensusid=CD.tfconsensusid and " +
+        "CD.evidencecodeid=EC.evidencecodeid " +
+        "and Pub.pubmedid=CD.pubmedid order by P.protein asc";
+
+    const res = await query(q);
+    for (let row of res) {
+        const qev =
+            "select distinct EV.envconditiondesc from envcondition as EV, " +
+            "consensusdata as CD where EV.envconditionid=CD.envconditionid " +
+            `and CD.tfconsensusid=${row["tfconsensusid"]} and CD.pubmedid=${row["pubmedid"]}`;
+        const resev = await query(qev);
+        if (resev)
+            row["environmental_Condition"] = resev.map(
+                (row) => row["envconditiondesc"]
+            );
+        else row["environmental_Condition"] = ["N/A"];
+    }
+    return res;
 }
 
 export async function getSpecies() {

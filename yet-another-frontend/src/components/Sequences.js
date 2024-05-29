@@ -22,8 +22,12 @@ import {
     promoterAnalysis,
     tfConsensus,
 } from "../services/remoteServices";
+import { useParams } from "react-router-dom";
+import speciesList from "../conf/speciesList";
 
-export default function Sequences(props) {
+export default function Sequences() {
+    const { species } = useParams();
+
     const [query, setQuery] = React.useState(
         "Search for DNA motif(s) on promoter regions"
     );
@@ -93,7 +97,10 @@ export default function Sequences(props) {
                 motif: formData.motif,
                 substitutions: formData.substitutions,
                 genes: formData.genes,
-                species: props.species,
+                species:
+                    speciesList[species].dbspecies +
+                    " " +
+                    speciesList[species].dbstrains,
             });
             console.log(res);
             setTmpResults(JSON.stringify(res));
@@ -104,7 +111,10 @@ export default function Sequences(props) {
             const res = await tfbsByMotif({
                 motif: formData.motif,
                 substitutions: formData.substitutions,
-                species: props.species,
+                species:
+                    speciesList[species].dbspecies +
+                    " " +
+                    speciesList[species].dbstrains,
             });
             console.log(res);
             let str = "";
@@ -117,7 +127,10 @@ export default function Sequences(props) {
                 motif: formData.motif,
                 substitutions: formData.substitutions,
                 sequence: formData.sequence,
-                species: props.species,
+                species:
+                    speciesList[species].dbspecies +
+                    " " +
+                    speciesList[species].dbstrains,
             });
             console.log(res);
         } else if (query === "Promoter Analysis") {
@@ -126,11 +139,18 @@ export default function Sequences(props) {
                 tfbs_species: formData.tfbs_species,
                 synteny: formData.synteny,
                 ortholog_species: formData.ortholog_species,
-                species: props.species,
+                species:
+                    speciesList[species].dbspecies +
+                    " " +
+                    speciesList[species].dbstrains,
             });
             console.log(res);
         } else if (query === "TF-Consensus List") {
-            const res = await tfConsensus(props.species);
+            const res = await tfConsensus(
+                speciesList[species].dbspecies +
+                    " " +
+                    speciesList[species].dbstrains
+            );
             console.log(res);
             setTmpResults(JSON.stringify(res));
         } else if (query === "Upstream Sequence") {
@@ -138,7 +158,10 @@ export default function Sequences(props) {
                 genes: formData.genes,
                 from: formData.from,
                 to: formData.to,
-                species: props.species,
+                species:
+                    speciesList[species].dbspecies +
+                    " " +
+                    speciesList[species].dbstrains,
             });
             console.log(res);
             let str = "";

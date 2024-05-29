@@ -1,15 +1,22 @@
 import React from "react";
-import { useSearchParams } from "react-router-dom";
+import { useSearchParams, useParams } from "react-router-dom";
 import { searchORF } from "../services/remoteServices";
+import Modal from "./Modal";
+import speciesList from "../conf/speciesList";
 
-export default function View({ species }) {
+export default function View() {
+    const { species } = useParams();
     let [searchParams, setSearchParams] = useSearchParams();
     const [results, setResults] = React.useState({});
-    console.log(species);
 
     React.useEffect(() => {
         async function fetchData() {
-            const res = await searchORF(searchParams.get("orf"), species);
+            const res = await searchORF(
+                searchParams.get("orf"),
+                speciesList[species].dbspecies +
+                    " " +
+                    speciesList[species].dbstrains
+            );
             console.log(res);
             setResults(res);
         }
@@ -19,6 +26,10 @@ export default function View({ species }) {
     function titleFormat(str) {
         str = str.replaceAll("_", " ");
         return str.charAt(0).toUpperCase() + str.slice(1);
+    }
+
+    function dbspecies(sp) {
+        return speciesList[sp].dbspecies + " " + speciesList[sp].dbstrains;
     }
 
     return (
@@ -42,7 +53,7 @@ export default function View({ species }) {
                         <div className="collapse collapse-arrow join-item bg-base-100 border border-base-300">
                             <input type="checkbox" />
                             <div className="collapse-title text-xl font-medium">
-                                Locus Information
+                                Locus
                             </div>
                             <div className="collapse-content">
                                 <div className="overflow-x-auto">
@@ -72,7 +83,7 @@ export default function View({ species }) {
                         <div className="collapse collapse-arrow join-item bg-base-100 border border-base-300">
                             <input type="checkbox" />
                             <div className="collapse-title text-xl font-medium">
-                                Protein Information
+                                Protein
                             </div>
                             <div className="collapse-content">
                                 <div className="overflow-x-auto">
@@ -91,9 +102,39 @@ export default function View({ species }) {
                                                                 ][row].map(
                                                                     (tfbs) => (
                                                                         <li>
-                                                                            {
-                                                                                tfbs
-                                                                            }
+                                                                            <span>
+                                                                                {
+                                                                                    tfbs
+                                                                                }
+                                                                            </span>
+                                                                            <button
+                                                                                className="btn btn-xs btn-ghost"
+                                                                                onClick={() =>
+                                                                                    document
+                                                                                        .getElementById(
+                                                                                            `modal_${tfbs}`
+                                                                                        )
+                                                                                        .showModal()
+                                                                                }
+                                                                            >
+                                                                                Ref
+                                                                            </button>
+                                                                            <Modal
+                                                                                id={`modal_${tfbs}`}
+                                                                                species={
+                                                                                    species
+                                                                                }
+                                                                                tf={
+                                                                                    results[
+                                                                                        "protein"
+                                                                                    ][
+                                                                                        "protein_name"
+                                                                                    ]
+                                                                                }
+                                                                                consensus={
+                                                                                    tfbs
+                                                                                }
+                                                                            />
                                                                         </li>
                                                                     )
                                                                 )}
@@ -114,7 +155,7 @@ export default function View({ species }) {
                         <div className="collapse collapse-arrow join-item bg-base-100 border border-base-300">
                             <input type="checkbox" />
                             <div className="collapse-title text-xl font-medium">
-                                GO Information
+                                Gene Ontology
                             </div>
                             <div className="collapse-content">
                                 <div className="overflow-x-auto">
@@ -181,7 +222,21 @@ export default function View({ species }) {
                                                             {orth["gene"] ===
                                                             "Uncharacterized" ? (
                                                                 <a
-                                                                    href={`/view?orf=${orth["orf"]}`}
+                                                                    href={`/${Object.keys(
+                                                                        speciesList
+                                                                    ).find(
+                                                                        (sp) =>
+                                                                            dbspecies(
+                                                                                sp
+                                                                            ) ===
+                                                                            orth[
+                                                                                "species"
+                                                                            ]
+                                                                    )}/view?orf=${
+                                                                        orth[
+                                                                            "orf"
+                                                                        ]
+                                                                    }`}
                                                                 >
                                                                     {
                                                                         orth[
@@ -191,7 +246,21 @@ export default function View({ species }) {
                                                                 </a>
                                                             ) : (
                                                                 <a
-                                                                    href={`/view?orf=${orth["orf"]}`}
+                                                                    href={`/${Object.keys(
+                                                                        speciesList
+                                                                    ).find(
+                                                                        (sp) =>
+                                                                            dbspecies(
+                                                                                sp
+                                                                            ) ===
+                                                                            orth[
+                                                                                "species"
+                                                                            ]
+                                                                    )}/view?orf=${
+                                                                        orth[
+                                                                            "orf"
+                                                                        ]
+                                                                    }`}
                                                                 >
                                                                     {[
                                                                         orth[

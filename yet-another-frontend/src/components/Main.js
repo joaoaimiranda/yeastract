@@ -18,8 +18,10 @@ import {
     rankTFBS,
     getEnvCons,
 } from "../services/remoteServices";
+import speciesList from "../conf/speciesList";
+import { useParams } from "react-router-dom";
 
-export default function Main(props) {
+export default function Main() {
     // const [crossSpecies, setCrossSpecies] = React.useState(false);
     // const [documented, setDocumented] = React.useState(true);
     // const [expression, setExpression] = React.useState(false);
@@ -41,6 +43,9 @@ export default function Main(props) {
         synteny: 0,
         homolog: "",
     });
+
+    const { species } = useParams();
+    // if (speciesList[species] === undefined) return <div>not found</div>; // create 404 page eventually
 
     console.log("refreshed");
 
@@ -75,8 +80,9 @@ export default function Main(props) {
     ]);
     const defaultColDef = React.useMemo(() => {
         return {
-            filter: "agTextColumnFilter",
-            flex: 1,
+            filter: true,
+            // flex: 1,
+            floatingFilter: true,
         };
     }, []);
 
@@ -97,6 +103,7 @@ export default function Main(props) {
         }));
     }
 
+    // FIXME SPECIES STRING FOR MULTIPLE STRAINS
     async function handleQuery(event) {
         event.preventDefault();
         const query = event.nativeEvent.submitter.name;
@@ -115,19 +122,27 @@ export default function Main(props) {
             const res = await searchRegulations({
                 ...formData,
                 documented: documented,
-                species: props.species,
+                species:
+                    speciesList[species].dbspecies +
+                    " " +
+                    speciesList[species].dbstrains,
             });
             console.log(res);
 
             //prettier-ignore
-            if (reverseCols)
+            if (reverseCols) {
                 setColDefs([
                     { headerName: "Gene", field: "gene", hide: false, 
                     cellRenderer: p => <a className="link" href={`/view?orf=${p.data.gene}`}>{p.data.gene}</a> },
                     { headerName: "TF", field: "tf", hide: false, 
                     cellRenderer: p => <a className="link" href={`/view?orf=${p.data.tf}`}>{p.data.tf}</a> },
                 ]);
-            else
+                setRowData(res);
+                gridRef.current.api.applyColumnState({
+                    state: [{ colId: "tf", sort: "asc", sortIndex: 1 }, { colId: "gene", sort: "asc", sortIndex: 0 }],
+                });
+            }
+            else{
             setColDefs([
                 { headerName: "TF", field: "tf", hide: false, 
                 cellRenderer: p => <a className="link" href={`/view?orf=${p.data.tf}`}>{p.data.tf}</a> },
@@ -136,12 +151,18 @@ export default function Main(props) {
                 
             ]);
             setRowData(res);
+            gridRef.current.api.applyColumnState({
+                state: [{ colId: "tf", sort: "asc", sortIndex: 0 }, { colId: "gene", sort: "asc", sortIndex: 1 }],
+            });}
         } else if (query === "rank-tf") {
             if (documented === "") return; //not accepted
             const res = await rankTF({
                 ...formData,
                 documented: documented,
-                species: props.species,
+                species:
+                    speciesList[species].dbspecies +
+                    " " +
+                    speciesList[species].dbstrains,
             });
             console.log(res);
             setColDefs([
@@ -168,7 +189,10 @@ export default function Main(props) {
             const res = await rankGO({
                 genes: formData.genes,
                 // ontology: formData.ontology,
-                species: props.species,
+                species:
+                    speciesList[species].dbspecies +
+                    " " +
+                    speciesList[species].dbstrains,
             });
             console.log(res);
             setColDefs([
@@ -197,7 +221,10 @@ export default function Main(props) {
             if (formData.homolog === "") return; //not accepted
             const res = await rankTFBS({
                 ...formData,
-                species: props.species,
+                species:
+                    speciesList[species].dbspecies +
+                    " " +
+                    speciesList[species].dbstrains,
             });
             console.log(res);
         } else {
@@ -216,7 +243,7 @@ export default function Main(props) {
     }, []);
 
     return (
-        <div>
+        <div className="w-full h-full">
             <h1 className="text-center font-figtree text-xl">Regulations</h1>
             <form
                 className="flex flex-col md:flex-row md:flex-wrap xl:justify-center items-center gap-2 xl:gap-8 p-4 border-b border-gray-500"
@@ -460,22 +487,24 @@ export default function Main(props) {
                         >
                             {[
                                 "---",
-                                ...props.speciesList.filter(
-                                    (el) => el !== props.species
+                                ...Object.keys(speciesList).filter(
+                                    (el) => el !== species
                                 ),
                             ].map((option) => (
                                 <option
                                     key={option}
                                     value={option === "---" ? "" : option}
                                 >
-                                    {option}
+                                    {option === "---"
+                                        ? "---"
+                                        : speciesList[option].short}
                                 </option>
                             ))}
                         </select>
                     </label>
                 </div>
             </form>
-            <div className="px-4 py-2">
+            <div className="px-4 py-2 w-full h-full">
                 <button className="btn" onClick={onBtnExport}>
                     Download
                 </button>
@@ -507,14 +536,17 @@ export default function Main(props) {
                     </ul>
                 </div>
                 <div
-                    className="ag-theme-quartz mt-2"
-                    style={{ width: 900, height: 400 }}
+                    className="ag-theme-quartz mt-2 max-w-[100vw] h-full"
+                    // style={{ width: 900, height: 400 }}
                 >
                     <AgGridReact
                         ref={gridRef}
                         rowData={rowData}
                         columnDefs={colDefs}
                         defaultColDef={defaultColDef}
+                        unSortIcon={true}
+                        pagination={true}
+                        paginationAutoPageSize={true}
                     />
                 </div>
             </div>

@@ -168,9 +168,19 @@ export async function searchTerm(term, species) {
 }
 
 export async function searchORF(orf, species) {
-    console.log(species, "bota");
     const res = await fetch(
         `${constants.baseUrl}/info/orf?orf=${orf}&species=${species}`
+    );
+    if (!res.ok) {
+        throw new Error(`HTTP error! status: ${res.status}`);
+    }
+    const data = await res.json();
+    return data;
+}
+
+export async function searchTFBS(tf, consensus, species) {
+    const res = await fetch(
+        `${constants.baseUrl}/info/tfbs?protein=${tf}&consensus=${consensus}&species=${species}`
     );
     if (!res.ok) {
         throw new Error(`HTTP error! status: ${res.status}`);

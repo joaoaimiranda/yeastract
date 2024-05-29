@@ -1,12 +1,13 @@
 import React from "react";
-import { Outlet, useNavigate } from "react-router-dom";
-// import { Select, SelectItem, Input, Link } from "@nextui-org/react";
+import { Outlet, useNavigate, useParams } from "react-router-dom";
+import speciesList from "../conf/speciesList.js";
 // import species from "./Species";
 
-export default function Layout({ species, setSpecies, speciesList }) {
+export default function Layout() {
     const [searchFormData, setSearchFormData] = React.useState("");
-
     const navigate = useNavigate();
+    const { species } = useParams();
+    // if (speciesList[species] === undefined) return <div>not found</div>; // create 404 page eventually
 
     function handleSearch(event) {
         event.preventDefault();
@@ -14,8 +15,16 @@ export default function Layout({ species, setSpecies, speciesList }) {
         if (searchFormData.trim() !== "") {
             // const res = await searchTerm(searchFormData.trim(), species);
             // console.log(res);
-            navigate(`/advanced-search?term=${searchFormData.trim()}`);
+            navigate(
+                `/${species}/advanced-search?term=${searchFormData.trim()}`
+            );
         }
+    }
+
+    function currentPage() {
+        return window.location.pathname.substring(
+            window.location.pathname.lastIndexOf("/") + 1
+        );
     }
 
     return (
@@ -51,7 +60,7 @@ export default function Layout({ species, setSpecies, speciesList }) {
                         YEASTRACT+
                     </h1>
                 </div>
-                <div className="max-w-[100vw] container mx-auto mt-2">
+                <div className="max-w-[100vw] h-full container mx-auto mt-2">
                     <Outlet />
                 </div>
             </div>
@@ -87,37 +96,16 @@ export default function Layout({ species, setSpecies, speciesList }) {
                         YEASTRACT+
                     </h1>
 
-                    {/* <Select
-                    label="Species"
-                    className="max-w-xs mb-6"
-                    id="species"
-                    name="species"
-                    defaultSelectedKeys={[currentSpecies]}
-                    onChange={(e) => setCurrentSpecies(e.target.value)}
-                >
-                    {species.map((x) => (
-                        <SelectItem key={x} value={x}>
-                            {x}
-                        </SelectItem>
-                    ))}
-                </Select> */}
-                    {/* <label>
-                    <div className="label p-0 mb-2">
-                        <span className="label-text text-color">
-                            Current Species:
-                        </span>
-                    </div> */}
-
                     <select
                         className="select select-sm select-bordered w-full max-w-xs mb-4 mt-2 text-color"
                         id="species"
                         name="species"
                         value={species}
-                        onChange={(e) => setSpecies(e.target.value)}
+                        onChange={(e) => navigate(`/${e.target.value}`)}
                     >
-                        {speciesList.map((option) => (
+                        {Object.keys(speciesList).map((option) => (
                             <option key={option} value={option}>
-                                {option}
+                                {speciesList[option].short}
                             </option>
                         ))}
                     </select>
@@ -167,11 +155,11 @@ export default function Layout({ species, setSpecies, speciesList }) {
                         <li>
                             <a
                                 className={`text-color ${
-                                    window.location.pathname === "/"
+                                    currentPage() === species
                                         ? "active-tab"
                                         : ""
                                 }`}
-                                href="/"
+                                href={`/${species}`}
                             >
                                 Regulations
                             </a>
@@ -179,11 +167,11 @@ export default function Layout({ species, setSpecies, speciesList }) {
                         <li>
                             <a
                                 className={`text-color ${
-                                    window.location.pathname === "/sequences"
+                                    currentPage() === "sequences"
                                         ? "active-tab"
                                         : ""
                                 }`}
-                                href="/sequences"
+                                href={`/${species}/sequences`}
                             >
                                 Sequences
                             </a>
@@ -191,11 +179,11 @@ export default function Layout({ species, setSpecies, speciesList }) {
                         <li>
                             <a
                                 className={`text-color ${
-                                    window.location.pathname === "/about"
+                                    currentPage() === "about"
                                         ? "active-tab"
                                         : ""
                                 }`}
-                                href="/about"
+                                href={`/${species}/about`}
                             >
                                 About
                             </a>
@@ -203,11 +191,9 @@ export default function Layout({ species, setSpecies, speciesList }) {
                         <li>
                             <a
                                 className={`text-color ${
-                                    window.location.pathname === "/help"
-                                        ? "active-tab"
-                                        : ""
+                                    currentPage() === "help" ? "active-tab" : ""
                                 }`}
-                                href="/help"
+                                href={`/${species}/help`}
                             >
                                 Help
                             </a>

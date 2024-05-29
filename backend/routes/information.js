@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { advancedSearch, getORF } from "../service/informationService.js";
+import { advancedSearch, getORF, tfbs } from "../service/informationService.js";
 const router = Router();
 
 router.get("/", async (req, res, next) => {
@@ -28,6 +28,19 @@ router.get("/orf", async (req, res, next) => {
             res.status(400).send(err.message);
         else if (err.message === "ORF/Gene not found")
             res.status(404).send(err.message);
+        else res.status(500).send("Internal Server Error");
+    }
+});
+
+router.get("/tfbs", async (req, res, next) => {
+    try {
+        const result = await tfbs(req.query);
+        res.status(200).json(result);
+    } catch (err) {
+        console.log(err);
+        if (err.message === "Bad Request") res.status(400).send(err.message);
+        else if (err.message === "nf")
+            res.status(404).send("Protein not found");
         else res.status(500).send("Internal Server Error");
     }
 });

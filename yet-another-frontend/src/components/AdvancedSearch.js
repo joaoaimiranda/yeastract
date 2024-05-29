@@ -1,8 +1,9 @@
 import React from "react";
 import { searchTerm } from "../services/remoteServices";
-import { useSearchParams, useNavigate } from "react-router-dom";
-
-export default function AdvancedSearch({ species }) {
+import { useSearchParams, useNavigate, useParams } from "react-router-dom";
+import speciesList from "../conf/speciesList";
+export default function AdvancedSearch() {
+    const { species } = useParams();
     let [searchParams, setSearchParams] = useSearchParams();
     const navigate = useNavigate();
     const [results, setResults] = React.useState({});
@@ -10,8 +11,13 @@ export default function AdvancedSearch({ species }) {
 
     React.useEffect(() => {
         async function fetchData() {
-            const res = await searchTerm(searchParams.get("term"), species);
-            if (res.fullMatch) navigate(`/view?orf=${res.matches}`);
+            const res = await searchTerm(
+                searchParams.get("term"),
+                speciesList[species].dbspecies +
+                    " " +
+                    speciesList[species].dbstrains
+            );
+            if (res.fullMatch) navigate(`/${species}/view?orf=${res.matches}`);
             else {
                 console.log(res.matches);
                 setResults(res.matches);
@@ -25,6 +31,7 @@ export default function AdvancedSearch({ species }) {
         event.preventDefault();
         setSearchParams({ species: species, term: termInput });
     }
+
     return (
         <>
             <h1 className="p-3  font-figtree text-xl">Advanced Search</h1>
@@ -97,19 +104,57 @@ export default function AdvancedSearch({ species }) {
                                                         <tr>
                                                             {Object.keys(
                                                                 row
-                                                            ).map((cell) => (
-                                                                <td>
-                                                                    <a
-                                                                        href={`/view?orf=${row[cell]}`}
-                                                                    >
-                                                                        {
+                                                            ).map((cell) =>
+                                                                cell !==
+                                                                "alias" ? (
+                                                                    <td>
+                                                                        {cell ===
+                                                                            "orf" ||
+                                                                        cell ===
+                                                                            "gene" ||
+                                                                        cell ===
+                                                                            "protein" ? (
+                                                                            <a
+                                                                                href={`/view?orf=${row[cell]}`}
+                                                                            >
+                                                                                {
+                                                                                    row[
+                                                                                        cell
+                                                                                    ]
+                                                                                }
+                                                                            </a>
+                                                                        ) : (
                                                                             row[
                                                                                 cell
                                                                             ]
-                                                                        }
-                                                                    </a>
-                                                                </td>
-                                                            ))}
+                                                                        )}
+                                                                    </td>
+                                                                ) : (
+                                                                    <td>
+                                                                        {row[
+                                                                            cell
+                                                                        ] ? (
+                                                                            <ul>
+                                                                                {row[
+                                                                                    cell
+                                                                                ].map(
+                                                                                    (
+                                                                                        alias
+                                                                                    ) => (
+                                                                                        <li>
+                                                                                            {
+                                                                                                alias
+                                                                                            }
+                                                                                        </li>
+                                                                                    )
+                                                                                )}
+                                                                            </ul>
+                                                                        ) : (
+                                                                            ""
+                                                                        )}
+                                                                    </td>
+                                                                )
+                                                            )}
                                                         </tr>
                                                     ))}
                                                 </tbody>

@@ -6,6 +6,7 @@ import {
     getProteinInfo,
     getGOinfo,
     getOrthologInfo,
+    getTFBSinfo,
 } from "../db/repository.js";
 
 export async function advancedSearch(params) {
@@ -45,4 +46,18 @@ export async function getORF(params) {
         go: goInfo,
         orthologs: orthologInfo,
     };
+}
+
+export async function tfbs(params) {
+    if (
+        params.protein === undefined ||
+        params.consensus === undefined ||
+        params.species === undefined
+    )
+        throw new Error("Bad Request");
+
+    const id = await getID(params.protein, params.species);
+    if (id === -1) throw new Error("nf");
+    const info = await getTFBSinfo(id, params.consensus);
+    return info;
 }
