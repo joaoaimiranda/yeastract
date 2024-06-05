@@ -1,4 +1,19 @@
-import { query, querySingleRow, querySingleValue } from "./dbaccess.js";
+import {
+    query,
+    querySingleCol,
+    querySingleRow,
+    querySingleValue,
+} from "./dbaccess.js";
+import speciesList from "./speciesList.js";
+
+function dbspecies(key) {
+    if (speciesList[key] === undefined) throw new Error("Species not found");
+    let res = [];
+    for (let strain of speciesList[key].dbstrains.split("\t")) {
+        res.push(speciesList[key].dbspecies + " " + strain);
+    }
+    return res.join("','");
+}
 
 export async function getIDs(names, species) {
     let res = [];
@@ -10,18 +25,26 @@ export async function getIDs(names, species) {
 }
 
 export async function getAllIDs(species) {
-    const q = `select O.orfid from orfgene as O, protein as P where P.tfid=O.orfid and O.species in ('${species}')`;
+    const q = `select O.orfid from orfgene as O, protein as P where P.tfid=O.orfid and O.species in ('${dbspecies(
+        species
+    )}')`;
 
     const res = await query(q);
     return res.map((row) => row["orfid"]);
 }
 
 export async function getID(element, species) {
-    const q_orf = `select O.orfid from orfgene as O LEFT OUTER JOIN protein as P ON P.tfid=O.orfid WHERE (O.orf='${element}' or O.gene='${element}') and O.species in ('${species}');`;
+    const q_orf = `select O.orfid from orfgene as O LEFT OUTER JOIN protein as P ON P.tfid=O.orfid WHERE (O.orf='${element}' or O.gene='${element}') and O.species in ('${dbspecies(
+        species
+    )}');`;
 
-    const q_alias = `select O.orfid from orfgene as O, alias as A, protein as P where A.orfid=O.orfid and P.tfid=O.orfid and A.alias='${element}' and O.species in ('${species}');`;
+    const q_alias = `select O.orfid from orfgene as O, alias as A, protein as P where A.orfid=O.orfid and P.tfid=O.orfid and A.alias='${element}' and O.species in ('${dbspecies(
+        species
+    )}');`;
 
-    const q_prot = `select O.orfid from orfgene as O, protein as P where P.tfid=O.orfid and P.protein='${element}' and O.species in ('${species}');`;
+    const q_prot = `select O.orfid from orfgene as O, protein as P where P.tfid=O.orfid and P.protein='${element}' and O.species in ('${dbspecies(
+        species
+    )}');`;
 
     const res_orf = await querySingleValue(q_orf);
     if (res_orf !== null) return res_orf;
@@ -51,7 +74,7 @@ export async function getHomoIDs(
         `H.orfiddest=Homo.orfid where O.orfid in (${ids}) ` +
         `and P.tfid=O.orfid and H.classif=${synteny} ` +
         "and O.orfid=H.orfidsrc and H.orfiddest in (select distinct " +
-        `orfid from orfgene where species in ('${species}'))`;
+        `orfid from orfgene where species in ('${dbspecies(species)}'))`;
     const res = await query(q);
     console.log(res);
     return res;
@@ -132,7 +155,7 @@ export async function getAllRegulations(biggroup, subgroup, evidence, pos, neg, 
 
     const q = "select distinct O.gene, O.orf, P.protein from regulation as R left outer join orfgene as O" +
         " on R.targetid=O.orfid left outer join protein as P ON R.tfid=P.tfid" +
-        ` where R.tfid in (select orfid from orfgene where species in ('${species}'))` +
+        ` where R.tfid in (select orfid from orfgene where species in ('${dbspecies(species)}'))` +
         getEnvconQuery(biggroup, subgroup) +
         getEvidenceQuery(evidence, pos, neg, NA);
     // if (envconQuery !== "" && evidenceQuery !== "") q += ` where ${envconQuery} and ${evidenceQuery}`;
@@ -155,7 +178,9 @@ export async function getMegaAllRegulations(species) {
         " left outer join evidencecodeBSRG as E on D.evidencecodeid=E.evidencecodeid" +
         " left outer join envcondition as C on D.envconditionid=C.envconditionid" +
         " left outer join envconditiongroups as G on C.groupid=G.groupid" +
-        ` where R.tfid in (select orfid from orfgene where species in ('${species}'))`;
+        ` where R.tfid in (select orfid from orfgene where species in ('${dbspecies(
+            species
+        )}'))`;
 
     const res = await query(q);
     return res;
@@ -223,7 +248,9 @@ export async function getAllGenesByTF(id) {
 }
 
 export async function getTotalNumDBGenes(species) {
-    const q = `select count(orf) as gTotal from orfgene where species='${species}'`;
+    const q = `select count(orf) as gTotal from orfgene where species in ('${dbspecies(
+        species
+    )}')`;
     const res = await querySingleValue(q);
     if (res === null) return -1;
     return res;
@@ -275,7 +302,7 @@ export async function getGOids(geneIds, species, ontology = "process") {
         const q_count =
             "select count(distinct orfid) as assoc from goorflist where " +
             `goid='${row["goid"]}' and orfid in (select distinct orfid from orfgene ` +
-            `where species in ('${species}'))` +
+            `where species in ('${dbspecies(species)}'))` +
             ` and goid in (select distinct goid from geneontology where onto='${ontology}')`;
         const q_ontology = `select term, depth from geneontology where goid='${row["goid"]}' and onto='${ontology}'`;
 
@@ -296,7 +323,7 @@ export async function getGOids(geneIds, species, ontology = "process") {
 
 export async function getSequence(ids, species = null) {
     //possible problem if species = array
-    const speciesQ = species ? ` and species in ('${species}')` : "";
+    const speciesQ = species ? ` and species in ('${dbspecies(species)}')` : "";
     const q =
         `select orf,gene,promoterseq from orfgene where orfid in (${ids})` +
         speciesQ;
@@ -313,7 +340,7 @@ export async function getMotifsFromDB(
         "select distinct P.tfid, P.protein, C.IUPACseq from protein as P, " +
         "consensus as C, tfconsensus as TFC, orfgene as O where " +
         "C.consensusid=TFC.consensusid and TFC.tfid=P.tfid and " +
-        `P.tfid=O.orfid and O.species='${species}'` +
+        `P.tfid=O.orfid and O.species in ('${dbspecies(species)}')` +
         " and TFC.source='BSRG curated'";
 
     const res = await query(q);
@@ -343,10 +370,18 @@ export async function multiSearch(
                 orfgene = orfgene.substring(0, orfgene.length - 1);
         }
     }
-    const q_orf = `select orf from orfgene where orf='${orfgene}' and species='${species}'`;
-    const q_gene = `select orf from orfgene where gene='${orfgene}' and species='${species}'`;
-    const q_alias = `select O.orf from orfgene as O, alias as A where A.alias='${orfgene}' and A.orfid=O.orfid and O.species='${species}'`;
-    const q_prot = `select O.orf from orfgene as O, protein as P where P.tfid=O.orfid and P.protein='${term}' and O.species='${species}'`;
+    const q_orf = `select orf from orfgene where orf='${orfgene}' and species in ('${dbspecies(
+        species
+    )}')`;
+    const q_gene = `select orf from orfgene where gene='${orfgene}' and species in ('${dbspecies(
+        species
+    )}')`;
+    const q_alias = `select O.orf from orfgene as O, alias as A where A.alias='${orfgene}' and A.orfid=O.orfid and O.species in ('${dbspecies(
+        species
+    )}')`;
+    const q_prot = `select O.orf from orfgene as O, protein as P where P.tfid=O.orfid and P.protein='${term}' and O.species in ('${dbspecies(
+        species
+    )}')`;
 
     // return Promise.any([
     //     querySingleValue(q1),
@@ -387,24 +422,28 @@ export async function getPossibleMatches(
     const q_orf =
         `select O.orf, O.gene, P.protein, A.alias, D.description from protein as P, orfgene as O ` +
         `left outer join alias as A on A.orfid=O.orfid left outer join description as D on O.descriptionid=D.descriptionid where O.orfid=P.tfid and ` +
-        `O.species='${species}' and (O.orf like '%${term}%' or O.gene like '%${term}%' or P.protein like '%${term}%' or A.alias like '%${term}%' or D.description like '%${term}%')`;
-    // const q_gene = `select orf, gene from orfgene where gene like '%${term}%' and species='${species}'`;
-    // const q_alias = `select A.alias, O.orf, O.gene from orfgene as O, alias as A where A.alias like '%${term}%' and A.orfid=O.orfid and species='${species}'`;
-    // const q_protein = `select P.protein from protein as P, orfgene as O where P.protein like '%${term}%' and P.tfid=O.orfid and species='${species}'`;
-    // const q_desc = `select distinct O.orf, O.gene, D.description from description as D, orfgene as O where D.description like '%${term}%' and D.descriptionid=O.descriptionid and O.species='${species}'`;
+        `O.species in ('${dbspecies(
+            species
+        )}') and (O.orf like '%${term}%' or O.gene like '%${term}%' or P.protein like '%${term}%' or A.alias like '%${term}%' or D.description like '%${term}%')`;
+    // const q_gene = `select orf, gene from orfgene where gene like '%${term}%' and species='${dbspecies(species)}'`;
+    // const q_alias = `select A.alias, O.orf, O.gene from orfgene as O, alias as A where A.alias like '%${term}%' and A.orfid=O.orfid and species='${dbspecies(species)}'`;
+    // const q_protein = `select P.protein from protein as P, orfgene as O where P.protein like '%${term}%' and P.tfid=O.orfid and species='${dbspecies(species)}'`;
+    // const q_desc = `select distinct O.orf, O.gene, D.description from description as D, orfgene as O where D.description like '%${term}%' and D.descriptionid=O.descriptionid and O.species='${dbspecies(species)}'`;
     const q_go = `select distinct term, onto as ontology from geneontology where term like '%${term}%'`;
     // const q_func = `select distinct term from geneontology where onto='function' and term like '%${term}%'`;
     // const q_process = `select distinct term from geneontology where onto='process' and term like '%${term}%'`;
     // const q_component = `select distinct term from geneontology where onto='component' and term like '%${term}%'`;
     const q_reaction =
-        `select reactionname, reactionstr from mreaction where reactionname like '%${term}%' or reactionstr like '%${term}%'` +
-        `and modid in (select modid from mmodel where species='${species}')`;
+        `select MR.rid, MR.reactionname, MR.reactionstr, MM.modname from mreaction as MR, mmodel as MM ` +
+        `where (MR.reactionname like '%${term}%' or MR.reactionstr like '%${term}%') and MR.modid in (` +
+        `select modid from mmodel where species in ('${dbspecies(species)}'))` +
+        " and MR.modid=MM.modid";
     // const q_reactionname =
     //     `select reactionname from mreaction where reactionname like '%${term}` +
-    //     `%' and modid in (select modid from mmodel where species='${species}')`;
+    //     `%' and modid in (select modid from mmodel where species='${dbspecies(species)}')`;
     // const q_reactionstr =
     //     `select reactionstr from mreaction where reactionstr like '%${term}` +
-    //     `%' and modid in (select modid from mmodel where species='${species}')`;
+    //     `%' and modid in (select modid from mmodel where species='${dbspecies(species)}')`;
 
     const orf_res = await query(q_orf);
     const go_res = await query(q_go);
@@ -545,7 +584,9 @@ export async function getOrthologInfo(orfid, species) {
     for (let synteny = 0; synteny < 4; synteny++) {
         let q =
             "select orf,gene,species from orthologs left outer join orfgene on orfiddest=orfid where " +
-            `orfidsrc=${orfid} and classif=${synteny} and species not in ('${species}')`;
+            `orfidsrc=${orfid} and classif=${synteny} and species not in ('${dbspecies(
+                species
+            )}')`;
         // $diff?
         if (synteny < 3)
             q +=
@@ -563,7 +604,9 @@ async function getHomologSpecies(species) {
     const q =
         "select distinct species from orfgene where orfid in (select " +
         "distinct orfiddest from orthologs where orfidsrc in (select " +
-        `distinct orfid from orfgene where species='${species}'))`;
+        `distinct orfid from orfgene where species in ('${dbspecies(
+            species
+        )}')))`;
 
     const res = await query(q);
     const hsp = [];
@@ -572,6 +615,48 @@ async function getHomologSpecies(species) {
             hsp.push(sp["species"].replaceAll("'", "\\'"));
     }
     return hsp;
+}
+
+export async function getMetabGeneInfo(id, species) {
+    const q =
+        "select R.reactionid,R.reactionname,R.generule,M.modname from orfgene as O, " +
+        "mreactiongenes as RG, mreaction as R, mmodel as M WHERE " +
+        `O.orfid=RG.orfid AND RG.rid=R.rid AND O.orfid=${id} ` +
+        `and O.species in ('${dbspecies(species)}') ` +
+        "AND M.modid=R.modid";
+    const res = await query(q);
+    return res;
+}
+
+export async function getReactionInfo(modname, rid) {
+    // Validate modname
+    const q_model = "select distinct modname from mmodel";
+    const res_model = await querySingleCol(q_model);
+    if (!res_model.includes(modname)) return [];
+
+    // Validate reactionid
+    const q_rid =
+        "SELECT distinct reactionid from mreaction where modid=" +
+        `(SELECT modid FROM mmodel WHERE modname='${modname}')`;
+    const res_rid = await querySingleCol(q_rid);
+    if (!res_rid.includes(rid)) return [];
+
+    const q =
+        "SELECT M.modname,M.pubmedid,M.url, " +
+        "R.rid,R.reactionid,R.reactionname,R.generule,R.reactionstr " +
+        "FROM mmodel as M, mreaction as R WHERE M.modid=R.modid " +
+        `AND M.modname='${modname}' AND R.reactionid='${reactionid}'`;
+    const res = await query(q);
+    //FIXME GENE RULE ?
+    let ret = [];
+    for (let row of res) {
+        const q_orf =
+            "SELECT orf FROM orfgene WHERE orfid in " +
+            `(SELECT orfid FROM mreactiongenes WHERE rid=${row["rid"]})`;
+        const res_orf = await querySingleCol(q_orf);
+        ret.push({ ...row, orfs: res_orf });
+    }
+    return ret;
 }
 
 export async function getTFBSinfo(id, consensus) {
@@ -599,6 +684,58 @@ export async function getTFBSinfo(id, consensus) {
         else row["environmental_Condition"] = ["N/A"];
     }
     return res;
+}
+
+export async function getGOtermInfo(id, species) {
+    const q = `select * from geneontology where goid='${id}'`;
+    const res = await querySingleRow(q);
+
+    const q_parents =
+        `select G.* from geneontology as G, goparents as P where ` +
+        `P.goidson='${res["goid"]}' and P.goid=G.goid`;
+    const res_parents = await query(q_parents);
+
+    const q_children =
+        `select G.* from geneontology as G, goparents as P where ` +
+        `P.goid='${res["goid"]}' and P.goidson=G.goid`;
+    const res_children = await query(q_children);
+
+    const q_genes =
+        "select O.orf,O.gene,O.species from orfgene as O, goorflist " +
+        `as GL where GL.goid='${res["goid"]}' and GL.orfid=O.orfid ` +
+        `and O.species in ('${dbspecies(species)}')`;
+    const res_genes = await query(q_genes);
+
+    return {
+        go: res,
+        parents: res_parents,
+        children: res_children,
+        genes: res_genes,
+    };
+}
+
+export async function getRegulationInfo(tfid, orfid, species) {
+    const q =
+        "select RD.regulationid, P.protein, O.orf,O.gene, RD.association, " +
+        "RD.strain, EV.code,EV.experiment, Pub.* " +
+        "from pubmed as Pub, regulation as R, orfgene as O, " +
+        "protein as P, regulationdata as RD, evidencecodeBSRG as EV " +
+        "where P.tfid=R.tfid and R.targetid=O.orfid " +
+        `and O.orfid=${orfid} and P.tfid=${tfid} ` +
+        "and RD.evidencecodeid=EV.evidencecodeid " +
+        "and R.regulationid=RD.regulationid " +
+        "and RD.pubmedid=Pub.pubmedid";
+    const res = await query(q);
+    let ret = [];
+    for (let row of res) {
+        const qec =
+            "select EV.envconditiondesc from envcondition as EV, " +
+            "regulationdata as RD where EV.envconditionid=RD.envconditionid " +
+            `and RD.regulationid=${row["regulationid"]} and RD.pubmedid=${row["pubmedid"]}`;
+        const envc = await querySingleCol(qec);
+        ret.push({ ...row, envcond: envc });
+    }
+    return ret;
 }
 
 export async function getSpecies() {

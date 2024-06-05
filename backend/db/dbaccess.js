@@ -39,3 +39,9 @@ export async function querySingleRow(q) {
     if (res.length === 0) return null;
     return res[0];
 }
+
+export async function querySingleCol(q) {
+    const res = await query(q);
+    if (res.length === 0) return null;
+    return res.map((row) => row[Object.keys(row)[0]]);
+}

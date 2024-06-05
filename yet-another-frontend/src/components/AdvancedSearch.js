@@ -13,9 +13,7 @@ export default function AdvancedSearch() {
         async function fetchData() {
             const res = await searchTerm(
                 searchParams.get("term"),
-                speciesList[species].dbspecies +
-                    " " +
-                    speciesList[species].dbstrains
+                speciesList[species].path
             );
             if (res.fullMatch) navigate(`/${species}/view?orf=${res.matches}`);
             else {

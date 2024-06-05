@@ -97,10 +97,7 @@ export default function Sequences() {
                 motif: formData.motif,
                 substitutions: formData.substitutions,
                 genes: formData.genes,
-                species:
-                    speciesList[species].dbspecies +
-                    " " +
-                    speciesList[species].dbstrains,
+                species: speciesList[species].path,
             });
             console.log(res);
             setTmpResults(JSON.stringify(res));
@@ -111,10 +108,7 @@ export default function Sequences() {
             const res = await tfbsByMotif({
                 motif: formData.motif,
                 substitutions: formData.substitutions,
-                species:
-                    speciesList[species].dbspecies +
-                    " " +
-                    speciesList[species].dbstrains,
+                species: speciesList[species].path,
             });
             console.log(res);
             let str = "";
@@ -127,10 +121,7 @@ export default function Sequences() {
                 motif: formData.motif,
                 substitutions: formData.substitutions,
                 sequence: formData.sequence,
-                species:
-                    speciesList[species].dbspecies +
-                    " " +
-                    speciesList[species].dbstrains,
+                species: speciesList[species].path,
             });
             console.log(res);
         } else if (query === "Promoter Analysis") {
@@ -139,18 +130,11 @@ export default function Sequences() {
                 tfbs_species: formData.tfbs_species,
                 synteny: formData.synteny,
                 ortholog_species: formData.ortholog_species,
-                species:
-                    speciesList[species].dbspecies +
-                    " " +
-                    speciesList[species].dbstrains,
+                species: speciesList[species].path,
             });
             console.log(res);
         } else if (query === "TF-Consensus List") {
-            const res = await tfConsensus(
-                speciesList[species].dbspecies +
-                    " " +
-                    speciesList[species].dbstrains
-            );
+            const res = await tfConsensus(speciesList[species].path);
             console.log(res);
             setTmpResults(JSON.stringify(res));
         } else if (query === "Upstream Sequence") {
@@ -158,10 +142,7 @@ export default function Sequences() {
                 genes: formData.genes,
                 from: formData.from,
                 to: formData.to,
-                species:
-                    speciesList[species].dbspecies +
-                    " " +
-                    speciesList[species].dbstrains,
+                species: speciesList[species].path,
             });
             console.log(res);
             let str = "";

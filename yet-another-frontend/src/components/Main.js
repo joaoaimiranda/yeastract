@@ -2,15 +2,6 @@ import React from "react";
 import { AgGridReact } from "ag-grid-react";
 import "ag-grid-community/styles/ag-grid.css";
 import "ag-grid-community/styles/ag-theme-quartz.css";
-// import {
-//     Textarea,
-//     Radio,
-//     RadioGroup,
-//     Checkbox,
-//     Select,
-//     SelectItem,
-//     Button,
-// } from "@nextui-org/react";
 import {
     searchRegulations,
     rankTF,
@@ -19,6 +10,7 @@ import {
     getEnvCons,
 } from "../services/remoteServices";
 import speciesList from "../conf/speciesList";
+import RegulationModal from "./RegulationModal";
 import { useParams } from "react-router-dom";
 
 export default function Main() {
@@ -83,6 +75,7 @@ export default function Main() {
             filter: true,
             // flex: 1,
             floatingFilter: true,
+            suppressHeaderMenuButton: true,
         };
     }, []);
 
@@ -122,10 +115,7 @@ export default function Main() {
             const res = await searchRegulations({
                 ...formData,
                 documented: documented,
-                species:
-                    speciesList[species].dbspecies +
-                    " " +
-                    speciesList[species].dbstrains,
+                species: speciesList[species].path,
             });
             console.log(res);
 
@@ -133,9 +123,9 @@ export default function Main() {
             if (reverseCols) {
                 setColDefs([
                     { headerName: "Gene", field: "gene", hide: false, 
-                    cellRenderer: p => <a className="link" href={`/view?orf=${p.data.gene}`}>{p.data.gene}</a> },
+                    cellRenderer: p => <a className="link" href={`/${species}/view?orf=${p.data.gene}`}>{p.data.gene}</a> },
                     { headerName: "TF", field: "tf", hide: false, 
-                    cellRenderer: p => <a className="link" href={`/view?orf=${p.data.tf}`}>{p.data.tf}</a> },
+                    cellRenderer: p => <><a className="link" href={`/${species}/view?orf=${p.data.tf}`}>{p.data.tf}</a><RegulationModal id={`reg_modal_${p.data.gene}_${p.data.tf}`} orf={p.data.gene} tf={p.data.tf} species={species} /></> },
                 ]);
                 setRowData(res);
                 gridRef.current.api.applyColumnState({
@@ -144,25 +134,69 @@ export default function Main() {
             }
             else{
             setColDefs([
-                { headerName: "TF", field: "tf", hide: false, 
-                cellRenderer: p => <a className="link" href={`/view?orf=${p.data.tf}`}>{p.data.tf}</a> },
+                { headerName: "TF", field: "tf", hide: false,
+                cellRenderer: p => p.node.rowPinned ? <svg className="w-6 h-6 text-gray-800" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" viewBox="0 0 24 24">
+                <path stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 15v4m6-6v6m6-4v4m6-6v6M3 11l6-5 6 5 5.5-5.5"/>
+              </svg>
+               : <a className="link" href={`${species}/view?orf=${p.data.tf}`}>{p.data.tf}</a> },
                 { headerName: "Gene", field: "gene", hide: false, 
-                cellRenderer: p => <a className="link" href={`/view?orf=${p.data.gene}`}>{p.data.gene}</a> },
-                
+                cellRenderer: p => p.node.rowPinned ? <svg className="w-6 h-6 text-gray-800" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" viewBox="0 0 24 24">
+                <path stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 15v4m6-6v6m6-4v4m6-6v6M3 11l6-5 6 5 5.5-5.5"/>
+              </svg> 
+               :<><a className="link" href={`${species}/view?orf=${p.data.gene}`}>{p.data.gene}</a><RegulationModal id={`reg_modal_${p.data.tf}_${p.data.gene}`} orf={p.data.gene} tf={p.data.tf} species={species} /></> },
+            //     {headerName: "", field : "ColMenu", hide: false, suppressHeaderMenuButton: true, floatingFilter: false, cellRenderer: p => p.node.rowPinned ?
+            //     <details className="dropdown">
+            //     <summary
+            //         className="btn btn-sm btn-ghost m-1 p-2 z-0"
+            //     >
+            //         <svg
+            //             xmlns="http://www.w3.org/2000/svg"
+            //             width="16"
+            //             height="16"
+            //             fill="currentColor"
+            //             className="bi bi-list"
+            //             viewBox="0 0 16 16"
+            //         >
+            //             <path
+            //                 fillRule="evenodd"
+            //                 d="M2.5 12a.5.5 0 0 1 .5-.5h10a.5.5 0 0 1 0 1H3a.5.5 0 0 1-.5-.5m0-4a.5.5 0 0 1 .5-.5h10a.5.5 0 0 1 0 1H3a.5.5 0 0 1-.5-.5m0-4a.5.5 0 0 1 .5-.5h10a.5.5 0 0 1 0 1H3a.5.5 0 0 1-.5-.5"
+            //             />
+            //         </svg>
+            //     </summary>
+            //     <ul
+            //         className="dropdown-content z-40 menu p-2 shadow bg-base-100 rounded-box w-52"
+            //     >
+            //         {colDefs.map((col) => 
+            //             <li key={col.field}>
+            //                 <label className="label cursor-pointer">
+            //                     <span className="label-text">
+            //                         {col.headerName}
+            //                     </span>
+            //                     <input
+            //                         type="checkbox"
+            //                         id={col.field}
+            //                         name={col.field}
+            //                         defaultChecked={!col.hide}
+            //                         className="checkbox checkbox-sm checkbox-primary"
+            //                         onChange={handleColumns}
+            //                     />
+            //                 </label>
+            //             </li>
+            //         )}
+            //     </ul>
+            // </details> : <></>}
             ]);
             setRowData(res);
             gridRef.current.api.applyColumnState({
-                state: [{ colId: "tf", sort: "asc", sortIndex: 0 }, { colId: "gene", sort: "asc", sortIndex: 1 }],
-            });}
+                state: [{ colId: "tf", sort: "asc" }, { colId: "gene", sort: null}],
+            });
+        }
         } else if (query === "rank-tf") {
             if (documented === "") return; //not accepted
             const res = await rankTF({
                 ...formData,
                 documented: documented,
-                species:
-                    speciesList[species].dbspecies +
-                    " " +
-                    speciesList[species].dbstrains,
+                species: speciesList[species].path,
             });
             console.log(res);
             setColDefs([
@@ -189,10 +223,7 @@ export default function Main() {
             const res = await rankGO({
                 genes: formData.genes,
                 // ontology: formData.ontology,
-                species:
-                    speciesList[species].dbspecies +
-                    " " +
-                    speciesList[species].dbstrains,
+                species: speciesList[species].path,
             });
             console.log(res);
             setColDefs([
@@ -221,10 +252,7 @@ export default function Main() {
             if (formData.homolog === "") return; //not accepted
             const res = await rankTFBS({
                 ...formData,
-                species:
-                    speciesList[species].dbspecies +
-                    " " +
-                    speciesList[species].dbstrains,
+                species: speciesList[species].path,
             });
             console.log(res);
         } else {
@@ -232,9 +260,19 @@ export default function Main() {
         }
     }
 
-    // fetch(`${constants.baseUrl}/utils/species`)
-    //     .then((res) => res.json())
-    //     .then((data) => console.log(data));
+    const pinnedTopRowData = React.useMemo(() => {
+        return [
+            {
+                tf: "",
+                gene: "",
+            },
+        ];
+    }, []);
+
+    const getRowHeight = React.useCallback(
+        (params) => (params.node.rowPinned ? 50 : 35),
+        []
+    );
 
     const gridRef = React.useRef();
 
@@ -262,7 +300,7 @@ export default function Main() {
                                     id="tfs"
                                     name="tfs"
                                     value={formData.tfs}
-                                    className="textarea textarea-bordered textarea-primary min-h-44 max-h-44 max-w-40 text-color"
+                                    className="textarea textarea-bordered textarea-primary min-h-44 max-h-44 max-w-40 text-color leading-4"
                                     onChange={handleForm}
                                 ></textarea>
                             </label>
@@ -278,7 +316,7 @@ export default function Main() {
                                     id="genes"
                                     name="genes"
                                     value={formData.genes}
-                                    className="textarea textarea-bordered textarea-primary min-h-44 max-h-44 max-w-40 text-color"
+                                    className="textarea textarea-bordered textarea-primary min-h-44 max-h-44 max-w-40 text-color  leading-4"
                                     onChange={handleForm}
                                 ></textarea>
                             </label>
@@ -505,39 +543,61 @@ export default function Main() {
                 </div>
             </form>
             <div className="px-4 py-2 w-full h-full">
-                <button className="btn" onClick={onBtnExport}>
-                    Download
-                </button>
-                <div className="dropdown dropdown-bottom dropdown-end float-end">
-                    <div tabIndex={0} role="button" className="btn m-1 p-2">
-                        Columns
+                <div className="p-2 bg-gray-100 rounded-t-lg border-x border-t border-[#e5e7eb] flex gap-5">
+                    <div className="dropdown dropdown-bottom">
+                        <div
+                            tabIndex={0}
+                            role="button"
+                            className="btn btn-sm btn-ghost p-2"
+                        >
+                            <svg
+                                xmlns="http://www.w3.org/2000/svg"
+                                width="16"
+                                height="16"
+                                fill="currentColor"
+                                className="bi bi-list"
+                                viewBox="0 0 16 16"
+                            >
+                                <path
+                                    fillRule="evenodd"
+                                    d="M2.5 12a.5.5 0 0 1 .5-.5h10a.5.5 0 0 1 0 1H3a.5.5 0 0 1-.5-.5m0-4a.5.5 0 0 1 .5-.5h10a.5.5 0 0 1 0 1H3a.5.5 0 0 1-.5-.5m0-4a.5.5 0 0 1 .5-.5h10a.5.5 0 0 1 0 1H3a.5.5 0 0 1-.5-.5"
+                                />
+                            </svg>
+                        </div>
+                        <ul
+                            tabIndex={0}
+                            className="dropdown-content z-40 menu p-2 shadow bg-base-100 rounded-box w-52"
+                        >
+                            {colDefs.map((col) => (
+                                <li key={col.field}>
+                                    <label className="label cursor-pointer">
+                                        <span className="label-text">
+                                            {col.headerName}
+                                        </span>
+                                        <input
+                                            type="checkbox"
+                                            id={col.field}
+                                            name={col.field}
+                                            defaultChecked={!col.hide}
+                                            className="checkbox checkbox-sm checkbox-primary"
+                                            onChange={handleColumns}
+                                        />
+                                    </label>
+                                </li>
+                            ))}
+                        </ul>
                     </div>
-                    <ul
-                        tabIndex={0}
-                        className="dropdown-content z-40 menu p-2 shadow bg-base-100 rounded-box w-52"
-                    >
-                        {colDefs.map((col) => (
-                            <li key={col.field}>
-                                <label className="label cursor-pointer">
-                                    <span className="label-text">
-                                        {col.headerName}
-                                    </span>
-                                    <input
-                                        type="checkbox"
-                                        id={col.field}
-                                        name={col.field}
-                                        defaultChecked={!col.hide}
-                                        className="checkbox checkbox-sm checkbox-primary"
-                                        onChange={handleColumns}
-                                    />
-                                </label>
-                            </li>
-                        ))}
-                    </ul>
+                    <button className="btn btn-sm" onClick={onBtnExport}>
+                        Download
+                    </button>
                 </div>
                 <div
-                    className="ag-theme-quartz mt-2 max-w-[100vw] h-full"
-                    // style={{ width: 900, height: 400 }}
+                    className="ag-theme-quartz max-w-[100vw] h-full z-0"
+                    style={{
+                        "--ag-header-background-color": "#f3f4f6",
+                        // "--ag-border-color": "#f3f4f6",
+                        "--ag-wrapper-border-radius": "none",
+                    }}
                 >
                     <AgGridReact
                         ref={gridRef}
@@ -547,6 +607,9 @@ export default function Main() {
                         unSortIcon={true}
                         pagination={true}
                         paginationAutoPageSize={true}
+                        pinnedTopRowData={pinnedTopRowData}
+                        getRowHeight={getRowHeight}
+                        // headerHeight={80}
                     />
                 </div>
             </div>

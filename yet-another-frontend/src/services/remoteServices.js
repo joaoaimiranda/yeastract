@@ -189,6 +189,39 @@ export async function searchTFBS(tf, consensus, species) {
     return data;
 }
 
+export async function searchMetabInfo(rid, model, species) {
+    const res = await fetch(
+        `${constants.baseUrl}/info/tfbs?rid=${rid}&model${model}&species=${species}`
+    );
+    if (!res.ok) {
+        throw new Error(`HTTP error! status: ${res.status}`);
+    }
+    const data = await res.json();
+    return data;
+}
+
+export async function searchGOterm(goid, species) {
+    const res = await fetch(
+        `${constants.baseUrl}/info/goterm?goid=${goid}&species=${species}`
+    );
+    if (!res.ok) {
+        throw new Error(`HTTP error! status: ${res.status}`);
+    }
+    const data = await res.json();
+    return data;
+}
+
+export async function searchRegulationInfo(orf, tf, species) {
+    const res = await fetch(
+        `${constants.baseUrl}/info/regulation?orf=${orf}&protein=${tf}&species=${species}`
+    );
+    if (!res.ok) {
+        throw new Error(`HTTP error! status: ${res.status}`);
+    }
+    const data = await res.json();
+    return data;
+}
+
 export async function getSpecies() {
     const res = await fetch(`${constants.baseUrl}/utils/species`);
     if (!res.ok) {
