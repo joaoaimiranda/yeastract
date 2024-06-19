@@ -12,6 +12,8 @@ import {
 import speciesList from "../conf/speciesList";
 import RegulationModal from "./RegulationModal";
 import { useParams } from "react-router-dom";
+import TestChart from "../charts/TestChart";
+import constants from "../conf/constants";
 
 export default function Main() {
     // const [crossSpecies, setCrossSpecies] = React.useState(false);
@@ -123,68 +125,36 @@ export default function Main() {
             if (reverseCols) {
                 setColDefs([
                     { headerName: "Gene", field: "gene", hide: false, 
-                    cellRenderer: p => <a className="link" href={`/${species}/view?orf=${p.data.gene}`}>{p.data.gene}</a> },
+                    cellRenderer: p => <a className="link" href={`/${species}/view?orf=${p.data.orf}`}>{p.data.gene}</a> },
+                    { headerName: "ORF", field: "orf", hide: false, 
+                    cellRenderer: p => <a className="link" href={`/${species}/view?orf=${p.data.orf}`}>{p.data.orf}</a> },
                     { headerName: "TF", field: "tf", hide: false, 
-                    cellRenderer: p => <><a className="link" href={`/${species}/view?orf=${p.data.tf}`}>{p.data.tf}</a><RegulationModal id={`reg_modal_${p.data.gene}_${p.data.tf}`} orf={p.data.gene} tf={p.data.tf} species={species} /></> },
+                    cellRenderer: p => !p.node.rowPinned && <><a className="link" href={`/${species}/view?orf=${p.data.tf}`}>{p.data.tf}</a></> },
+                    { headerName: "Evidence", field: "evidence", hide: false},
+                    { headerName: "Association Type", field: "association", hide: false},
+                    { headerName: "Reference", field: "Reference", width: 100, hide: false, sortable: false, cellRenderer: p => !p.node.rowPinned && <RegulationModal id={`reg_modal_${p.data.gene}_${p.data.tf}`} orf={p.data.gene} tf={p.data.tf} species={species} />},
                 ]);
                 setRowData(res);
                 gridRef.current.api.applyColumnState({
-                    state: [{ colId: "tf", sort: "asc", sortIndex: 1 }, { colId: "gene", sort: "asc", sortIndex: 0 }],
+                    state: [{ colId: "tf", sort: null }, { colId: "gene", sort: "asc"}],
                 });
             }
             else{
             setColDefs([
                 { headerName: "TF", field: "tf", hide: false,
-                cellRenderer: p => p.node.rowPinned ? <svg className="w-6 h-6 text-gray-800" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" viewBox="0 0 24 24">
-                <path stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 15v4m6-6v6m6-4v4m6-6v6M3 11l6-5 6 5 5.5-5.5"/>
-              </svg>
-               : <a className="link" href={`${species}/view?orf=${p.data.tf}`}>{p.data.tf}</a> },
+                cellRenderer: p => p.node.rowPinned ? 
+                    <TestChart data={res} />
+                    : <a className="link" href={`${species}/view?orf=${p.data.tf}`}>{p.data.tf}</a> },
                 { headerName: "Gene", field: "gene", hide: false, 
                 cellRenderer: p => p.node.rowPinned ? <svg className="w-6 h-6 text-gray-800" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" viewBox="0 0 24 24">
-                <path stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 15v4m6-6v6m6-4v4m6-6v6M3 11l6-5 6 5 5.5-5.5"/>
-              </svg> 
-               :<><a className="link" href={`${species}/view?orf=${p.data.gene}`}>{p.data.gene}</a><RegulationModal id={`reg_modal_${p.data.tf}_${p.data.gene}`} orf={p.data.gene} tf={p.data.tf} species={species} /></> },
-            //     {headerName: "", field : "ColMenu", hide: false, suppressHeaderMenuButton: true, floatingFilter: false, cellRenderer: p => p.node.rowPinned ?
-            //     <details className="dropdown">
-            //     <summary
-            //         className="btn btn-sm btn-ghost m-1 p-2 z-0"
-            //     >
-            //         <svg
-            //             xmlns="http://www.w3.org/2000/svg"
-            //             width="16"
-            //             height="16"
-            //             fill="currentColor"
-            //             className="bi bi-list"
-            //             viewBox="0 0 16 16"
-            //         >
-            //             <path
-            //                 fillRule="evenodd"
-            //                 d="M2.5 12a.5.5 0 0 1 .5-.5h10a.5.5 0 0 1 0 1H3a.5.5 0 0 1-.5-.5m0-4a.5.5 0 0 1 .5-.5h10a.5.5 0 0 1 0 1H3a.5.5 0 0 1-.5-.5m0-4a.5.5 0 0 1 .5-.5h10a.5.5 0 0 1 0 1H3a.5.5 0 0 1-.5-.5"
-            //             />
-            //         </svg>
-            //     </summary>
-            //     <ul
-            //         className="dropdown-content z-40 menu p-2 shadow bg-base-100 rounded-box w-52"
-            //     >
-            //         {colDefs.map((col) => 
-            //             <li key={col.field}>
-            //                 <label className="label cursor-pointer">
-            //                     <span className="label-text">
-            //                         {col.headerName}
-            //                     </span>
-            //                     <input
-            //                         type="checkbox"
-            //                         id={col.field}
-            //                         name={col.field}
-            //                         defaultChecked={!col.hide}
-            //                         className="checkbox checkbox-sm checkbox-primary"
-            //                         onChange={handleColumns}
-            //                     />
-            //                 </label>
-            //             </li>
-            //         )}
-            //     </ul>
-            // </details> : <></>}
+                    <path stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 15v4m6-6v6m6-4v4m6-6v6M3 11l6-5 6 5 5.5-5.5"/>
+                    </svg> 
+                    :<><a className="link" href={`${species}/view?orf=${p.data.orf}`}>{p.data.gene}</a></> },
+                { headerName: "ORF", field: "orf", hide: false, 
+                cellRenderer: p => <a className="link" href={`/${species}/view?orf=${p.data.orf}`}>{p.data.orf}</a> },
+                { headerName: "Evidence", field: "evidence", hide: false},
+                { headerName: "Association Type", field: "association", hide: false},
+                { headerName: "Reference", field: "Reference", width: 100, hide: false, sortable: false, floatingFilter: false, cellRenderer: p => !p.node.rowPinned && <RegulationModal id={`reg_modal_${p.data.tf}_${p.data.gene}`} orf={p.data.gene} tf={p.data.tf} species={species} />},
             ]);
             setRowData(res);
             gridRef.current.api.applyColumnState({
@@ -210,7 +180,10 @@ export default function Main() {
                     cellRenderer: (p) =>
                         p.data.genes.map((v) => (
                             <>
-                                <a className="link" href={`/view?orf=${v}`}>
+                                <a
+                                    className="link"
+                                    href={`/${species}/view?orf=${v}`}
+                                >
                                     {v}
                                 </a>
                                 <span> </span>
@@ -227,8 +200,34 @@ export default function Main() {
             });
             console.log(res);
             setColDefs([
-                { headerName: "GO ID", field: "goid", hide: false },
-                { headerName: "GO Term", field: "term", hide: false },
+                {
+                    headerName: "GO ID",
+                    field: "goid",
+                    hide: false,
+                    cellRenderer: (p) => (
+                        <a
+                            className="underline"
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            href={`${constants.geneOntologyUrl}${p.data.goid}`}
+                        >
+                            {p.data.goid}
+                        </a>
+                    ),
+                },
+                {
+                    headerName: "GO Term",
+                    field: "term",
+                    hide: false,
+                    cellRenderer: (p) => (
+                        <a
+                            className="underline"
+                            href={`/${species}/view?goid=${p.data.goid}`}
+                        >
+                            {p.data.term}
+                        </a>
+                    ),
+                },
                 { headerName: "Depth level", field: "depth", hide: false },
                 { headerName: "% in user set", field: "setPer", hide: false },
                 { headerName: "% in species", field: "dbPer", hide: false },
@@ -239,7 +238,10 @@ export default function Main() {
                     cellRenderer: (p) =>
                         p.data.genes.map((v) => (
                             <>
-                                <a className="link" href={`/view?orf=${v}`}>
+                                <a
+                                    className="link"
+                                    href={`/${species}/view?orf=${v}`}
+                                >
                                     {v}
                                 </a>
                                 <span> </span>
@@ -255,6 +257,7 @@ export default function Main() {
                 species: speciesList[species].path,
             });
             console.log(res);
+            // TODO
         } else {
             console.log("Unknown query name");
         }
@@ -270,7 +273,7 @@ export default function Main() {
     }, []);
 
     const getRowHeight = React.useCallback(
-        (params) => (params.node.rowPinned ? 50 : 35),
+        (params) => (params.node.rowPinned ? 80 : 35),
         []
     );
 
@@ -284,7 +287,7 @@ export default function Main() {
         <div className="w-full h-full">
             <h1 className="text-center font-figtree text-xl">Regulations</h1>
             <form
-                className="flex flex-col md:flex-row md:flex-wrap xl:justify-center items-center gap-2 xl:gap-8 p-4 border-b border-gray-500"
+                className="flex flex-col md:flex-row md:flex-wrap items-center gap-2 xl:gap-8 p-4 border-b border-gray-500"
                 onSubmit={handleQuery}
             >
                 <div className="flex flex-col p-3 max-w-sm rounded-lg shadow-md shadow-gray-200">
@@ -316,7 +319,7 @@ export default function Main() {
                                     id="genes"
                                     name="genes"
                                     value={formData.genes}
-                                    className="textarea textarea-bordered textarea-primary min-h-44 max-h-44 max-w-40 text-color  leading-4"
+                                    className="textarea textarea-bordered textarea-primary min-h-44 max-h-44 max-w-40 text-color leading-4"
                                     onChange={handleForm}
                                 ></textarea>
                             </label>
@@ -340,7 +343,7 @@ export default function Main() {
                         {/* </div> */}
                     </div>
                 </div>
-                <div className="grid row-span-2 gap-6 max-w-sm">
+                {/* <div className="grid row-span-2 gap-6 max-w-sm">
                     <div className="p-3 content-center rounded-lg shadow-md shadow-gray-200">
                         <div className="flex flex-col gap-3">
                             <label>
@@ -437,7 +440,7 @@ export default function Main() {
                             </div>
                         </label>
                     </div>
-                </div>
+                </div> */}
 
                 <div className="flex flex-col p-3 items-center rounded-lg shadow-md shadow-gray-200 max-w-sm">
                     <label>

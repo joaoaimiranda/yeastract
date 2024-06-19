@@ -1,4 +1,4 @@
-import constants from "../constants";
+import constants from "../conf/constants";
 
 export async function searchRegulations(reqData) {
     const res = await fetch(`${constants.baseUrl}/associations/search`, {

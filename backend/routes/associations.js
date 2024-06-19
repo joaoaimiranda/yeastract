@@ -1,8 +1,8 @@
-import { getMegaAllRegulations } from "../db/repository.js";
 import {
     searchRegulations,
     rankTF,
     rankGO,
+    lmaoService,
 } from "../service/associationsService.js";
 import { Router } from "express";
 const router = Router();
@@ -47,9 +47,10 @@ router.post("/rankgo", async (req, res, next) => {
 
 router.get("/lmao", async (req, res, next) => {
     try {
-        const result = await getMegaAllRegulations(
-            "Saccharomyces cerevisiae S288c"
-        );
+        const result = await lmaoService({
+            tfs: "Pdr1\nHaa1\nMsn2\nYap1",
+            species: "scerevisiae",
+        });
         console.log(result.length);
         res.status(200).json(result);
     } catch (err) {

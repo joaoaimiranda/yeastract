@@ -1,9 +1,13 @@
 import {
     getRegulations,
     getRegulationsByTF,
+    getMegaRegulationsByTF,
     getRegulationsByGene,
+    getMegaRegulationsByGene,
     getRegulationsByTFAndGene,
+    getMegaRegulations,
     getAllRegulations,
+    getMegaAllRegulations,
     getAllGenesByTF,
     getIDs,
     getGOids,
@@ -32,15 +36,16 @@ export async function searchRegulations(params) {
 
     // case search all regulations
     if (tfNames[0] === "" && geneNames[0] === "") {
-        const regs = await getAllRegulations(
-            params.envconGroup,
-            params.envconSubgroup,
-            params.evidence,
-            params.activator,
-            params.inhibitor,
-            params.noexprinfo,
-            params.species
-        );
+        const regs = await getMegaAllRegulations(params.species);
+        // const regs = await getAllRegulations(
+        //     params.envconGroup,
+        //     params.envconSubgroup,
+        //     params.evidence,
+        //     params.activator,
+        //     params.inhibitor,
+        //     params.noexprinfo,
+        //     params.species
+        // );
         return regs;
     }
     // case Search for Genes
@@ -63,21 +68,23 @@ export async function searchRegulations(params) {
 
         // standard, no homologous relations
         if (params.homolog === undefined || params.homolog === "") {
-            const regs = await getRegulationsByTF(
-                idList.join(", "),
-                params.envconGroup,
-                params.envconSubgroup,
-                params.evidence,
-                params.activator,
-                params.inhibitor,
-                params.noexprinfo
-            );
+            const regs = await getMegaRegulationsByTF(idList.join(", "));
+            // const regs = await getRegulationsByTF(
+            //     idList.join(", "),
+            //     params.envconGroup,
+            //     params.envconSubgroup,
+            //     params.evidence,
+            //     params.activator,
+            //     params.inhibitor,
+            //     params.noexprinfo
+            // );
             return regs;
 
             // homologous relations
         } else {
             // prettier-ignore
-            const homoIds = await getHomoIDs(ids, params.species, params.homolog, params.synteny);
+            // NOT FINISHED - COMMENTED FOR NOW
+            // const homoIds = await getHomoIDs(ids, params.species, params.homolog, params.synteny);
             // TODO
         }
     }
@@ -98,15 +105,16 @@ export async function searchRegulations(params) {
         //         )
         //     )
         //     .then((values) => res.status(200).json(values));
-        const regs = await getRegulationsByGene(
-            idList.join(", "),
-            params.envconGroup,
-            params.envconSubgroup,
-            params.evidence,
-            params.activator,
-            params.inhibitor,
-            params.noexprinfo
-        );
+        const regs = await getMegaRegulationsByGene(idList.join(", "));
+        // const regs = await getRegulationsByGene(
+        //     idList.join(", "),
+        //     params.envconGroup,
+        //     params.envconSubgroup,
+        //     params.evidence,
+        //     params.activator,
+        //     params.inhibitor,
+        //     params.noexprinfo
+        // );
         return regs;
     }
     // case Search for Associations
@@ -130,16 +138,20 @@ export async function searchRegulations(params) {
         //     )
         //     .then((values) => trimReturnObject(values))
         //     .then((values) => res.status(200).json(values));
-        const regs = await getRegulationsByTFAndGene(
+        const regs = await getMegaRegulations(
             tfIdList.join(", "),
-            geneIdList.join(", "),
-            params.envconGroup,
-            params.envconSubgroup,
-            params.evidence,
-            params.activator,
-            params.inhibitor,
-            params.noexprinfo
+            geneIdList.join(", ")
         );
+        // const regs = await getRegulationsByTFAndGene(
+        //     tfIdList.join(", "),
+        //     geneIdList.join(", "),
+        //     params.envconGroup,
+        //     params.envconSubgroup,
+        //     params.evidence,
+        //     params.activator,
+        //     params.inhibitor,
+        //     params.noexprinfo
+        // );
         return regs;
     }
 }
@@ -264,4 +276,13 @@ export async function rankGO(params) {
     //     .then((values) => res.status(200).json(values));
     const gos = await getGOids(geneIdList, params.ontology);
     return gos;
+}
+
+export async function lmaoService(params) {
+    // req check
+
+    const tfNames = params.tfs.trim().split(/[\s\t\n\r\0,;|]+/);
+    const idList = await getIDs(tfNames, params.species);
+    const regs = await getMegaRegulationsByTF(idList);
+    return regs;
 }

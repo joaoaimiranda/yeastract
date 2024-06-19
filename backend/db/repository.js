@@ -96,18 +96,168 @@ export async function getRegulationsByTF(ids, biggroup, subgroup, evidence, pos,
     });
 }
 export async function getMegaRegulationsByTF(ids) {
+    // const q =
+    //     "select distinct R.regulationid, O.gene, O.orf, P.protein, D.association, E.code, G.biggroup, G.subgroup" +
+    //     " from regulation as R left outer join orfgene as O" +
+    //     " on R.targetid=O.orfid left outer join protein as P ON R.tfid=P.tfid" +
+    //     " left outer join regulationdata as D on R.regulationid=D.regulationid" +
+    //     " left outer join evidencecodeBSRG as E on D.evidencecodeid=E.evidencecodeid" +
+    //     " left outer join envcondition as C on D.envconditionid=C.envconditionid" +
+    //     " left outer join envconditiongroups as G on C.groupid=G.groupid" +
+    //     ` where R.tfid in (${ids})`;
+
+    // const res = await query(q);
     const q =
-        "select distinct O.gene, O.orf, P.protein, D.association, E.code, G.biggroup, G.subgroup" +
+        "select R.regulationid, O.gene, O.orf, P.protein, D.association, E.code" +
         " from regulation as R left outer join orfgene as O" +
         " on R.targetid=O.orfid left outer join protein as P ON R.tfid=P.tfid" +
         " left outer join regulationdata as D on R.regulationid=D.regulationid" +
         " left outer join evidencecodeBSRG as E on D.evidencecodeid=E.evidencecodeid" +
-        " left outer join envcondition as C on D.envconditionid=C.envconditionid" +
-        " left outer join envconditiongroups as G on C.groupid=G.groupid" +
         ` where R.tfid in (${ids})`;
+    const regs = await query(q);
 
+    const xd = formatRegulations(regs);
+    return Object.keys(xd).map((id) => xd[id]);
+    // for (let row of regs) {
+    //     const [assoc, evids, ecids] = await getRegData(row["regulationid"]);
+    //     const ev = await getEVcodes(evids);
+    //     // const [ecgroup, envcon] = await getECgroups(ecids);
+    //     res.push({
+    //         gene: row["gene"],
+    //         orf: row["orf"],
+    //         tf: row["protein"],
+    //         association: assoc,
+    //         evidence: ev,
+    //         // envcon: envcon,
+    //         // ecgroup: ecgroup,
+    //     });
+    // }
+    // return res;
+}
+
+export async function getMegaRegulationsByGene(ids) {
+    const q =
+        "select R.regulationid, O.gene, O.orf, P.protein, D.association, E.code" +
+        " from regulation as R left outer join orfgene as O" +
+        " on R.targetid=O.orfid left outer join protein as P ON R.tfid=P.tfid" +
+        " left outer join regulationdata as D on R.regulationid=D.regulationid" +
+        " left outer join evidencecodeBSRG as E on D.evidencecodeid=E.evidencecodeid" +
+        ` where R.targetid in (${ids})`;
+    const regs = await query(q);
+    const xd = formatRegulations(regs);
+    return Object.keys(xd).map((id) => xd[id]);
+}
+
+export async function getMegaRegulations(tfIds, geneIds) {
+    const q =
+        "select R.regulationid, O.gene, O.orf, P.protein, D.association, E.code" +
+        " from regulation as R left outer join orfgene as O" +
+        " on R.targetid=O.orfid left outer join protein as P ON R.tfid=P.tfid" +
+        " left outer join regulationdata as D on R.regulationid=D.regulationid" +
+        " left outer join evidencecodeBSRG as E on D.evidencecodeid=E.evidencecodeid" +
+        ` where R.targetid in (${geneIds}) and R.tfid in (${tfIds})`;
+    const regs = await query(q);
+    const xd = formatRegulations(regs);
+    return Object.keys(xd).map((id) => xd[id]);
+}
+
+function formatRegulations(regs) {
+    const xd = {};
+    for (let row of regs) {
+        const obj = xd[row["regulationid"]];
+        if (obj !== undefined) {
+            if (
+                (obj["association"] === "Negative" &&
+                    row["association"] === "Positive") ||
+                (obj["association"] === "Positive" &&
+                    row["association"] === "Negative")
+            ) {
+                obj["association"] = "Dual";
+            } else if (obj["association"] === "N/A")
+                obj["association"] = row["association"];
+
+            if (
+                (obj["evidence"] === "Binding" && row["code"] === "Indirect") ||
+                (obj["evidence"] === "Expression" && row["code"] === "Direct")
+            )
+                obj["evidence"] = "Binding & Expression";
+            else if (obj["evidence"] === "N/A") obj["evidence"] = row["code"];
+        } else {
+            let ev = "";
+            if (row["code"] === "Direct") ev = "Binding";
+            else if (row["code"] === "Indirect") ev = "Expression";
+            else ev = "N/A";
+            xd[row["regulationid"]] = {
+                gene: row["gene"],
+                orf: row["orf"],
+                tf: row["protein"],
+                association: row["association"],
+                evidence: ev,
+            };
+        }
+    }
+    return xd;
+}
+
+async function getRegData(id) {
+    const q =
+        "select association, evidencecodeid, envconditionid " +
+        `from regulationdata where regulationid=${id}`;
     const res = await query(q);
-    return res;
+
+    let pos = false;
+    let neg = false;
+    let posneg = false;
+    const ev = [];
+    const ec = [];
+
+    for (let row of res) {
+        // console.log(row["association"]);
+        if (row["association"] === "Positive") pos = true;
+        else if (row["association"] === "Negative") neg = true;
+        else if (row["association"] === "Positive/Negative") posneg = true;
+
+        if (!ev.some((value) => value === row["evidencecodeid"]))
+            ev.push(row["evidencecodeid"]);
+        if (!ec.some((value) => value === row["envconditionid"]))
+            ec.push(row["envconditionid"]);
+    }
+
+    let assoc = "";
+    if ((pos && neg) || posneg) assoc = "Dual";
+    else if (pos) assoc = "Positive";
+    else if (neg) assoc = "Negative";
+    else assoc = "N/A";
+
+    return [assoc, ev, ec];
+}
+
+async function getEVcodes(evidList) {
+    const q =
+        "select code from evidencecodeBSRG " +
+        `where evidencecodeid in (${evidList.join(",")})`;
+    const res = await querySingleCol(q);
+
+    const bind = res.some((value) => value === "Direct");
+    const expr = res.some((value) => value === "Indirect");
+    let ev = "";
+    if (bind && expr) ev = "Binding & Expression";
+    else if (expr) ev = "Expression";
+    else if (bind) ev = "Binding";
+    else ev = "N/A";
+    return ev;
+}
+
+async function getECgroups(ecidList) {
+    const q =
+        "select ECG.biggroup,ECG.subgroup,EC.envconditiondesc from " +
+        "envcondition as EC, envconditiongroups as ECG where " +
+        `EC.envconditionid in (${ecidList.join(
+            ","
+        )}) and EC.groupid=ECG.groupid`;
+    const res = await query(q);
+    const envcon = res.map((row) => row["envconditiondesc"]);
+    return [res, envcon];
 }
 // prettier-ignore
 export async function getRegulationsByGene(ids, biggroup, subgroup, evidence, pos, neg, NA) {
@@ -171,23 +321,21 @@ export async function getAllRegulations(biggroup, subgroup, evidence, pos, neg, 
 
 export async function getMegaAllRegulations(species) {
     const q =
-        "select distinct O.gene, O.orf, P.protein, D.association, E.code, G.biggroup, G.subgroup" +
+        "select R.regulationid, O.gene, O.orf, P.protein, D.association, E.code" +
         " from regulation as R left outer join orfgene as O" +
         " on R.targetid=O.orfid left outer join protein as P ON R.tfid=P.tfid" +
         " left outer join regulationdata as D on R.regulationid=D.regulationid" +
         " left outer join evidencecodeBSRG as E on D.evidencecodeid=E.evidencecodeid" +
-        " left outer join envcondition as C on D.envconditionid=C.envconditionid" +
-        " left outer join envconditiongroups as G on C.groupid=G.groupid" +
         ` where R.tfid in (select orfid from orfgene where species in ('${dbspecies(
             species
         )}'))`;
-
-    const res = await query(q);
-    return res;
+    const regs = await query(q);
+    const xd = formatRegulations(regs);
+    return Object.keys(xd).map((id) => xd[id]);
 }
 
 function getEnvconQuery(biggroup, subgroup, and = true) {
-    if (!biggroup) return "";
+    if (!biggroup || biggroup == undefined) return "";
     const subgroupQ = subgroup ? ` and subgroup='${subgroup}'` : "";
     return (
         `${and ? " and " : ""}` +
@@ -201,7 +349,12 @@ function getEnvconQuery(biggroup, subgroup, and = true) {
 }
 
 function getEvidenceQuery(evidence, pos, neg, NA, and = true) {
-    if (!evidence || (evidence !== "binding" && !pos && !neg && !NA)) return "";
+    if (
+        !evidence ||
+        evidence == undefined ||
+        (evidence !== "binding" && !pos && !neg && !NA)
+    )
+        return "";
     let q =
         `${and ? " and " : ""}` +
         "R.regulationid in (select distinct regulationid from regulationdata " +
@@ -714,7 +867,7 @@ export async function getGOtermInfo(id, species) {
     };
 }
 
-export async function getRegulationInfo(tfid, orfid, species) {
+export async function getRegulationInfo(tfid, orfid) {
     const q =
         "select RD.regulationid, P.protein, O.orf,O.gene, RD.association, " +
         "RD.strain, EV.code,EV.experiment, Pub.* " +
@@ -728,11 +881,13 @@ export async function getRegulationInfo(tfid, orfid, species) {
     const res = await query(q);
     let ret = [];
     for (let row of res) {
+        console.log(row.pubmedid, row.regulationid);
         const qec =
             "select EV.envconditiondesc from envcondition as EV, " +
             "regulationdata as RD where EV.envconditionid=RD.envconditionid " +
             `and RD.regulationid=${row["regulationid"]} and RD.pubmedid=${row["pubmedid"]}`;
         const envc = await querySingleCol(qec);
+        // console.log(envc);
         ret.push({ ...row, envcond: envc });
     }
     return ret;
