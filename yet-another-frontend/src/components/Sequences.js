@@ -155,7 +155,7 @@ export default function Sequences() {
 
     return (
         <>
-            <form onSubmit={handleQuery}>
+            <form onSubmit={handleQuery} className="md:ml-4">
                 {/* <div className="grid grid-cols-3 gap-3">
                     <div></div>
                     <div className="flex flex-row gap-5">
@@ -176,7 +176,7 @@ export default function Sequences() {
                     </div>
                     <div></div>
                 </div> */}
-                <div className="ml-3 flex flex-row justify-center gap-5 mb-5">
+                <div className="ml-3 flex flex-row gap-5 mb-5">
                     <h1 className="font-figtree text-xl">Sequences</h1>
                     <select
                         className="select select-sm select-bordered select-primary max-w-106 text-color"
@@ -190,11 +190,11 @@ export default function Sequences() {
                         ))}
                     </select>
                 </div>
-                <div className="flex flex-row justify-center space-x-6 p-3 border-b border-gray-500">
+                <div className="flex flex-row space-x-6 p-3 border-b border-gray-500">
                     {query !== "Promoter Analysis" &&
                         query !== "TF-Consensus List" &&
                         query !== "Upstream Sequence" && (
-                            <>
+                            <div className="flex flex-col">
                                 <label>
                                     <div className="label p-0 mb-2">
                                         <span className="label-text text-color">
@@ -209,13 +209,15 @@ export default function Sequences() {
                                         onChange={handleForm}
                                     ></textarea>
                                 </label>
-                                <label>
-                                    <div className="label p-0 mb-2">
+                                <label className="label cursor-pointer mt-2 p-0">
+                                    {/* <div className="label p-0 mb-2">
                                         <span className="label-text text-color">
                                             Substitutions
                                         </span>
-                                    </div>
-
+                                    </div> */}
+                                    <span className="label-text text-color">
+                                        Substitutions
+                                    </span>
                                     <select
                                         className="select select-bordered select-primary select-sm max-w-24 mb-3 text-color"
                                         id="substitutions"
@@ -230,7 +232,7 @@ export default function Sequences() {
                                         ))}
                                     </select>
                                 </label>
-                            </>
+                            </div>
                         )}
                     {query !==
                         "Search described TF Binding Sites by a given DNA motif" &&
@@ -246,7 +248,7 @@ export default function Sequences() {
                                     id="genes"
                                     name="genes"
                                     value={formData.genes}
-                                    className="textarea textarea-bordered textarea-primary max-w-24 min-h-36 max-h-36 text-color"
+                                    className="textarea textarea-bordered textarea-primary max-w-24 min-h-[120px] max-h-[120px] text-color"
                                     onChange={handleForm}
                                 ></textarea>
                             </label>
@@ -263,15 +265,15 @@ export default function Sequences() {
                                 id="sequence"
                                 name="sequence"
                                 value={formData.sequence}
-                                className="textarea textarea-bordered textarea-primary text-color"
+                                className="textarea textarea-bordered textarea-primary text-color min-h-[120px] max-h-[120px]"
                                 onChange={handleForm}
                             ></textarea>
                         </label>
                     )}
                     {query === "Promoter Analysis" && (
-                        <>
-                            <span>
-                                {/* <Select
+                        <div className="grid grid-rows-2">
+                            {/* <span> */}
+                            {/* <Select
                                 variant="bordered"
                                 label="Consider TFBS from strain:"
                                 className="mb-6"
@@ -286,49 +288,45 @@ export default function Sequences() {
                                     </SelectItem>
                                 ))}
                             </Select>*/}
-                                <label>
-                                    <div className="label p-0 mb-2">
-                                        <span className="label-text text-color">
-                                            Consider TFBS from strain:
-                                        </span>
-                                    </div>
+                            <label>
+                                <div className="label p-0 mb-2">
+                                    <span className="label-text text-color">
+                                        Consider TFBS from strain:
+                                    </span>
+                                </div>
 
-                                    <select
-                                        className="select select-bordered select-primary select-sm w-full max-w-xs mb-3 text-color"
-                                        id="tfbs_species"
-                                        name="tfbs_species"
-                                        value={formData.tfbs_species}
-                                        onChange={handleForm}
-                                    >
-                                        {homologs.map((option) => (
-                                            <option value={option}>
-                                                {option}
-                                            </option>
-                                        ))}
-                                    </select>
-                                </label>
-                                <label>
-                                    <div className="label p-0 mb-2">
-                                        <span className="label-text text-color">
-                                            Synteny
-                                        </span>
-                                    </div>
+                                <select
+                                    className="select select-bordered select-primary select-sm w-full max-w-xs mb-3 text-color"
+                                    id="tfbs_species"
+                                    name="tfbs_species"
+                                    value={formData.tfbs_species}
+                                    onChange={handleForm}
+                                >
+                                    {homologs.map((option) => (
+                                        <option value={option}>{option}</option>
+                                    ))}
+                                </select>
+                            </label>
+                            <label className="self-end mb-2">
+                                <div className="label p-0 mb-2">
+                                    <span className="label-text text-color">
+                                        Synteny
+                                    </span>
+                                </div>
 
-                                    <select
-                                        className="select select-bordered select-primary select-sm w-full max-w-xs mb-3 text-color"
-                                        id="synteny"
-                                        name="synteny"
-                                        value={formData.synteny}
-                                        onChange={handleForm}
-                                    >
-                                        {syntenies.map((option) => (
-                                            <option value={option}>
-                                                {option}
-                                            </option>
-                                        ))}
-                                    </select>
-                                </label>
-                            </span>
+                                <select
+                                    className="select select-bordered select-primary select-sm w-full max-w-xs text-color"
+                                    id="synteny"
+                                    name="synteny"
+                                    value={formData.synteny}
+                                    onChange={handleForm}
+                                >
+                                    {syntenies.map((option) => (
+                                        <option value={option}>{option}</option>
+                                    ))}
+                                </select>
+                            </label>
+                            {/* </span> */}
                             {/* TODO COMPARE GENES WITH ORTHOLOGY IN STRAINS*/}
                             {/* <Select
                             label="Compare genes with orthology in strains:"
@@ -345,10 +343,10 @@ export default function Sequences() {
                                 </SelectItem>
                             ))}
                         </Select> */}
-                        </>
+                        </div>
                     )}
                     {query === "Upstream Sequence" && (
-                        <span>
+                        <div className="grid grid-rows-2">
                             <label>
                                 <div className="label p-0 mb-2">
                                     <span className="label-text text-color">
@@ -364,7 +362,7 @@ export default function Sequences() {
                                     onChange={handleForm}
                                 />
                             </label>
-                            <label>
+                            <label className="self-end mb-2">
                                 <div className="label">
                                     <span className="label-text text-color">
                                         To
@@ -379,7 +377,7 @@ export default function Sequences() {
                                     onChange={handleForm}
                                 />
                             </label>
-                        </span>
+                        </div>
                     )}
                     {query !== "TF-Consensus List" && (
                         // <Button className="self-start mt-10" type="submit">

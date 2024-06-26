@@ -55,6 +55,23 @@ export default function Layout() {
                                 d="M4 6h16M4 12h16M4 18h16"
                             ></path>
                         </svg>
+                        {/* <svg
+                            className="w-6 h-6 text-gray-800 dark:text-white hidden lg:block"
+                            aria-hidden="true"
+                            xmlns="http://www.w3.org/2000/svg"
+                            width="24"
+                            height="24"
+                            fill="none"
+                            viewBox="0 0 24 24"
+                        >
+                            <path
+                                stroke="currentColor"
+                                stroke-linecap="round"
+                                stroke-linejoin="round"
+                                stroke-width="2"
+                                d="m15 19-7-7 7-7"
+                            />
+                        </svg> */}
                     </label>
                     <h1 className="text-2xl font-figtree mt-1 lg:hidden">
                         YEASTRACT+

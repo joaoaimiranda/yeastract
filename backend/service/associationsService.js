@@ -12,19 +12,20 @@ import {
     getIDs,
     getGOids,
     getHomoIDs,
+    getTotalNumDBGenes,
 } from "../db/repository.js";
 
 export async function searchRegulations(params) {
     if (
         params.tfs === undefined ||
         params.genes === undefined ||
-        params.documented === undefined ||
-        params.activator === undefined ||
-        params.inhibitor === undefined ||
-        params.noexprinfo === undefined ||
-        params.envconGroup === undefined ||
-        params.envconSubgroup === undefined ||
-        params.synteny === undefined ||
+        // params.documented === undefined ||
+        // params.activator === undefined ||
+        // params.inhibitor === undefined ||
+        // params.noexprinfo === undefined ||
+        // params.envconGroup === undefined ||
+        // params.envconSubgroup === undefined ||
+        // params.synteny === undefined ||
         params.species === undefined
     ) {
         // res.status(400).send("Bad Request");
@@ -36,7 +37,11 @@ export async function searchRegulations(params) {
 
     // case search all regulations
     if (tfNames[0] === "" && geneNames[0] === "") {
-        const regs = await getMegaAllRegulations(params.species);
+        const regs = await getMegaAllRegulations(
+            params.species,
+            params.envconGroup,
+            params.envconSubgroup
+        );
         // const regs = await getAllRegulations(
         //     params.envconGroup,
         //     params.envconSubgroup,
@@ -68,7 +73,11 @@ export async function searchRegulations(params) {
 
         // standard, no homologous relations
         if (params.homolog === undefined || params.homolog === "") {
-            const regs = await getMegaRegulationsByTF(idList.join(", "));
+            const regs = await getMegaRegulationsByTF(
+                idList.join(", "),
+                params.envconGroup,
+                params.envconSubgroup
+            );
             // const regs = await getRegulationsByTF(
             //     idList.join(", "),
             //     params.envconGroup,
@@ -105,7 +114,11 @@ export async function searchRegulations(params) {
         //         )
         //     )
         //     .then((values) => res.status(200).json(values));
-        const regs = await getMegaRegulationsByGene(idList.join(", "));
+        const regs = await getMegaRegulationsByGene(
+            idList.join(", "),
+            params.envconGroup,
+            params.envconSubgroup
+        );
         // const regs = await getRegulationsByGene(
         //     idList.join(", "),
         //     params.envconGroup,
@@ -140,7 +153,9 @@ export async function searchRegulations(params) {
         //     .then((values) => res.status(200).json(values));
         const regs = await getMegaRegulations(
             tfIdList.join(", "),
-            geneIdList.join(", ")
+            geneIdList.join(", "),
+            params.envconGroup,
+            params.envconSubgroup
         );
         // const regs = await getRegulationsByTFAndGene(
         //     tfIdList.join(", "),
@@ -159,14 +174,14 @@ export async function rankTF(params) {
     if (
         params.tfs === undefined ||
         params.genes === undefined ||
-        params.documented === undefined ||
-        params.activator === undefined ||
-        params.inhibitor === undefined ||
-        params.noexprinfo === undefined ||
-        params.envconGroup === undefined ||
-        params.envconSubgroup === undefined ||
-        params.synteny === undefined ||
-        params.homolog === undefined ||
+        // params.documented === undefined ||
+        // params.activator === undefined ||
+        // params.inhibitor === undefined ||
+        // params.noexprinfo === undefined ||
+        // params.envconGroup === undefined ||
+        // params.envconSubgroup === undefined ||
+        // params.synteny === undefined ||
+        // params.homolog === undefined ||
         params.species === undefined
     ) {
         throw new Error("Bad Request");
@@ -239,7 +254,9 @@ async function getRankByTfs(regs, tfIDs, hypern) {
         const dbNum = await getAllGenesByTF(id);
 
         const idRegs = regs.filter((row) => row["tfid"] === id);
-        const dbPer = idRegs.length / (await dbNum);
+        const dbPer = Number.parseFloat((idRegs.length / dbNum) * 100).toFixed(
+            2
+        );
 
         ranks.push({
             tf: idRegs[0]["protein"],
@@ -247,7 +264,9 @@ async function getRankByTfs(regs, tfIDs, hypern) {
                 row["gene"] === "Uncharacterized" ? row["orf"] : row["gene"]
             ),
             // setNum: idRegs.length,
-            setPer: idRegs.length / hypern,
+            setPer: Number.parseFloat((idRegs.length / hypern) * 100).toFixed(
+                2
+            ),
             // dbNum: dbNum,
             dbPer: dbPer,
         });
@@ -268,21 +287,28 @@ export async function rankGO(params) {
         throw new Error("No genes provided");
     }
     const geneIdList = await getIDs(geneNames, params.species);
+    const hyperN = await getTotalNumDBGenes(params.species);
+    if (hyperN === -1) throw new Error("Database Error");
     // Promise.all(geneIdList)
     //     .then(async (ids) => {
     //         const res = await getGOids(ids, params.ontology);
     //         return Promise.all(res);
     //     })
     //     .then((values) => res.status(200).json(values));
-    const gos = await getGOids(geneIdList, params.ontology);
+    const gos = await getGOids(
+        geneIdList,
+        params.species,
+        params.ontology,
+        hyperN
+    );
     return gos;
 }
 
-export async function lmaoService(params) {
-    // req check
+// export async function lmaoService(params) {
+//     // req check
 
-    const tfNames = params.tfs.trim().split(/[\s\t\n\r\0,;|]+/);
-    const idList = await getIDs(tfNames, params.species);
-    const regs = await getMegaRegulationsByTF(idList);
-    return regs;
-}
+//     const tfNames = params.tfs.trim().split(/[\s\t\n\r\0,;|]+/);
+//     const idList = await getIDs(tfNames, params.species);
+//     const regs = await getMegaRegulationsByTF(idList);
+//     return regs;
+// }

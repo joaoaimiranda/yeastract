@@ -95,7 +95,7 @@ export async function getRegulationsByTF(ids, biggroup, subgroup, evidence, pos,
         return { gene: row["gene"], tf: row["protein"] };
     });
 }
-export async function getMegaRegulationsByTF(ids) {
+export async function getMegaRegulationsByTF(ids, biggroup, subgroup) {
     // const q =
     //     "select distinct R.regulationid, O.gene, O.orf, P.protein, D.association, E.code, G.biggroup, G.subgroup" +
     //     " from regulation as R left outer join orfgene as O" +
@@ -113,7 +113,8 @@ export async function getMegaRegulationsByTF(ids) {
         " on R.targetid=O.orfid left outer join protein as P ON R.tfid=P.tfid" +
         " left outer join regulationdata as D on R.regulationid=D.regulationid" +
         " left outer join evidencecodeBSRG as E on D.evidencecodeid=E.evidencecodeid" +
-        ` where R.tfid in (${ids})`;
+        ` where R.tfid in (${ids})` +
+        getEnvconQuery(biggroup, subgroup);
     const regs = await query(q);
 
     const xd = formatRegulations(regs);
@@ -135,27 +136,31 @@ export async function getMegaRegulationsByTF(ids) {
     // return res;
 }
 
-export async function getMegaRegulationsByGene(ids) {
+export async function getMegaRegulationsByGene(ids, biggroup, subgroup) {
     const q =
         "select R.regulationid, O.gene, O.orf, P.protein, D.association, E.code" +
         " from regulation as R left outer join orfgene as O" +
         " on R.targetid=O.orfid left outer join protein as P ON R.tfid=P.tfid" +
         " left outer join regulationdata as D on R.regulationid=D.regulationid" +
         " left outer join evidencecodeBSRG as E on D.evidencecodeid=E.evidencecodeid" +
-        ` where R.targetid in (${ids})`;
+        ` where R.targetid in (${ids})` +
+        getEnvconQuery(biggroup, subgroup);
+
     const regs = await query(q);
     const xd = formatRegulations(regs);
     return Object.keys(xd).map((id) => xd[id]);
 }
 
-export async function getMegaRegulations(tfIds, geneIds) {
+export async function getMegaRegulations(tfIds, geneIds, biggroup, subgroup) {
     const q =
         "select R.regulationid, O.gene, O.orf, P.protein, D.association, E.code" +
         " from regulation as R left outer join orfgene as O" +
         " on R.targetid=O.orfid left outer join protein as P ON R.tfid=P.tfid" +
         " left outer join regulationdata as D on R.regulationid=D.regulationid" +
         " left outer join evidencecodeBSRG as E on D.evidencecodeid=E.evidencecodeid" +
-        ` where R.targetid in (${geneIds}) and R.tfid in (${tfIds})`;
+        ` where R.targetid in (${geneIds}) and R.tfid in (${tfIds})` +
+        getEnvconQuery(biggroup, subgroup);
+
     const regs = await query(q);
     const xd = formatRegulations(regs);
     return Object.keys(xd).map((id) => xd[id]);
@@ -319,7 +324,7 @@ export async function getAllRegulations(biggroup, subgroup, evidence, pos, neg, 
     });
 }
 
-export async function getMegaAllRegulations(species) {
+export async function getMegaAllRegulations(species, biggroup, subgroup) {
     const q =
         "select R.regulationid, O.gene, O.orf, P.protein, D.association, E.code" +
         " from regulation as R left outer join orfgene as O" +
@@ -328,7 +333,9 @@ export async function getMegaAllRegulations(species) {
         " left outer join evidencecodeBSRG as E on D.evidencecodeid=E.evidencecodeid" +
         ` where R.tfid in (select orfid from orfgene where species in ('${dbspecies(
             species
-        )}'))`;
+        )}'))` +
+        getEnvconQuery(biggroup, subgroup);
+
     const regs = await query(q);
     const xd = formatRegulations(regs);
     return Object.keys(xd).map((id) => xd[id]);
@@ -409,7 +416,13 @@ export async function getTotalNumDBGenes(species) {
     return res;
 }
 
-export async function getGOids(geneIds, species, ontology = "process") {
+export async function getGOids(geneIds, species, ontology, hyperN) {
+    if (
+        ontology !== "process" &&
+        ontology !== "function" &&
+        ontology !== "component"
+    )
+        ontology = "process";
     // prettier-ignore
     const q =
         "select G.goid, O.orf, O.gene from geneontology as G, goorflist as T left outer join orfgene as O on T.orfid=O.orfid " +
@@ -461,12 +474,14 @@ export async function getGOids(geneIds, species, ontology = "process") {
 
         const res_count = await querySingleValue(q_count);
         const res_ontology = await querySingleRow(q_ontology);
-        // TODO MISSING HYPERN
+        // TODO MISSING HYPERGEOMETRIC
         gos.push({
             goid: row["goid"],
             genes: row["genes"],
-            setPer: row["genes"].length / geneIds.length,
-            dbPer: res_count / 1, // FIX THIS 1 (?) probably same as hypern comment
+            setPer: Number.parseFloat(
+                (row["genes"].length / geneIds.length) * 100
+            ).toFixed(2),
+            dbPer: Number.parseFloat((res_count / hyperN) * 100).toFixed(2),
             term: res_ontology["term"],
             depth: res_ontology["depth"],
         });
@@ -879,16 +894,24 @@ export async function getRegulationInfo(tfid, orfid) {
         "and R.regulationid=RD.regulationid " +
         "and RD.pubmedid=Pub.pubmedid";
     const res = await query(q);
+
+    // ONLY WORKS IF N_ENTRIES_OF_SAME_PUBMED = N_ENVCONS_OF_SAME_PUBMED
     let ret = [];
+    let aux = {};
     for (let row of res) {
-        console.log(row.pubmedid, row.regulationid);
+        if (aux[row["pubmedid"]] !== undefined) aux[row["pubmedid"]].push(row);
+        else aux[row["pubmedid"]] = [row];
+    }
+    for (let pubmedid of Object.keys(aux)) {
         const qec =
             "select EV.envconditiondesc from envcondition as EV, " +
             "regulationdata as RD where EV.envconditionid=RD.envconditionid " +
-            `and RD.regulationid=${row["regulationid"]} and RD.pubmedid=${row["pubmedid"]}`;
+            `and RD.regulationid=${aux[pubmedid][0].regulationid} and RD.pubmedid=${pubmedid}`;
         const envc = await querySingleCol(qec);
         // console.log(envc);
-        ret.push({ ...row, envcond: envc });
+        for (let i = 0; i < aux[pubmedid].length; i++) {
+            ret.push({ ...aux[pubmedid][i], envcond: envc[i] });
+        }
     }
     return ret;
 }

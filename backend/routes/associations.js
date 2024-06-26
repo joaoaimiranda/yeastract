@@ -2,7 +2,7 @@ import {
     searchRegulations,
     rankTF,
     rankGO,
-    lmaoService,
+    // lmaoService,
 } from "../service/associationsService.js";
 import { Router } from "express";
 const router = Router();
@@ -45,19 +45,19 @@ router.post("/rankgo", async (req, res, next) => {
     }
 });
 
-router.get("/lmao", async (req, res, next) => {
-    try {
-        const result = await lmaoService({
-            tfs: "Pdr1\nHaa1\nMsn2\nYap1",
-            species: "scerevisiae",
-        });
-        console.log(result.length);
-        res.status(200).json(result);
-    } catch (err) {
-        console.log(err);
-        res.status(500).send("oops");
-    }
-});
+// router.get("/lmao", async (req, res, next) => {
+//     try {
+//         const result = await lmaoService({
+//             tfs: "Pdr1\nHaa1\nMsn2\nYap1",
+//             species: "scerevisiae",
+//         });
+//         console.log(result.length);
+//         res.status(200).json(result);
+//     } catch (err) {
+//         console.log(err);
+//         res.status(500).send("oops");
+//     }
+// });
 
 // async function getID(element) {
 //     const q1 = `select O.orfid from orfgene as O LEFT OUTER JOIN protein as P ON P.tfid=O.orfid WHERE (O.orf='${element}' or O.gene='${element}') and O.species in ('Saccharomyces cerevisiae S288c');`;

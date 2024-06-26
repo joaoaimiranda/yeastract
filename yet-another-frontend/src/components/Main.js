@@ -12,8 +12,13 @@ import {
 import speciesList from "../conf/speciesList";
 import RegulationModal from "./RegulationModal";
 import { useParams } from "react-router-dom";
-import TestChart from "../charts/TestChart";
 import constants from "../conf/constants";
+import TfChart from "../charts/TfChart";
+import EvidenceChart from "../charts/EvidenceChart";
+import AssocTypeChart from "../charts/AssocTypeChart";
+import GeneChart from "../charts/GeneChart";
+import OrfChart from "../charts/OrfChart";
+import Histogram from "../charts/Histogram";
 
 export default function Main() {
     // const [crossSpecies, setCrossSpecies] = React.useState(false);
@@ -25,17 +30,18 @@ export default function Main() {
         genes: "",
         // evidence: "documented",
 
-        binding: false,
-        expression: true,
-        // and -> false | or -> true
-        and_or: false,
-        activator: true,
-        inhibitor: true,
-        noexprinfo: true,
+        // binding: false,
+        // expression: true,
+        // // and -> false | or -> true
+        // and_or: false,
+        // activator: true,
+        // inhibitor: true,
+        // noexprinfo: true,
         envconGroup: "",
         envconSubgroup: "",
         synteny: 0,
         homolog: "",
+        ontology: "process",
     });
 
     const { species } = useParams();
@@ -64,7 +70,14 @@ export default function Main() {
         { option: "BLAST Best-Scores + at least 2 neighbor", value: 2 },
         { option: "BLAST Best-Scores + at least 3 neighbor", value: 3 },
     ];
+
     // const homologs = ["c. albicans", "c. auris", "c. glabrata"];
+
+    const ontologies = [
+        { option: "Biological process", value: "process" },
+        { option: "Molecular function", value: "function" },
+        { option: "Cellular component", value: "component" },
+    ];
 
     const [rowData, setRowData] = React.useState([]);
 
@@ -98,25 +111,34 @@ export default function Main() {
         }));
     }
 
-    // FIXME SPECIES STRING FOR MULTIPLE STRAINS
+    // FIXME DOESNT WORK FOR MULTIPLE STRAINS
+    function setSampleData() {
+        setFormData((prevData) => ({
+            ...prevData,
+            tfs: speciesList[species].sample[0].tfs,
+            genes: speciesList[species].sample[0].tgs,
+        }));
+    }
+
     async function handleQuery(event) {
         event.preventDefault();
         const query = event.nativeEvent.submitter.name;
+        console.log(query);
 
-        let documented = "";
-        if (formData.binding && formData.expression)
-            documented = formData.and_or
-                ? "binding or expression"
-                : "binding and expression";
-        else if (formData.binding) documented = "binding";
-        else if (formData.expression) documented = "expression";
+        // let documented = "";
+        // if (formData.binding && formData.expression)
+        //     documented = formData.and_or
+        //         ? "binding or expression"
+        //         : "binding and expression";
+        // else if (formData.binding) documented = "binding";
+        // else if (formData.expression) documented = "expression";
 
         if (query === "rank-none") {
-            if (documented === "") return; //not accepted
+            // if (documented === "") return; //not accepted
             const reverseCols = formData.tfs.trim() === "";
             const res = await searchRegulations({
                 ...formData,
-                documented: documented,
+                // documented: documented,
                 species: speciesList[species].path,
             });
             console.log(res);
@@ -124,71 +146,105 @@ export default function Main() {
             //prettier-ignore
             if (reverseCols) {
                 setColDefs([
-                    { headerName: "Gene", field: "gene", hide: false, 
-                    cellRenderer: p => <a className="link" href={`/${species}/view?orf=${p.data.orf}`}>{p.data.gene}</a> },
-                    { headerName: "ORF", field: "orf", hide: false, 
-                    cellRenderer: p => <a className="link" href={`/${species}/view?orf=${p.data.orf}`}>{p.data.orf}</a> },
-                    { headerName: "TF", field: "tf", hide: false, 
-                    cellRenderer: p => !p.node.rowPinned && <><a className="link" href={`/${species}/view?orf=${p.data.tf}`}>{p.data.tf}</a></> },
-                    { headerName: "Evidence", field: "evidence", hide: false},
-                    { headerName: "Association Type", field: "association", hide: false},
-                    { headerName: "Reference", field: "Reference", width: 100, hide: false, sortable: false, cellRenderer: p => !p.node.rowPinned && <RegulationModal id={`reg_modal_${p.data.gene}_${p.data.tf}`} orf={p.data.gene} tf={p.data.tf} species={species} />},
+                    { headerName: "Gene", field: "gene", hide: false, width: 200,
+                    cellRenderer: p => p.node.rowPinned ? <GeneChart data={res} /> : <a className="link" href={`/${species}/view?orf=${p.data.orf}`}>{p.data.gene}</a> },
+                    { headerName: "ORF", field: "orf", hide: false, width: 200,
+                    cellRenderer: p => p.node.rowPinned ? <OrfChart data={res} /> : <a className="link" href={`/${species}/view?orf=${p.data.orf}`}>{p.data.orf}</a> },
+                    { headerName: "TF", field: "tf", hide: false, width: 150,
+                    cellRenderer: p => p.node.rowPinned ? <p className="text-lg font-semibold text-wrap">{`${(new Set(res.map(row => row.tf))).size} unique TFs`}</p> : <a className="link" href={`/${species}/view?orf=${p.data.tf}`}>{p.data.tf}</a> },
+                    { headerName: "Evidence", field: "evidence", hide: false, width: 180, cellRenderer: p => p.node.rowPinned ? <EvidenceChart data={res}/> : p.data.evidence},
+                    { headerName: "Association Type", field: "association", hide: false, width: 150, cellRenderer: p => p.node.rowPinned ? <AssocTypeChart data={res}/> : p.data.association},
+                    { headerName: "Reference", field: "Reference", width: 100, hide: false, sortable: false, floatingFilter: false, cellRenderer: p => !p.node.rowPinned && <RegulationModal id={`reg_modal_${p.data.tf}_${p.data.gene}`} orf={p.data.gene === "Uncharacterized" ? p.data.orf : p.data.gene} tf={p.data.tf} species={species} />},
                 ]);
                 setRowData(res);
+                // apply default sort
                 gridRef.current.api.applyColumnState({
                     state: [{ colId: "tf", sort: null }, { colId: "gene", sort: "asc"}],
                 });
             }
-            else{
-            setColDefs([
-                { headerName: "TF", field: "tf", hide: false,
-                cellRenderer: p => p.node.rowPinned ? 
-                    <TestChart data={res} />
-                    : <a className="link" href={`${species}/view?orf=${p.data.tf}`}>{p.data.tf}</a> },
-                { headerName: "Gene", field: "gene", hide: false, 
-                cellRenderer: p => p.node.rowPinned ? <svg className="w-6 h-6 text-gray-800" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" viewBox="0 0 24 24">
-                    <path stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 15v4m6-6v6m6-4v4m6-6v6M3 11l6-5 6 5 5.5-5.5"/>
-                    </svg> 
-                    :<><a className="link" href={`${species}/view?orf=${p.data.orf}`}>{p.data.gene}</a></> },
-                { headerName: "ORF", field: "orf", hide: false, 
-                cellRenderer: p => <a className="link" href={`/${species}/view?orf=${p.data.orf}`}>{p.data.orf}</a> },
-                { headerName: "Evidence", field: "evidence", hide: false},
-                { headerName: "Association Type", field: "association", hide: false},
-                { headerName: "Reference", field: "Reference", width: 100, hide: false, sortable: false, floatingFilter: false, cellRenderer: p => !p.node.rowPinned && <RegulationModal id={`reg_modal_${p.data.tf}_${p.data.gene}`} orf={p.data.gene} tf={p.data.tf} species={species} />},
-            ]);
-            setRowData(res);
-            gridRef.current.api.applyColumnState({
-                state: [{ colId: "tf", sort: "asc" }, { colId: "gene", sort: null}],
-            });
-        }
+            else {
+                setColDefs([
+                    { headerName: "TF", field: "tf", hide: false, width: 200,
+                    cellRenderer: p => p.node.rowPinned ? 
+                        <TfChart data={res} tableHighlight={chartHoverToTable} />
+                        : <a className="link" href={`${species}/view?orf=${p.data.tf}`}>{p.data.tf}</a> },
+                    { headerName: "Gene", field: "gene", hide: false, width: 150, 
+                    cellRenderer: p => p.node.rowPinned ? <p className="text-lg font-semibold text-wrap">{`${(new Set(res.map(row => row.gene))).size} unique Genes`}</p>
+                        : <a className="link" href={`${species}/view?orf=${p.data.orf}`}>{p.data.gene}</a> },
+                    { headerName: "ORF", field: "orf", hide: false, width: 150,
+                    cellRenderer: p => p.node.rowPinned ? <p className="text-lg font-semibold text-wrap">{`${(new Set(res.map(row => row.orf))).size} unique ORFs`}</p> :<a className="link" href={`/${species}/view?orf=${p.data.orf}`}>{p.data.orf}</a> },
+                    { headerName: "Evidence", field: "evidence", hide: false, width: 180, cellRenderer: p => p.node.rowPinned ? <EvidenceChart data={res}/> : p.data.evidence},
+                    { headerName: "Association Type", field: "association", hide: false, width: 150, cellRenderer: p => p.node.rowPinned ? <AssocTypeChart data={res}/> : p.data.association},
+                    { headerName: "Reference", field: "Reference", width: 100, hide: false, sortable: false, floatingFilter: false, cellRenderer: p => !p.node.rowPinned && <RegulationModal id={`reg_modal_${p.data.tf}_${p.data.gene}`} orf={p.data.gene === "Uncharacterized" ? p.data.orf : p.data.gene} tf={p.data.tf} species={species} />},
+                ]);
+                setRowData(res);
+                // apply default sort
+                gridRef.current.api.applyColumnState({
+                    state: [{ colId: "tf", sort: "asc" }, { colId: "gene", sort: null}],
+                });
+            }
         } else if (query === "rank-tf") {
-            if (documented === "") return; //not accepted
+            // if (documented === "") return; //not accepted
             const res = await rankTF({
                 ...formData,
-                documented: documented,
+                // documented: documented,
                 species: speciesList[species].path,
             });
             console.log(res);
             setColDefs([
                 { headerName: "TF", field: "tf", hide: false },
-                { headerName: "% in user set", field: "setPer", hide: false },
-                { headerName: "% in species", field: "dbPer", hide: false },
+                {
+                    headerName: "% in user set",
+                    field: "setPer",
+                    hide: false,
+                    width: 150,
+                    cellRenderer: (p) =>
+                        p.node.rowPinned ? (
+                            <Histogram
+                                data={res.map((row) => row.setPer)}
+                                width={150}
+                                height={95}
+                            />
+                        ) : (
+                            p.data.setPer + "%"
+                        ),
+                },
+                {
+                    headerName: "% in species",
+                    field: "dbPer",
+                    hide: false,
+                    width: 150,
+                    cellRenderer: (p) =>
+                        p.node.rowPinned ? (
+                            <Histogram
+                                data={res.map((row) => row.dbPer)}
+                                width={150}
+                                height={95}
+                            />
+                        ) : (
+                            p.data.dbPer + "%"
+                        ),
+                },
                 {
                     headerName: "Target Genes",
                     field: "genes",
                     hide: false,
                     cellRenderer: (p) =>
-                        p.data.genes.map((v) => (
-                            <>
-                                <a
-                                    className="link"
-                                    href={`/${species}/view?orf=${v}`}
-                                >
-                                    {v}
-                                </a>
-                                <span> </span>
-                            </>
-                        )),
+                        p.node.rowPinned ? (
+                            <></>
+                        ) : (
+                            p.data.genes.map((v) => (
+                                <>
+                                    <a
+                                        className="link"
+                                        href={`/${species}/view?orf=${v}`}
+                                    >
+                                        {v}
+                                    </a>
+                                    <span> </span>
+                                </>
+                            ))
+                        ),
                 },
             ]);
             setRowData(res);
@@ -204,49 +260,89 @@ export default function Main() {
                     headerName: "GO ID",
                     field: "goid",
                     hide: false,
-                    cellRenderer: (p) => (
-                        <a
-                            className="underline"
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            href={`${constants.geneOntologyUrl}${p.data.goid}`}
-                        >
-                            {p.data.goid}
-                        </a>
-                    ),
+                    cellRenderer: (p) =>
+                        p.node.rowPinned ? (
+                            <></>
+                        ) : (
+                            <a
+                                className="underline"
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                href={`${constants.geneOntologyUrl}${p.data.goid}`}
+                            >
+                                {p.data.goid}
+                            </a>
+                        ),
                 },
                 {
                     headerName: "GO Term",
                     field: "term",
                     hide: false,
-                    cellRenderer: (p) => (
-                        <a
-                            className="underline"
-                            href={`/${species}/view?goid=${p.data.goid}`}
-                        >
-                            {p.data.term}
-                        </a>
-                    ),
+                    cellRenderer: (p) =>
+                        p.node.rowPinned ? (
+                            <></>
+                        ) : (
+                            <a
+                                className="underline"
+                                href={`/${species}/view?goid=${p.data.goid}`}
+                            >
+                                {p.data.term}
+                            </a>
+                        ),
                 },
                 { headerName: "Depth level", field: "depth", hide: false },
-                { headerName: "% in user set", field: "setPer", hide: false },
-                { headerName: "% in species", field: "dbPer", hide: false },
+                {
+                    headerName: "% in user set",
+                    field: "setPer",
+                    hide: false,
+                    width: 150,
+                    cellRenderer: (p) =>
+                        p.node.rowPinned ? (
+                            <Histogram
+                                data={res.map((row) => row.setPer)}
+                                width={150}
+                                height={95}
+                            />
+                        ) : (
+                            p.data.setPer + "%"
+                        ),
+                },
+                {
+                    headerName: "% in species",
+                    field: "dbPer",
+                    hide: false,
+                    width: 150,
+                    cellRenderer: (p) =>
+                        p.node.rowPinned ? (
+                            <Histogram
+                                data={res.map((row) => row.dbPer)}
+                                width={150}
+                                height={95}
+                            />
+                        ) : (
+                            p.data.dbPer + "%"
+                        ),
+                },
                 {
                     headerName: "Genes",
                     field: "genes",
                     hide: false,
                     cellRenderer: (p) =>
-                        p.data.genes.map((v) => (
-                            <>
-                                <a
-                                    className="link"
-                                    href={`/${species}/view?orf=${v}`}
-                                >
-                                    {v}
-                                </a>
-                                <span> </span>
-                            </>
-                        )),
+                        p.node.rowPinned ? (
+                            <></>
+                        ) : (
+                            p.data.genes.map((v) => (
+                                <>
+                                    <a
+                                        className="link"
+                                        href={`/${species}/view?orf=${v}`}
+                                    >
+                                        {v}
+                                    </a>
+                                    <span> </span>
+                                </>
+                            ))
+                        ),
                 },
             ]);
             setRowData(res);
@@ -263,6 +359,24 @@ export default function Main() {
         }
     }
 
+    const chartUnhover = () => {
+        return { backgroundColor: "white" };
+    };
+
+    const [rowStyleFunc, setRowStyleFunc] = React.useState(() => chartUnhover);
+
+    const chartHoverToTable = (col, val) => {
+        const styleSetter = (p) => {
+            const row = p.data;
+            for (const [key, value] of Object.entries(row)) {
+                if (col === key && value === val)
+                    return { backgroundColor: "blue" };
+            }
+            return { backgroundColor: "white" };
+        };
+        setRowStyleFunc(() => styleSetter);
+    };
+
     const pinnedTopRowData = React.useMemo(() => {
         return [
             {
@@ -277,6 +391,13 @@ export default function Main() {
         []
     );
 
+    const autoSizeStrategy = React.useMemo(
+        () => ({
+            type: "fitCellContents",
+        }),
+        []
+    );
+
     const gridRef = React.useRef();
 
     const onBtnExport = React.useCallback(() => {
@@ -287,12 +408,12 @@ export default function Main() {
         <div className="w-full h-full">
             <h1 className="text-center font-figtree text-xl">Regulations</h1>
             <form
-                className="flex flex-col md:flex-row md:flex-wrap items-center gap-2 xl:gap-8 p-4 border-b border-gray-500"
+                className="flex flex-col md:flex-row md:flex-wrap md:items-start gap-2 xl:gap-8 p-4 border-b border-gray-500"
                 onSubmit={handleQuery}
             >
                 <div className="flex flex-col p-3 max-w-sm rounded-lg shadow-md shadow-gray-200">
-                    <div className="flex flex-row justify-center gap-9">
-                        <div>
+                    <div className="flex flex-row">
+                        <div className="flex flex-col">
                             <label>
                                 <div className="label p-0 mb-2">
                                     <span className="label-text text-color">
@@ -303,12 +424,28 @@ export default function Main() {
                                     id="tfs"
                                     name="tfs"
                                     value={formData.tfs}
-                                    className="textarea textarea-bordered textarea-primary min-h-44 max-h-44 max-w-40 text-color leading-4"
+                                    className="textarea textarea-bordered textarea-primary min-h-44 max-h-44 max-w-44 text-color leading-4"
                                     onChange={handleForm}
                                 ></textarea>
                             </label>
+                            <div className="grid grid-cols-2 gap-2 mt-2 mr-2">
+                                <button
+                                    className="btn"
+                                    type="submit"
+                                    name="rank-none"
+                                >
+                                    Regulations
+                                </button>
+                                <button
+                                    className="btn"
+                                    type="submit"
+                                    name="rank-tf"
+                                >
+                                    Rank TF
+                                </button>
+                            </div>
                         </div>
-                        <div>
+                        <div className="flex flex-col">
                             <label>
                                 <div className="label p-0 mb-2">
                                     <span className="label-text text-color">
@@ -319,26 +456,51 @@ export default function Main() {
                                     id="genes"
                                     name="genes"
                                     value={formData.genes}
-                                    className="textarea textarea-bordered textarea-primary min-h-44 max-h-44 max-w-40 text-color leading-4"
+                                    className="textarea textarea-bordered textarea-primary min-h-44 max-h-44 max-w-44 text-color leading-4"
                                     onChange={handleForm}
                                 ></textarea>
                             </label>
+                            <div className="grid grid-cols-2 gap-2 mt-2">
+                                <button
+                                    className="btn"
+                                    type="submit"
+                                    name="rank-go"
+                                >
+                                    Rank GO
+                                </button>
+                                <button
+                                    className="btn"
+                                    type="submit"
+                                    name="rank-tfbs"
+                                >
+                                    Rank TFBS
+                                </button>
+                            </div>
                         </div>
                     </div>
                     <div className="grid grid-cols-4 mt-auto mb-2 gap-2">
-                        <button className="btn" type="submit" name="rank-none">
-                            Regulations
-                        </button>
-                        {/* <div className="col-span-2 items-end flex gap-2 ml-auto"> */}
-                        {/* <span className="text-color mb-1">Rank by:</span> */}
-                        <button className="btn" type="submit" name="rank-tf">
-                            Rank TF
-                        </button>
-                        <button className="btn" type="submit" name="rank-go">
-                            Rank GO
-                        </button>
-                        <button className="btn" type="submit" name="rank-tfbs">
-                            Rank TFBS
+                        <button
+                            className="btn btn-sm btn-square"
+                            type="button"
+                            onClick={setSampleData}
+                        >
+                            <svg
+                                className="w-6 h-6 text-gray-800 dark:text-white self-center"
+                                aria-hidden="true"
+                                xmlns="http://www.w3.org/2000/svg"
+                                width="24"
+                                height="24"
+                                fill="none"
+                                viewBox="0 0 24 24"
+                            >
+                                <path
+                                    stroke="currentColor"
+                                    strokeLinecap="round"
+                                    strokeLinejoin="round"
+                                    strokeWidth="2"
+                                    d="m14.304 4.844 2.852 2.852M7 7H4a1 1 0 0 0-1 1v10a1 1 0 0 0 1 1h11a1 1 0 0 0 1-1v-4.5m2.409-9.91a2.017 2.017 0 0 1 0 2.853l-6.844 6.844L8 14l.713-3.565 6.844-6.844a2.015 2.015 0 0 1 2.852 0Z"
+                                />
+                            </svg>
                         </button>
                         {/* </div> */}
                     </div>
@@ -475,7 +637,7 @@ export default function Main() {
                         </div>
 
                         <select
-                            className="select select-bordered select-primary select-sm w-56 mb-4 text-color"
+                            className="select select-bordered select-primary select-sm w-56 mb-2 text-color"
                             id="envconSubgroup"
                             name="envconSubgroup"
                             value={formData.envconSubgroup}
@@ -491,58 +653,89 @@ export default function Main() {
                             ))}
                         </select>
                     </label>
-                    <label>
-                        <div className="label p-0 mb-2">
-                            <span className="label-text text-color">
-                                Synteny
-                            </span>
-                        </div>
+                </div>
+                <div className="flex flex-col gap-4">
+                    <div className="flex flex-col p-3 items-center rounded-lg shadow-md shadow-gray-200 max-w-sm">
+                        <label>
+                            <div className="label p-0 mb-2">
+                                <span className="label-text text-color">
+                                    Homologous Regulations
+                                </span>
+                            </div>
 
-                        <select
-                            className="select select-bordered select-primary select-sm w-56 mb-2 text-color"
-                            id="synteny"
-                            name="synteny"
-                            value={formData.synteny}
-                            onChange={handleForm}
-                        >
-                            {syntenies.map((x) => (
-                                <option key={x.value} value={x.value}>
-                                    {x.option}
-                                </option>
-                            ))}
-                        </select>
-                    </label>
-                    <label>
-                        <div className="label p-0 mb-2">
-                            <span className="label-text text-color">
-                                Homologous Regulations
-                            </span>
-                        </div>
+                            <select
+                                className="select select-bordered select-primary select-sm w-56 mb-2 text-color"
+                                id="homolog"
+                                name="homolog"
+                                value={formData.homolog}
+                                onChange={handleForm}
+                            >
+                                {[
+                                    "---",
+                                    ...Object.keys(speciesList).filter(
+                                        (el) => el !== species
+                                    ),
+                                ].map((option) => (
+                                    <option
+                                        key={option}
+                                        value={option === "---" ? "" : option}
+                                    >
+                                        {option === "---"
+                                            ? "---"
+                                            : speciesList[option].short}
+                                    </option>
+                                ))}
+                            </select>
+                        </label>
+                        <label>
+                            <div className="label p-0 mb-2">
+                                <span className="label-text text-color">
+                                    Synteny
+                                </span>
+                            </div>
 
-                        <select
-                            className="select select-bordered select-primary select-sm w-56 mb-2 text-color"
-                            id="homolog"
-                            name="homolog"
-                            value={formData.homolog}
-                            onChange={handleForm}
-                        >
-                            {[
-                                "---",
-                                ...Object.keys(speciesList).filter(
-                                    (el) => el !== species
-                                ),
-                            ].map((option) => (
-                                <option
-                                    key={option}
-                                    value={option === "---" ? "" : option}
-                                >
-                                    {option === "---"
-                                        ? "---"
-                                        : speciesList[option].short}
-                                </option>
-                            ))}
-                        </select>
-                    </label>
+                            <select
+                                className="select select-bordered select-primary select-sm w-56 mb-2 text-color"
+                                id="synteny"
+                                name="synteny"
+                                value={formData.synteny}
+                                disabled={formData.homolog === ""}
+                                onChange={handleForm}
+                            >
+                                {syntenies.map((x) => (
+                                    <option key={x.value} value={x.value}>
+                                        {x.option}
+                                    </option>
+                                ))}
+                            </select>
+                        </label>
+                    </div>
+                    <div className="flex flex-col p-3 items-center rounded-lg shadow-md shadow-gray-200 max-w-sm">
+                        <label>
+                            <div className="label p-0 mb-2">
+                                <span className="label-text text-color">
+                                    Ontology (Rank GO only)
+                                </span>
+                            </div>
+                            <select
+                                className="select select-bordered select-primary select-sm w-56 text-color"
+                                id="ontology"
+                                name="ontology"
+                                value={formData.ontology}
+                                onChange={handleForm}
+                            >
+                                {ontologies.map((x) => (
+                                    <option
+                                        key={x.value}
+                                        value={x.value}
+                                        // value={option === "---" ? "" : option}
+                                    >
+                                        {x.option}
+                                    </option>
+                                ))}
+                            </select>
+                        </label>
+                    </div>
                 </div>
             </form>
             <div className="px-4 py-2 w-full h-full">
@@ -595,7 +788,7 @@ export default function Main() {
                     </button>
                 </div>
                 <div
-                    className="ag-theme-quartz max-w-[100vw] h-full z-0"
+                    className="ag-theme-quartz max-w-[100vw] z-0"
                     style={{
                         "--ag-header-background-color": "#f3f4f6",
                         // "--ag-border-color": "#f3f4f6",
@@ -603,16 +796,31 @@ export default function Main() {
                     }}
                 >
                     <AgGridReact
+                        // table api ref
                         ref={gridRef}
+                        // table data
                         rowData={rowData}
                         columnDefs={colDefs}
+                        // col filters enabled
                         defaultColDef={defaultColDef}
+                        // display sort icon
                         unSortIcon={true}
+                        // table height
+                        domLayout={"autoHeight"}
+                        // pagination
                         pagination={true}
-                        paginationAutoPageSize={true}
+                        paginationPageSize={50}
+                        // selectable text inside table
+                        enableCellTextSelection={true}
+                        ensureDomOrder={true}
+                        // enable pinned row for graphs
                         pinnedTopRowData={pinnedTopRowData}
+                        // for pinned row height
                         getRowHeight={getRowHeight}
-                        // headerHeight={80}
+                        // column sizing
+                        autoSizeStrategy={autoSizeStrategy}
+                        // idk yet
+                        getRowStyle={rowStyleFunc}
                     />
                 </div>
             </div>

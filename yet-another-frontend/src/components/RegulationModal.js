@@ -50,6 +50,10 @@ export default function Modal(props) {
                 headerName: "Gene",
                 field: "orf",
                 width: 120,
+                cellRenderer: (p) =>
+                    p.data.gene === "Uncharacterized"
+                        ? p.data.orf
+                        : p.data.gene,
             },
             {
                 headerName: "References",
@@ -63,7 +67,8 @@ export default function Modal(props) {
                         {referenceFormat(p.data)}
                     </a>
                 ),
-                width: 450,
+                tooltipValueGetter: (p) => referenceFormat(p.data),
+                width: 400,
             },
             { headerName: "Evidence", field: "code", width: 120 },
             { headerName: "Experiment", field: "experiment" },
@@ -71,21 +76,10 @@ export default function Modal(props) {
             { headerName: "Strain", field: "strain", width: 100 },
             {
                 headerName: "Environmental Condition",
-                cellRenderer: (p) => (
-                    <ul>
-                        {p.data.envcond.map((ec) => (
-                            <p
-                                className={`${
-                                    p.data.envcond.length > 1 ? "leading-4" : ""
-                                }`}
-                            >
-                                {ec};
-                            </p>
-                        ))}
-                    </ul>
-                ),
-                width: 400,
-                // wrapText: true,
+                field: "envcond",
+                tooltipValueGetter: (p) => p.data.envcond,
+                width: 500,
+                wrapText: true,
             },
         ],
         []
@@ -97,7 +91,28 @@ export default function Modal(props) {
                 Ref
             </button>
             <dialog id={props.id} className="modal">
-                <div className="modal-box w-11/12 max-w-full h-full">
+                <div className="modal-box w-11/12 max-w-full h-full flex flex-col">
+                    <div className="grid grid-cols-2">
+                        <h3 className="text-xl self-center">{`Reference(s) supporting ${props.tf} -> ${props.orf}`}</h3>
+                        <form method="dialog" className="justify-self-end mb-2">
+                            <button className="btn btn-ghost btn-circle">
+                                <svg
+                                    xmlns="http://www.w3.org/2000/svg"
+                                    className="h-6 w-6"
+                                    fill="none"
+                                    viewBox="0 0 24 24"
+                                    stroke="currentColor"
+                                >
+                                    <path
+                                        strokeLinecap="round"
+                                        strokeLinejoin="round"
+                                        strokeWidth="2"
+                                        d="M6 18L18 6M6 6l12 12"
+                                    />
+                                </svg>
+                            </button>
+                        </form>
+                    </div>
                     {Object.keys(info).length !== 0 && (
                         // <table className="table">
                         //     <thead>
@@ -136,19 +151,26 @@ export default function Modal(props) {
                         //         ))}
                         //     </tbody>
                         // </table>
-                        <div className="ag-theme-quartz w-full h-full">
+                        <div
+                            className="ag-theme-quartz w-full h-full"
+                            style={{
+                                "--ag-header-background-color": "#f3f4f6",
+                            }}
+                        >
                             <AgGridReact
                                 rowData={info}
                                 columnDefs={colDefs}
                                 defaultColDef={defaultColDef}
                                 unSortIcon={true}
+                                enableCellTextSelection={true}
+                                ensureDomOrder={true}
                                 // getRowHeight={getRowHeight}
                             />
                         </div>
                     )}
                 </div>
                 <form method="dialog" className="modal-backdrop">
-                    <button>close</button>
+                    <button>Close</button>
                 </form>
             </dialog>
         </>
