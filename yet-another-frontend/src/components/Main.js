@@ -19,6 +19,7 @@ import AssocTypeChart from "../charts/AssocTypeChart";
 import GeneChart from "../charts/GeneChart";
 import OrfChart from "../charts/OrfChart";
 import Histogram from "../charts/Histogram";
+import ErrorAlert from "./ErrorAlert";
 
 export default function Main() {
     // const [crossSpecies, setCrossSpecies] = React.useState(false);
@@ -42,6 +43,10 @@ export default function Main() {
         synteny: 0,
         homolog: "",
         ontology: "process",
+    });
+    const [showErrorMessage, setShowErrorMessage] = React.useState({
+        flag: false,
+        msg: "",
     });
 
     const { species } = useParams();
@@ -121,9 +126,9 @@ export default function Main() {
     }
 
     async function handleQuery(event) {
+        if (showErrorMessage.flag) setShowErrorMessage(false);
         event.preventDefault();
         const query = event.nativeEvent.submitter.name;
-        console.log(query);
 
         // let documented = "";
         // if (formData.binding && formData.expression)
@@ -135,7 +140,16 @@ export default function Main() {
 
         if (query === "rank-none") {
             // if (documented === "") return; //not accepted
-            const reverseCols = formData.tfs.trim() === "";
+            // FORM CHECK
+            if (formData.tfs.trim() === "" && formData.genes.trim() === "") {
+                setShowErrorMessage({
+                    flag: true,
+                    msg: 'Either "TFs" or "Genes" must be filled',
+                });
+                return;
+            }
+            const reverseCols =
+                formData.tfs.trim() === "" && formData.genes.trim() !== "";
             const res = await searchRegulations({
                 ...formData,
                 // documented: documented,
@@ -173,9 +187,12 @@ export default function Main() {
                         : <a className="link" href={`${species}/view?orf=${p.data.orf}`}>{p.data.gene}</a> },
                     { headerName: "ORF", field: "orf", hide: false, width: 150,
                     cellRenderer: p => p.node.rowPinned ? <p className="text-lg font-semibold text-wrap">{`${(new Set(res.map(row => row.orf))).size} unique ORFs`}</p> :<a className="link" href={`/${species}/view?orf=${p.data.orf}`}>{p.data.orf}</a> },
-                    { headerName: "Evidence", field: "evidence", hide: false, width: 180, cellRenderer: p => p.node.rowPinned ? <EvidenceChart data={res}/> : p.data.evidence},
-                    { headerName: "Association Type", field: "association", hide: false, width: 150, cellRenderer: p => p.node.rowPinned ? <AssocTypeChart data={res}/> : p.data.association},
-                    { headerName: "Reference", field: "Reference", width: 100, hide: false, sortable: false, floatingFilter: false, cellRenderer: p => !p.node.rowPinned && <RegulationModal id={`reg_modal_${p.data.tf}_${p.data.gene}`} orf={p.data.gene === "Uncharacterized" ? p.data.orf : p.data.gene} tf={p.data.tf} species={species} />},
+                    { headerName: "Evidence", field: "evidence", hide: false, width: 180, 
+                    cellRenderer: p => p.node.rowPinned ? <EvidenceChart data={res}/> : p.data.evidence},
+                    { headerName: "Association Type", field: "association", hide: false, width: 150, 
+                    cellRenderer: p => p.node.rowPinned ? <AssocTypeChart data={res}/> : p.data.association},
+                    { headerName: "Reference", field: "Reference", width: 100, hide: false, sortable: false, floatingFilter: false, 
+                    cellRenderer: p => !p.node.rowPinned && <RegulationModal id={`reg_modal_${p.data.tf}_${p.data.gene}`} orf={p.data.gene === "Uncharacterized" ? p.data.orf : p.data.gene} tf={p.data.tf} species={species} />},
                 ]);
                 setRowData(res);
                 // apply default sort
@@ -185,169 +202,77 @@ export default function Main() {
             }
         } else if (query === "rank-tf") {
             // if (documented === "") return; //not accepted
+            // FORM CHECK
+            if (formData.genes.trim() === "") {
+                setShowErrorMessage({
+                    flag: true,
+                    msg: '"Genes" field cannot be empty',
+                });
+                return;
+            }
             const res = await rankTF({
                 ...formData,
                 // documented: documented,
                 species: speciesList[species].path,
             });
             console.log(res);
+            // prettier-ignore
             setColDefs([
                 { headerName: "TF", field: "tf", hide: false },
-                {
-                    headerName: "% in user set",
-                    field: "setPer",
-                    hide: false,
-                    width: 150,
-                    cellRenderer: (p) =>
-                        p.node.rowPinned ? (
-                            <Histogram
-                                data={res.map((row) => row.setPer)}
-                                width={150}
-                                height={95}
-                            />
-                        ) : (
-                            p.data.setPer + "%"
-                        ),
-                },
-                {
-                    headerName: "% in species",
-                    field: "dbPer",
-                    hide: false,
-                    width: 150,
-                    cellRenderer: (p) =>
-                        p.node.rowPinned ? (
-                            <Histogram
-                                data={res.map((row) => row.dbPer)}
-                                width={150}
-                                height={95}
-                            />
-                        ) : (
-                            p.data.dbPer + "%"
-                        ),
-                },
-                {
-                    headerName: "Target Genes",
-                    field: "genes",
-                    hide: false,
-                    cellRenderer: (p) =>
-                        p.node.rowPinned ? (
-                            <></>
-                        ) : (
-                            p.data.genes.map((v) => (
-                                <>
-                                    <a
-                                        className="link"
-                                        href={`/${species}/view?orf=${v}`}
-                                    >
-                                        {v}
-                                    </a>
-                                    <span> </span>
-                                </>
-                            ))
-                        ),
-                },
+                { headerName: "% in user set", field: "setPer", hide: false, width: 150,
+                cellRenderer: (p) => p.node.rowPinned ? (<Histogram data={res.map((row) => row.setPer)} width={150} height={95} />) : (p.data.setPer + "%"),},
+                { headerName: "% in species", field: "dbPer", hide: false, width: 150,
+                cellRenderer: (p) => p.node.rowPinned ? (<Histogram data={res.map((row) => row.dbPer)} width={150} height={95} />) : (p.data.dbPer + "%"),},
+                { headerName: "Target Genes", field: "genes", hide: false,
+                cellRenderer: (p) => p.node.rowPinned ? (<></>) : (p.data.genes.map((v) => (<><a className="link" href={`/${species}/view?orf=${v}`}>{v}</a><span> </span></>))),},
             ]);
             setRowData(res);
         } else if (query === "rank-go") {
+            // FORM CHECK
+            if (formData.genes.trim() === "") {
+                setShowErrorMessage({
+                    flag: true,
+                    msg: '"Genes" field cannot be empty',
+                });
+                return;
+            }
             const res = await rankGO({
                 genes: formData.genes,
                 // ontology: formData.ontology,
                 species: speciesList[species].path,
             });
             console.log(res);
+            // prettier-ignore
             setColDefs([
-                {
-                    headerName: "GO ID",
-                    field: "goid",
-                    hide: false,
-                    cellRenderer: (p) =>
-                        p.node.rowPinned ? (
-                            <></>
-                        ) : (
-                            <a
-                                className="underline"
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                href={`${constants.geneOntologyUrl}${p.data.goid}`}
-                            >
-                                {p.data.goid}
-                            </a>
-                        ),
-                },
-                {
-                    headerName: "GO Term",
-                    field: "term",
-                    hide: false,
-                    cellRenderer: (p) =>
-                        p.node.rowPinned ? (
-                            <></>
-                        ) : (
-                            <a
-                                className="underline"
-                                href={`/${species}/view?goid=${p.data.goid}`}
-                            >
-                                {p.data.term}
-                            </a>
-                        ),
-                },
+                { headerName: "GO ID", field: "goid", hide: false,
+                cellRenderer: (p) => p.node.rowPinned ? (<></>) : (<a className="link" target="_blank" rel="noopener noreferrer" href={`${constants.geneOntologyUrl}${p.data.goid}`}>{p.data.goid}</a>),},
+                { headerName: "GO Term", field: "term", hide: false,
+                cellRenderer: (p) => p.node.rowPinned ? (<></>) : (<a className="link" href={`/${species}/view?goid=${p.data.goid}`}>{p.data.term}</a>),},
                 { headerName: "Depth level", field: "depth", hide: false },
-                {
-                    headerName: "% in user set",
-                    field: "setPer",
-                    hide: false,
-                    width: 150,
-                    cellRenderer: (p) =>
-                        p.node.rowPinned ? (
-                            <Histogram
-                                data={res.map((row) => row.setPer)}
-                                width={150}
-                                height={95}
-                            />
-                        ) : (
-                            p.data.setPer + "%"
-                        ),
-                },
-                {
-                    headerName: "% in species",
-                    field: "dbPer",
-                    hide: false,
-                    width: 150,
-                    cellRenderer: (p) =>
-                        p.node.rowPinned ? (
-                            <Histogram
-                                data={res.map((row) => row.dbPer)}
-                                width={150}
-                                height={95}
-                            />
-                        ) : (
-                            p.data.dbPer + "%"
-                        ),
-                },
-                {
-                    headerName: "Genes",
-                    field: "genes",
-                    hide: false,
-                    cellRenderer: (p) =>
-                        p.node.rowPinned ? (
-                            <></>
-                        ) : (
-                            p.data.genes.map((v) => (
-                                <>
-                                    <a
-                                        className="link"
-                                        href={`/${species}/view?orf=${v}`}
-                                    >
-                                        {v}
-                                    </a>
-                                    <span> </span>
-                                </>
-                            ))
-                        ),
-                },
+                { headerName: "% in user set", field: "setPer", hide: false, width: 150,
+                cellRenderer: (p) =>p.node.rowPinned ? (<Histogram data={res.map((row) => row.setPer)} width={150} height={95} />) : (p.data.setPer + "%"),},
+                { headerName: "% in species", field: "dbPer", hide: false, width: 150,
+                cellRenderer: (p) => p.node.rowPinned ? (<Histogram data={res.map((row) => row.dbPer)} width={150} height={95} />) : (p.data.dbPer + "%"),},
+                { headerName: "Genes", field: "genes", hide: false,
+                cellRenderer: (p) => p.node.rowPinned ? (<></>) : (p.data.genes.map((v) => (<><a className="link" href={`/${species}/view?orf=${v}`}>{v}</a><span> </span></>))),},
             ]);
             setRowData(res);
         } else if (query === "rank-tfbs") {
-            if (formData.homolog === "") return; //not accepted
+            // FORM CHECK
+            if (formData.genes.trim() === "") {
+                setShowErrorMessage({
+                    flag: true,
+                    msg: '"Genes" field cannot be empty',
+                });
+                return;
+            }
+            if (formData.homolog === "") {
+                setShowErrorMessage({
+                    flag: true,
+                    msg: "Please select a Homolog Species",
+                });
+                return;
+            }
             const res = await rankTFBS({
                 ...formData,
                 species: speciesList[species].path,
@@ -408,12 +333,13 @@ export default function Main() {
         <div className="w-full h-full">
             <h1 className="text-center font-figtree text-xl">Regulations</h1>
             <form
-                className="flex flex-col md:flex-row md:flex-wrap md:items-start gap-2 xl:gap-8 p-4 border-b border-gray-500"
                 onSubmit={handleQuery}
+                className=" p-4 border-b border-gray-500"
             >
-                <div className="flex flex-col p-3 max-w-sm rounded-lg shadow-md shadow-gray-200">
-                    <div className="flex flex-row">
-                        <div className="flex flex-col">
+                <div className="flex flex-col md:flex-row md:flex-wrap md:items-start gap-2 xl:gap-8">
+                    <div className="flex flex-col p-3 max-w-sm rounded-lg shadow-md shadow-gray-300">
+                        <div className="flex flex-row">
+                            {/* <div className="flex flex-col"> */}
                             <label>
                                 <div className="label p-0 mb-2">
                                     <span className="label-text text-color">
@@ -428,24 +354,9 @@ export default function Main() {
                                     onChange={handleForm}
                                 ></textarea>
                             </label>
-                            <div className="grid grid-cols-2 gap-2 mt-2 mr-2">
-                                <button
-                                    className="btn"
-                                    type="submit"
-                                    name="rank-none"
-                                >
-                                    Regulations
-                                </button>
-                                <button
-                                    className="btn"
-                                    type="submit"
-                                    name="rank-tf"
-                                >
-                                    Rank TF
-                                </button>
-                            </div>
-                        </div>
-                        <div className="flex flex-col">
+                            {/* <div className="grid grid-cols-2 gap-2 mt-2 mr-2"></div> */}
+                            {/* </div> */}
+                            {/* <div className="flex flex-col"> */}
                             <label>
                                 <div className="label p-0 mb-2">
                                     <span className="label-text text-color">
@@ -460,27 +371,11 @@ export default function Main() {
                                     onChange={handleForm}
                                 ></textarea>
                             </label>
-                            <div className="grid grid-cols-2 gap-2 mt-2">
-                                <button
-                                    className="btn"
-                                    type="submit"
-                                    name="rank-go"
-                                >
-                                    Rank GO
-                                </button>
-                                <button
-                                    className="btn"
-                                    type="submit"
-                                    name="rank-tfbs"
-                                >
-                                    Rank TFBS
-                                </button>
-                            </div>
+                            {/* <div className="grid grid-cols-2 gap-2 mt-2"></div> */}
+                            {/* </div> */}
                         </div>
-                    </div>
-                    <div className="grid grid-cols-4 mt-auto mb-2 gap-2">
                         <button
-                            className="btn btn-sm btn-square"
+                            className="btn btn-xs btn-square self-end"
                             type="button"
                             onClick={setSampleData}
                         >
@@ -497,15 +392,16 @@ export default function Main() {
                                     stroke="currentColor"
                                     strokeLinecap="round"
                                     strokeLinejoin="round"
-                                    strokeWidth="2"
+                                    strokeWidth="1"
                                     d="m14.304 4.844 2.852 2.852M7 7H4a1 1 0 0 0-1 1v10a1 1 0 0 0 1 1h11a1 1 0 0 0 1-1v-4.5m2.409-9.91a2.017 2.017 0 0 1 0 2.853l-6.844 6.844L8 14l.713-3.565 6.844-6.844a2.015 2.015 0 0 1 2.852 0Z"
                                 />
                             </svg>
                         </button>
+                        {/* <div className="grid grid-cols-4 mt-auto mb-2 gap-2"> */}
+                        {/* </div> */}
                         {/* </div> */}
                     </div>
-                </div>
-                {/* <div className="grid row-span-2 gap-6 max-w-sm">
+                    {/* <div className="grid row-span-2 gap-6 max-w-sm">
                     <div className="p-3 content-center rounded-lg shadow-md shadow-gray-200">
                         <div className="flex flex-col gap-3">
                             <label>
@@ -603,59 +499,93 @@ export default function Main() {
                         </label>
                     </div>
                 </div> */}
+                    <div className="flex flex-col gap-3">
+                        <div className="flex flex-col p-3 items-center rounded-lg shadow-md shadow-gray-300 max-w-sm">
+                            <label>
+                                <div className="label p-0 mb-2">
+                                    <span className="label-text text-color">
+                                        Environmental Condition Group
+                                    </span>
+                                </div>
 
-                <div className="flex flex-col p-3 items-center rounded-lg shadow-md shadow-gray-200 max-w-sm">
-                    <label>
-                        <div className="label p-0 mb-2">
-                            <span className="label-text text-color">
-                                Environmental Condition Group
-                            </span>
-                        </div>
-
-                        <select
-                            className="select select-bordered select-primary select-sm w-56 mb-2 text-color"
-                            id="envconGroup"
-                            name="envconGroup"
-                            value={formData.envconGroup}
-                            onChange={handleForm}
-                        >
-                            {["---", ...Object.keys(envcons)].map((option) => (
-                                <option
-                                    key={option}
-                                    value={option === "---" ? "" : option}
+                                <select
+                                    className="select select-bordered select-primary select-sm w-56 mb-2 text-color"
+                                    id="envconGroup"
+                                    name="envconGroup"
+                                    value={formData.envconGroup}
+                                    onChange={handleForm}
                                 >
-                                    {option}
-                                </option>
-                            ))}
-                        </select>
-                    </label>
-                    <label>
-                        <div className="label p-0 mb-2">
-                            <span className="label-text text-color">
-                                Subgroup
-                            </span>
-                        </div>
+                                    {["---", ...Object.keys(envcons)].map(
+                                        (option) => (
+                                            <option
+                                                key={option}
+                                                value={
+                                                    option === "---"
+                                                        ? ""
+                                                        : option
+                                                }
+                                            >
+                                                {option}
+                                            </option>
+                                        )
+                                    )}
+                                </select>
+                            </label>
+                            <label>
+                                <div className="label p-0 mb-2">
+                                    <span className="label-text text-color">
+                                        Subgroup
+                                    </span>
+                                </div>
 
-                        <select
-                            className="select select-bordered select-primary select-sm w-56 mb-2 text-color"
-                            id="envconSubgroup"
-                            name="envconSubgroup"
-                            value={formData.envconSubgroup}
-                            onChange={handleForm}
-                        >
-                            {subgroupOptions.map((option) => (
-                                <option
-                                    key={option}
-                                    value={option === "---" ? "" : option}
+                                <select
+                                    className="select select-bordered select-primary select-sm w-56 mb-2 text-color"
+                                    id="envconSubgroup"
+                                    name="envconSubgroup"
+                                    value={formData.envconSubgroup}
+                                    onChange={handleForm}
                                 >
-                                    {option}
-                                </option>
-                            ))}
-                        </select>
-                    </label>
-                </div>
-                <div className="flex flex-col gap-4">
-                    <div className="flex flex-col p-3 items-center rounded-lg shadow-md shadow-gray-200 max-w-sm">
+                                    {subgroupOptions.map((option) => (
+                                        <option
+                                            key={option}
+                                            value={
+                                                option === "---" ? "" : option
+                                            }
+                                        >
+                                            {option}
+                                        </option>
+                                    ))}
+                                </select>
+                            </label>
+                        </div>
+                        <div className="flex flex-col p-3 items-center rounded-lg shadow-md shadow-gray-300 max-w-sm">
+                            <label>
+                                <div className="label p-0 mb-2">
+                                    <span className="label-text text-color">
+                                        Ontology (Rank GO only)
+                                    </span>
+                                </div>
+                                <select
+                                    className="select select-bordered select-primary select-sm w-56 text-color"
+                                    id="ontology"
+                                    name="ontology"
+                                    value={formData.ontology}
+                                    onChange={handleForm}
+                                >
+                                    {ontologies.map((x) => (
+                                        <option
+                                            key={x.value}
+                                            value={x.value}
+                                            // value={option === "---" ? "" : option}
+                                        >
+                                            {x.option}
+                                        </option>
+                                    ))}
+                                </select>
+                            </label>
+                        </div>
+                    </div>
+                    <div className="flex flex-col p-3 items-center rounded-lg shadow-md shadow-gray-300 max-w-sm">
                         <label>
                             <div className="label p-0 mb-2">
                                 <span className="label-text text-color">
@@ -710,34 +640,44 @@ export default function Main() {
                             </select>
                         </label>
                     </div>
-                    <div className="flex flex-col p-3 items-center rounded-lg shadow-md shadow-gray-200 max-w-sm">
-                        <label>
-                            <div className="label p-0 mb-2">
-                                <span className="label-text text-color">
-                                    Ontology (Rank GO only)
-                                </span>
-                            </div>
-                            <select
-                                className="select select-bordered select-primary select-sm w-56 text-color"
-                                id="ontology"
-                                name="ontology"
-                                value={formData.ontology}
-                                onChange={handleForm}
-                            >
-                                {ontologies.map((x) => (
-                                    <option
-                                        key={x.value}
-                                        value={x.value}
-                                        // value={option === "---" ? "" : option}
-                                    >
-                                        {x.option}
-                                    </option>
-                                ))}
-                            </select>
-                        </label>
-                    </div>
+                </div>
+                <div className="flex flex-row gap-2 mt-4">
+                    <button
+                        className="btn btn-primary w-20"
+                        type="submit"
+                        name="rank-none"
+                    >
+                        Regulations
+                    </button>
+                    <button
+                        className="btn btn-primary w-20"
+                        type="submit"
+                        name="rank-tf"
+                    >
+                        Rank TF
+                    </button>
+                    <button
+                        className="btn btn-primary w-20"
+                        type="submit"
+                        name="rank-go"
+                    >
+                        Rank GO
+                    </button>
+                    <button
+                        className="btn btn-primary w-20"
+                        type="submit"
+                        name="rank-tfbs"
+                    >
+                        Rank TFBS
+                    </button>
+                </div>
+                <div className="mt-2">
+                    {showErrorMessage.flag && (
+                        <ErrorAlert msg={showErrorMessage.msg} />
+                    )}
                 </div>
             </form>
+
             <div className="px-4 py-2 w-full h-full">
                 <div className="p-2 bg-gray-100 rounded-t-lg border-x border-t border-[#e5e7eb] flex gap-5">
                     <div className="dropdown dropdown-bottom">
