@@ -13,13 +13,11 @@ import speciesList from "../conf/speciesList";
 import RegulationModal from "./RegulationModal";
 import { useParams } from "react-router-dom";
 import constants from "../conf/constants";
-import TfChart from "../charts/TfChart";
-import EvidenceChart from "../charts/EvidenceChart";
-import AssocTypeChart from "../charts/AssocTypeChart";
-import GeneChart from "../charts/GeneChart";
-import OrfChart from "../charts/OrfChart";
+import BarChart from "../charts/BarChart";
 import Histogram from "../charts/Histogram";
 import ErrorAlert from "./ErrorAlert";
+import SampleDataIcon from "../svg/SampleDataIcon";
+import HamburgerIcon from "../svg/HamburgerIcon";
 
 export default function Main() {
     // const [crossSpecies, setCrossSpecies] = React.useState(false);
@@ -161,14 +159,17 @@ export default function Main() {
             if (reverseCols) {
                 setColDefs([
                     { headerName: "Gene", field: "gene", hide: false, width: 200,
-                    cellRenderer: p => p.node.rowPinned ? <GeneChart data={res} /> : <a className="link" href={`/${species}/view?orf=${p.data.orf}`}>{p.data.gene}</a> },
+                    cellRenderer: p => p.node.rowPinned ? <BarChart data={res} colName={"gene"} width={200} height={90} /> : <a className="link" href={`/${species}/view?orf=${p.data.orf}`}>{p.data.gene}</a> },
                     { headerName: "ORF", field: "orf", hide: false, width: 200,
-                    cellRenderer: p => p.node.rowPinned ? <OrfChart data={res} /> : <a className="link" href={`/${species}/view?orf=${p.data.orf}`}>{p.data.orf}</a> },
+                    cellRenderer: p => p.node.rowPinned ? <BarChart data={res} colName={"orf"} width={200} height={90} /> : <a className="link" href={`/${species}/view?orf=${p.data.orf}`}>{p.data.orf}</a> },
                     { headerName: "TF", field: "tf", hide: false, width: 150,
                     cellRenderer: p => p.node.rowPinned ? <p className="text-lg font-semibold text-wrap">{`${(new Set(res.map(row => row.tf))).size} unique TFs`}</p> : <a className="link" href={`/${species}/view?orf=${p.data.tf}`}>{p.data.tf}</a> },
-                    { headerName: "Evidence", field: "evidence", hide: false, width: 180, cellRenderer: p => p.node.rowPinned ? <EvidenceChart data={res}/> : p.data.evidence},
-                    { headerName: "Association Type", field: "association", hide: false, width: 150, cellRenderer: p => p.node.rowPinned ? <AssocTypeChart data={res}/> : p.data.association},
-                    { headerName: "Reference", field: "Reference", width: 100, hide: false, sortable: false, floatingFilter: false, cellRenderer: p => !p.node.rowPinned && <RegulationModal id={`reg_modal_${p.data.tf}_${p.data.gene}`} orf={p.data.gene === "Uncharacterized" ? p.data.orf : p.data.gene} tf={p.data.tf} species={species} />},
+                    { headerName: "Evidence", field: "evidence", hide: false, width: 180, 
+                    cellRenderer: p => p.node.rowPinned ? <BarChart data={res} colName={"evidence"} width={180} height={90} /> : p.data.evidence},
+                    { headerName: "Association Type", field: "association", hide: false, width: 150, 
+                    cellRenderer: p => p.node.rowPinned ? <BarChart data={res} colName={"association"} width={150} height={90} /> : p.data.association},
+                    { headerName: "Reference", field: "Reference", width: 100, hide: false, sortable: false, floatingFilter: false, 
+                    cellRenderer: p => !p.node.rowPinned && <RegulationModal id={`reg_modal_${p.data.tf}_${p.data.gene}`} orf={p.data.gene === "Uncharacterized" ? p.data.orf : p.data.gene} tf={p.data.tf} species={species} />},
                 ]);
                 setRowData(res);
                 // apply default sort
@@ -180,7 +181,7 @@ export default function Main() {
                 setColDefs([
                     { headerName: "TF", field: "tf", hide: false, width: 200,
                     cellRenderer: p => p.node.rowPinned ? 
-                        <TfChart data={res} tableHighlight={chartHoverToTable} />
+                        <BarChart data={res} colName={"tf"} width={200} height={90} />
                         : <a className="link" href={`${species}/view?orf=${p.data.tf}`}>{p.data.tf}</a> },
                     { headerName: "Gene", field: "gene", hide: false, width: 150, 
                     cellRenderer: p => p.node.rowPinned ? <p className="text-lg font-semibold text-wrap">{`${(new Set(res.map(row => row.gene))).size} unique Genes`}</p>
@@ -188,9 +189,9 @@ export default function Main() {
                     { headerName: "ORF", field: "orf", hide: false, width: 150,
                     cellRenderer: p => p.node.rowPinned ? <p className="text-lg font-semibold text-wrap">{`${(new Set(res.map(row => row.orf))).size} unique ORFs`}</p> :<a className="link" href={`/${species}/view?orf=${p.data.orf}`}>{p.data.orf}</a> },
                     { headerName: "Evidence", field: "evidence", hide: false, width: 180, 
-                    cellRenderer: p => p.node.rowPinned ? <EvidenceChart data={res}/> : p.data.evidence},
+                    cellRenderer: p => p.node.rowPinned ? <BarChart data={res} colName={"evidence"} width={180} height={90} /> : p.data.evidence},
                     { headerName: "Association Type", field: "association", hide: false, width: 150, 
-                    cellRenderer: p => p.node.rowPinned ? <AssocTypeChart data={res}/> : p.data.association},
+                    cellRenderer: p => p.node.rowPinned ? <BarChart data={res} colName={"association"} width={150} height={90}/> : p.data.association},
                     { headerName: "Reference", field: "Reference", width: 100, hide: false, sortable: false, floatingFilter: false, 
                     cellRenderer: p => !p.node.rowPinned && <RegulationModal id={`reg_modal_${p.data.tf}_${p.data.gene}`} orf={p.data.gene === "Uncharacterized" ? p.data.orf : p.data.gene} tf={p.data.tf} species={species} />},
                 ]);
@@ -379,23 +380,7 @@ export default function Main() {
                             type="button"
                             onClick={setSampleData}
                         >
-                            <svg
-                                className="w-6 h-6 text-gray-800 dark:text-white self-center"
-                                aria-hidden="true"
-                                xmlns="http://www.w3.org/2000/svg"
-                                width="24"
-                                height="24"
-                                fill="none"
-                                viewBox="0 0 24 24"
-                            >
-                                <path
-                                    stroke="currentColor"
-                                    strokeLinecap="round"
-                                    strokeLinejoin="round"
-                                    strokeWidth="1"
-                                    d="m14.304 4.844 2.852 2.852M7 7H4a1 1 0 0 0-1 1v10a1 1 0 0 0 1 1h11a1 1 0 0 0 1-1v-4.5m2.409-9.91a2.017 2.017 0 0 1 0 2.853l-6.844 6.844L8 14l.713-3.565 6.844-6.844a2.015 2.015 0 0 1 2.852 0Z"
-                                />
-                            </svg>
+                            <SampleDataIcon />
                         </button>
                         {/* <div className="grid grid-cols-4 mt-auto mb-2 gap-2"> */}
                         {/* </div> */}
@@ -686,19 +671,7 @@ export default function Main() {
                             role="button"
                             className="btn btn-sm btn-ghost p-2"
                         >
-                            <svg
-                                xmlns="http://www.w3.org/2000/svg"
-                                width="16"
-                                height="16"
-                                fill="currentColor"
-                                className="bi bi-list"
-                                viewBox="0 0 16 16"
-                            >
-                                <path
-                                    fillRule="evenodd"
-                                    d="M2.5 12a.5.5 0 0 1 .5-.5h10a.5.5 0 0 1 0 1H3a.5.5 0 0 1-.5-.5m0-4a.5.5 0 0 1 .5-.5h10a.5.5 0 0 1 0 1H3a.5.5 0 0 1-.5-.5m0-4a.5.5 0 0 1 .5-.5h10a.5.5 0 0 1 0 1H3a.5.5 0 0 1-.5-.5"
-                                />
-                            </svg>
+                            <HamburgerIcon />
                         </div>
                         <ul
                             tabIndex={0}

@@ -1,6 +1,9 @@
 import React from "react";
 import { Outlet, useNavigate, useParams } from "react-router-dom";
 import speciesList from "../conf/speciesList.js";
+import OpenSidebarIcon from "../svg/OpenSidebarIcon.js";
+import CloseIcon from "../svg/CloseIcon.js";
+import SearchIcon from "../svg/SearchIcon.js";
 // import species from "./Species";
 
 export default function Layout() {
@@ -42,19 +45,7 @@ export default function Layout() {
                         aria-label="open sidebar"
                         className="btn btn-square btn-ghost drawer-button lg:hidden"
                     >
-                        <svg
-                            xmlns="http://www.w3.org/2000/svg"
-                            fill="none"
-                            viewBox="0 0 24 24"
-                            className="inline-block w-6 h-6 stroke-current"
-                        >
-                            <path
-                                strokeLinecap="round"
-                                strokeLinejoin="round"
-                                strokeWidth="2"
-                                d="M4 6h16M4 12h16M4 18h16"
-                            ></path>
-                        </svg>
+                        <OpenSidebarIcon />
                         {/* <svg
                             className="w-6 h-6 text-gray-800 dark:text-white hidden lg:block"
                             aria-hidden="true"
@@ -94,20 +85,7 @@ export default function Layout() {
                         aria-label="close sidebar"
                         className="btn btn-circle btn-ghost self-end lg:hidden"
                     >
-                        <svg
-                            xmlns="http://www.w3.org/2000/svg"
-                            className="h-6 w-6"
-                            fill="none"
-                            viewBox="0 0 24 24"
-                            stroke="currentColor"
-                        >
-                            <path
-                                strokeLinecap="round"
-                                strokeLinejoin="round"
-                                strokeWidth="2"
-                                d="M6 18L18 6M6 6l12 12"
-                            />
-                        </svg>
+                        <CloseIcon />
                     </label>
                     <h1 className="hidden lg:block font-figtree text-2xl">
                         YEASTRACT+
@@ -137,18 +115,7 @@ export default function Layout() {
                         onClear={() => setSearchFormData("")}
                     /> */}
                         <label className="input input-sm input-bordered flex items-center gap-2">
-                            <svg
-                                xmlns="http://www.w3.org/2000/svg"
-                                viewBox="0 0 16 16"
-                                fill="currentColor"
-                                className="w-4 h-4 opacity-70"
-                            >
-                                <path
-                                    fillRule="evenodd"
-                                    d="M9.965 11.026a5 5 0 1 1 1.06-1.06l2.755 2.754a.75.75 0 1 1-1.06 1.06l-2.755-2.754ZM10.5 7a3.5 3.5 0 1 1-7 0 3.5 3.5 0 0 1 7 0Z"
-                                    clipRule="evenodd"
-                                />
-                            </svg>
+                            <SearchIcon />
                             <input
                                 type="text"
                                 className="w-full"

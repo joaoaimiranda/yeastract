@@ -1,7 +1,7 @@
 import React from "react";
 import * as d3 from "d3";
 
-export default function BarChart({ data, tableHighlight, width, height }) {
+export default function BarChart({ data, colName, width, height }) {
     const tooltipRef = React.useRef();
     const ref = React.useRef();
     React.useEffect(() => {
@@ -12,12 +12,22 @@ export default function BarChart({ data, tableHighlight, width, height }) {
         const marginBottom = 0;
         const marginLeft = 0;
 
+        let auxData = {};
+        for (let row of data) {
+            if (!auxData[row[colName]]) auxData[row[colName]] = 1;
+            else auxData[row[colName]]++;
+        }
+        const newData = [];
+        for (let key of Object.keys(auxData)) {
+            newData.push({ label: key, frequency: auxData[key] });
+        }
+
         // Declare the x (horizontal position) scale.
         const x = d3
             .scaleBand()
             .domain(
                 d3.groupSort(
-                    data,
+                    newData,
                     ([d]) => -d.frequency,
                     (d) => d.label
                 )
@@ -28,7 +38,7 @@ export default function BarChart({ data, tableHighlight, width, height }) {
         // Declare the y (vertical position) scale.
         const y = d3
             .scaleLinear()
-            .domain([0, d3.max(data, (d) => d.frequency)])
+            .domain([0, d3.max(newData, (d) => d.frequency)])
             .range([height - marginBottom, marginTop]);
 
         // Create the SVG container.
@@ -43,7 +53,7 @@ export default function BarChart({ data, tableHighlight, width, height }) {
         svg.append("g")
             .attr("fill", "steelblue")
             .selectAll()
-            .data(data)
+            .data(newData)
             .join("rect")
             .attr("x", (d) => x(d.label))
             .attr("y", (d) => y(d.frequency))
@@ -79,7 +89,7 @@ export default function BarChart({ data, tableHighlight, width, height }) {
                     .style("visibility", "hidden");
                 d3.select(this).style("stroke-opacity", "0");
             });
-    }, [data, width, height]);
+    }, [data, colName, width, height]);
 
     // // Add the x-axis and label.
     // svg.append("g")
