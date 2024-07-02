@@ -15,9 +15,14 @@ import { useParams } from "react-router-dom";
 import constants from "../conf/constants";
 import BarChart from "../charts/BarChart";
 import Histogram from "../charts/Histogram";
+import Network from "../charts/Network";
+
 import ErrorAlert from "./ErrorAlert";
 import SampleDataIcon from "../svg/SampleDataIcon";
 import HamburgerIcon from "../svg/HamburgerIcon";
+import NetworkIcon from "../svg/NetworkIcon";
+import TableIcon from "../svg/TableIcon";
+import DownloadIcon from "../svg/DownloadIcon";
 
 export default function Main() {
     // const [crossSpecies, setCrossSpecies] = React.useState(false);
@@ -46,6 +51,7 @@ export default function Main() {
         flag: false,
         msg: "",
     });
+    const [showNetwork, setShowNetwork] = React.useState(false);
 
     const { species } = useParams();
     // if (speciesList[species] === undefined) return <div>not found</div>; // create 404 page eventually
@@ -285,23 +291,23 @@ export default function Main() {
         }
     }
 
-    const chartUnhover = () => {
-        return { backgroundColor: "white" };
-    };
+    // const chartUnhover = () => {
+    //     return { backgroundColor: "white" };
+    // };
 
-    const [rowStyleFunc, setRowStyleFunc] = React.useState(() => chartUnhover);
+    // const [rowStyleFunc, setRowStyleFunc] = React.useState(() => chartUnhover);
 
-    const chartHoverToTable = (col, val) => {
-        const styleSetter = (p) => {
-            const row = p.data;
-            for (const [key, value] of Object.entries(row)) {
-                if (col === key && value === val)
-                    return { backgroundColor: "blue" };
-            }
-            return { backgroundColor: "white" };
-        };
-        setRowStyleFunc(() => styleSetter);
-    };
+    // const chartHoverToTable = (col, val) => {
+    //     const styleSetter = (p) => {
+    //         const row = p.data;
+    //         for (const [key, value] of Object.entries(row)) {
+    //             if (col === key && value === val)
+    //                 return { backgroundColor: "blue" };
+    //         }
+    //         return { backgroundColor: "white" };
+    //     };
+    //     setRowStyleFunc(() => styleSetter);
+    // };
 
     const pinnedTopRowData = React.useMemo(() => {
         return [
@@ -337,7 +343,7 @@ export default function Main() {
                 onSubmit={handleQuery}
                 className=" p-4 border-b border-gray-500"
             >
-                <div className="flex flex-col md:flex-row md:flex-wrap md:items-start gap-2 xl:gap-8">
+                <div className="flex flex-col md:flex-row md:flex-wrap items-center md:items-start gap-2 xl:gap-8">
                     <div className="flex flex-col p-3 max-w-sm rounded-lg shadow-md shadow-gray-300">
                         <div className="flex flex-row">
                             {/* <div className="flex flex-col"> */}
@@ -626,7 +632,7 @@ export default function Main() {
                         </label>
                     </div>
                 </div>
-                <div className="flex flex-row gap-2 mt-4">
+                <div className="flex flex-row gap-2 mt-4 justify-center md:justify-start">
                     <button
                         className="btn btn-primary w-20"
                         type="submit"
@@ -696,46 +702,57 @@ export default function Main() {
                             ))}
                         </ul>
                     </div>
+                    <button
+                        className="btn btn-sm btn-square"
+                        onClick={() => setShowNetwork((prev) => !prev)}
+                    >
+                        {showNetwork ? <TableIcon /> : <NetworkIcon />}
+                    </button>
                     <button className="btn btn-sm" onClick={onBtnExport}>
+                        <DownloadIcon />
                         Download
                     </button>
                 </div>
-                <div
-                    className="ag-theme-quartz max-w-[100vw] z-0"
-                    style={{
-                        "--ag-header-background-color": "#f3f4f6",
-                        // "--ag-border-color": "#f3f4f6",
-                        "--ag-wrapper-border-radius": "none",
-                    }}
-                >
-                    <AgGridReact
-                        // table api ref
-                        ref={gridRef}
-                        // table data
-                        rowData={rowData}
-                        columnDefs={colDefs}
-                        // col filters enabled
-                        defaultColDef={defaultColDef}
-                        // display sort icon
-                        unSortIcon={true}
-                        // table height
-                        domLayout={"autoHeight"}
-                        // pagination
-                        pagination={true}
-                        paginationPageSize={50}
-                        // selectable text inside table
-                        enableCellTextSelection={true}
-                        ensureDomOrder={true}
-                        // enable pinned row for graphs
-                        pinnedTopRowData={pinnedTopRowData}
-                        // for pinned row height
-                        getRowHeight={getRowHeight}
-                        // column sizing
-                        autoSizeStrategy={autoSizeStrategy}
-                        // idk yet
-                        getRowStyle={rowStyleFunc}
-                    />
-                </div>
+                {showNetwork ? (
+                    <Network data={rowData} />
+                ) : (
+                    <div
+                        className="ag-theme-quartz max-w-[100vw] z-0"
+                        style={{
+                            "--ag-header-background-color": "#f3f4f6",
+                            // "--ag-border-color": "#f3f4f6",
+                            "--ag-wrapper-border-radius": "none",
+                        }}
+                    >
+                        <AgGridReact
+                            // table api ref
+                            ref={gridRef}
+                            // table data
+                            rowData={rowData}
+                            columnDefs={colDefs}
+                            // col filters enabled
+                            defaultColDef={defaultColDef}
+                            // display sort icon
+                            unSortIcon={true}
+                            // table height
+                            domLayout={"autoHeight"}
+                            // pagination
+                            pagination={true}
+                            paginationPageSize={50}
+                            // selectable text inside table
+                            enableCellTextSelection={true}
+                            ensureDomOrder={true}
+                            // enable pinned row for graphs
+                            pinnedTopRowData={pinnedTopRowData}
+                            // for pinned row height
+                            getRowHeight={getRowHeight}
+                            // column sizing
+                            autoSizeStrategy={autoSizeStrategy}
+                            // idk yet
+                            // getRowStyle={rowStyleFunc}
+                        />
+                    </div>
+                )}
             </div>
         </div>
     );
