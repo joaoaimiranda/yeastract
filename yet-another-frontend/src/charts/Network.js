@@ -1,8 +1,10 @@
 import React from "react";
 import * as d3 from "d3";
 
-export default function Network({ data }) {
+export default function Network({ dataGetter }) {
     const ref = React.useRef();
+
+    const data = dataGetter();
 
     React.useEffect(() => {
         const width = 700;
@@ -26,12 +28,13 @@ export default function Network({ data }) {
             dash: row.evidence,
         }));
 
-        console.log(nodes);
-
         const LinkTypes = ["Negative", "Dual", "Positive", "N/A"];
-
         // Construct the scales.
-        const color = d3.scaleOrdinal(LinkTypes, d3.schemeSet1);
+        const colorScheme = d3.schemeSet1;
+        // change color for N/A
+        colorScheme.splice(3, 1, "#666");
+
+        const color = d3.scaleOrdinal(LinkTypes, colorScheme);
 
         // Construct the forces.
         const forceNode = d3.forceManyBody();
@@ -68,10 +71,7 @@ export default function Network({ data }) {
             .join("marker")
             .attr("id", (d) => `marker_${d.type}`)
             .attr("viewBox", "-0 -5 10 10")
-            .attr("fill", (d) => {
-                console.log(d);
-                return d.fill;
-            })
+            .attr("fill", (d) => d.fill)
             .attr("refX", 13)
             .attr("refY", 0)
             .attr("markerWidth", 6)

@@ -1,9 +1,22 @@
 import React from "react";
 import * as d3 from "d3";
 
-export default function BarChart({ data, colName, width, height }) {
+export default function BarChart({
+    data,
+    colName,
+    width,
+    height,
+    getFilter,
+    setFilter,
+    getFilteredData,
+    addListener,
+    removeListener,
+}) {
     const tooltipRef = React.useRef();
     const ref = React.useRef();
+
+    const [chartData, setChartData] = React.useState(data);
+
     React.useEffect(() => {
         // const width = 200;
         // const height = 80;
@@ -13,7 +26,7 @@ export default function BarChart({ data, colName, width, height }) {
         const marginLeft = 0;
 
         let auxData = {};
-        for (let row of data) {
+        for (let row of chartData) {
             if (!auxData[row[colName]]) auxData[row[colName]] = 1;
             else auxData[row[colName]]++;
         }
@@ -44,6 +57,7 @@ export default function BarChart({ data, colName, width, height }) {
         // Create the SVG container.
         const svg = d3
             .select(ref.current)
+            .attr("id", `barchart_${colName}`)
             .attr("width", width)
             .attr("height", height)
             .attr("viewBox", [0, 0, width, height])
@@ -60,7 +74,6 @@ export default function BarChart({ data, colName, width, height }) {
             .attr("height", (d) => y(0) - y(d.frequency))
             .attr("width", x.bandwidth())
             .on("mouseover", function (event, d) {
-                console.log(event.pageX, event.pageY);
                 d3.select(tooltipRef.current)
                     .transition()
                     .duration(100)
@@ -73,23 +86,52 @@ export default function BarChart({ data, colName, width, height }) {
                     .style("visibility", "visible");
                 // .style("left", event.pageX + "px")
                 // .style("top", event.pageY - 28 + "px");
-                d3.select(this)
-                    .style("stroke", "black")
-                    .style("stroke-width", "4px")
-                    .style("stroke-opacity", "1");
+                // d3.select(this)
+                //     .style("stroke", "black")
+                //     .style("stroke-width", "4px")
+                //     .style("stroke-opacity", "1");
+                d3.select(this).style("fill", "orange");
                 d3.select(tooltipRef.current).text(`${d.label} ${d.frequency}`);
-                // tableHighlight("tf", d.label);
             })
-            .on("mousemove", function () {})
             .on("mouseout", function () {
                 d3.select(tooltipRef.current)
                     .transition()
                     .duration(200)
                     // .style("opacity", 0);
                     .style("visibility", "hidden");
-                d3.select(this).style("stroke-opacity", "0");
+                // d3.select(this).style("stroke-opacity", "0");
+                d3.select(this).style("fill", "steelblue");
+            })
+            .on("click", async function (e, d) {
+                if (getFilter(colName) === d.label) {
+                    await setFilter(colName, null);
+                } else {
+                    await setFilter(colName, d.label);
+                }
+                setChartData(getFilteredData());
             });
-    }, [data, colName, width, height]);
+
+        function filterListener(e) {
+            console.log(getFilteredData());
+            setChartData(getFilteredData());
+        }
+        addListener(filterListener);
+
+        return () => {
+            svg.selectAll("*").remove();
+            removeListener(filterListener);
+        };
+    }, [
+        chartData,
+        colName,
+        width,
+        height,
+        getFilter,
+        setFilter,
+        getFilteredData,
+        addListener,
+        removeListener,
+    ]);
 
     // // Add the x-axis and label.
     // svg.append("g")

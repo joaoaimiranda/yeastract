@@ -165,15 +165,15 @@ export default function Main() {
             if (reverseCols) {
                 setColDefs([
                     { headerName: "Gene", field: "gene", hide: false, width: 200,
-                    cellRenderer: p => p.node.rowPinned ? <BarChart data={res} colName={"gene"} width={200} height={90} /> : <a className="link" href={`/${species}/view?orf=${p.data.orf}`}>{p.data.gene}</a> },
+                    cellRenderer: p => p.node.rowPinned ? <BarChart data={res} colName={"gene"} width={200} height={90} getFilter={getFilterTerm} setFilter={setFilter} getFilteredData={getFilteredData} addListener={addListener} removeListener={removeListener} /> : <a className="link" href={`/${species}/view?orf=${p.data.orf}`}>{p.data.gene}</a> },
                     { headerName: "ORF", field: "orf", hide: false, width: 200,
-                    cellRenderer: p => p.node.rowPinned ? <BarChart data={res} colName={"orf"} width={200} height={90} /> : <a className="link" href={`/${species}/view?orf=${p.data.orf}`}>{p.data.orf}</a> },
+                    cellRenderer: p => p.node.rowPinned ? <BarChart data={res} colName={"orf"} width={200} height={90} getFilter={getFilterTerm} setFilter={setFilter} getFilteredData={getFilteredData} addListener={addListener} removeListener={removeListener} /> : <a className="link" href={`/${species}/view?orf=${p.data.orf}`}>{p.data.orf}</a> },
                     { headerName: "TF", field: "tf", hide: false, width: 150,
                     cellRenderer: p => p.node.rowPinned ? <p className="text-lg font-semibold text-wrap">{`${(new Set(res.map(row => row.tf))).size} unique TFs`}</p> : <a className="link" href={`/${species}/view?orf=${p.data.tf}`}>{p.data.tf}</a> },
                     { headerName: "Evidence", field: "evidence", hide: false, width: 180, 
-                    cellRenderer: p => p.node.rowPinned ? <BarChart data={res} colName={"evidence"} width={180} height={90} /> : p.data.evidence},
+                    cellRenderer: p => p.node.rowPinned ? <BarChart data={res} colName={"evidence"} width={180} height={90} getFilter={getFilterTerm} setFilter={setFilter} getFilteredData={getFilteredData} addListener={addListener} removeListener={removeListener} /> : p.data.evidence},
                     { headerName: "Association Type", field: "association", hide: false, width: 150, 
-                    cellRenderer: p => p.node.rowPinned ? <BarChart data={res} colName={"association"} width={150} height={90} /> : p.data.association},
+                    cellRenderer: p => p.node.rowPinned ? <BarChart data={res} colName={"association"} width={150} height={90} getFilter={getFilterTerm} setFilter={setFilter} getFilteredData={getFilteredData} addListener={addListener} removeListener={removeListener} /> : p.data.association},
                     { headerName: "Reference", field: "Reference", width: 100, hide: false, sortable: false, floatingFilter: false, 
                     cellRenderer: p => !p.node.rowPinned && <RegulationModal id={`reg_modal_${p.data.tf}_${p.data.gene}`} orf={p.data.gene === "Uncharacterized" ? p.data.orf : p.data.gene} tf={p.data.tf} species={species} />},
                 ]);
@@ -187,7 +187,7 @@ export default function Main() {
                 setColDefs([
                     { headerName: "TF", field: "tf", hide: false, width: 200,
                     cellRenderer: p => p.node.rowPinned ? 
-                        <BarChart data={res} colName={"tf"} width={200} height={90} />
+                        <BarChart data={res} colName={"tf"} width={200} height={90} getFilter={getFilterTerm} setFilter={setFilter} getFilteredData={getFilteredData} addListener={addListener} removeListener={removeListener} />
                         : <a className="link" href={`${species}/view?orf=${p.data.tf}`}>{p.data.tf}</a> },
                     { headerName: "Gene", field: "gene", hide: false, width: 150, 
                     cellRenderer: p => p.node.rowPinned ? <p className="text-lg font-semibold text-wrap">{`${(new Set(res.map(row => row.gene))).size} unique Genes`}</p>
@@ -195,9 +195,9 @@ export default function Main() {
                     { headerName: "ORF", field: "orf", hide: false, width: 150,
                     cellRenderer: p => p.node.rowPinned ? <p className="text-lg font-semibold text-wrap">{`${(new Set(res.map(row => row.orf))).size} unique ORFs`}</p> :<a className="link" href={`/${species}/view?orf=${p.data.orf}`}>{p.data.orf}</a> },
                     { headerName: "Evidence", field: "evidence", hide: false, width: 180, 
-                    cellRenderer: p => p.node.rowPinned ? <BarChart data={res} colName={"evidence"} width={180} height={90} /> : p.data.evidence},
+                    cellRenderer: p => p.node.rowPinned ? <BarChart data={res} colName={"evidence"} width={180} height={90} getFilter={getFilterTerm} setFilter={setFilter} getFilteredData={getFilteredData} addListener={addListener} removeListener={removeListener} /> : p.data.evidence},
                     { headerName: "Association Type", field: "association", hide: false, width: 150, 
-                    cellRenderer: p => p.node.rowPinned ? <BarChart data={res} colName={"association"} width={150} height={90}/> : p.data.association},
+                    cellRenderer: p => p.node.rowPinned ? <BarChart data={res} colName={"association"} width={150} height={90} getFilter={getFilterTerm} setFilter={setFilter} getFilteredData={getFilteredData} addListener={addListener} removeListener={removeListener} /> : p.data.association},
                     { headerName: "Reference", field: "Reference", width: 100, hide: false, sortable: false, floatingFilter: false, 
                     cellRenderer: p => !p.node.rowPinned && <RegulationModal id={`reg_modal_${p.data.tf}_${p.data.gene}`} orf={p.data.gene === "Uncharacterized" ? p.data.orf : p.data.gene} tf={p.data.tf} species={species} />},
                 ]);
@@ -323,18 +323,61 @@ export default function Main() {
         []
     );
 
-    const autoSizeStrategy = React.useMemo(
-        () => ({
-            type: "fitCellContents",
-        }),
-        []
-    );
+    // const autoSizeStrategy = React.useMemo(
+    //     () => ({
+    //         type: "fitCellContents",
+    //     }),
+    //     []
+    // );
 
     const gridRef = React.useRef();
 
     const onBtnExport = React.useCallback(() => {
         gridRef.current.api.exportDataAsCsv();
     }, []);
+
+    function getFilteredData() {
+        const rowData = [];
+        gridRef.current.api.forEachNodeAfterFilter((node) => {
+            rowData.push(node.data);
+        });
+        return rowData;
+    }
+
+    const setFilter = React.useCallback(async (col, val) => {
+        await gridRef.current.api.setColumnFilterModel(col, {
+            filterType: "text",
+            type: "contains",
+            filter: val,
+        });
+        gridRef.current.api.onFilterChanged();
+    }, []);
+
+    const getFilterTerm = React.useCallback((col) => {
+        const filter = gridRef.current.api.getColumnFilterModel(col);
+        return filter === null ? null : filter.filter;
+    }, []);
+
+    const addListener = React.useCallback((listener) => {
+        gridRef.current.api.addEventListener("filterChanged", listener);
+    }, []);
+
+    const removeListener = React.useCallback((listener) => {
+        if (gridRef.current)
+            gridRef.current.api.removeEventListener("filterChanged", listener);
+    }, []);
+
+    // const onGridPreDestroyed = React.useCallback(
+    //     (params) => {
+    //         // TODO SAVE STATE
+    //         const len = currentEventListeners.length;
+    //         for (let i = 0; i < len; i++) {
+    //             removeListener(currentEventListeners[i], params.api);
+    //         }
+    //         setCurrentEventListeners([])
+    //     },
+    //     [currentEventListeners, removeListener]
+    // );
 
     return (
         <div className="w-full h-full">
@@ -590,6 +633,8 @@ export default function Main() {
                                 name="homolog"
                                 value={formData.homolog}
                                 onChange={handleForm}
+                                // TODO IMPLEMENT HOMOLOGOUS BEFORE ENABLING THIS OPTION
+                                disabled
                             >
                                 {[
                                     "---",
@@ -714,7 +759,7 @@ export default function Main() {
                     </button>
                 </div>
                 {showNetwork ? (
-                    <Network data={rowData} />
+                    <Network dataGetter={getFilteredData} />
                 ) : (
                     <div
                         className="ag-theme-quartz max-w-[100vw] z-0"
@@ -747,9 +792,10 @@ export default function Main() {
                             // for pinned row height
                             getRowHeight={getRowHeight}
                             // column sizing
-                            autoSizeStrategy={autoSizeStrategy}
+                            // autoSizeStrategy={autoSizeStrategy}
                             // idk yet
                             // getRowStyle={rowStyleFunc}
+                            // onGridPreDestroyed={onGridPreDestroyed}
                         />
                     </div>
                 )}
