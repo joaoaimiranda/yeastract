@@ -53,6 +53,10 @@ export default function Main() {
     });
     const [showNetwork, setShowNetwork] = React.useState(false);
 
+    const [gridVisible, setGridVisible] = React.useState(false);
+    const [gridSavedState, setGridSavedState] = React.useState();
+    const [filteredData, setFilteredData] = React.useState();
+
     const { species } = useParams();
     // if (speciesList[species] === undefined) return <div>not found</div>; // create 404 page eventually
 
@@ -160,9 +164,13 @@ export default function Main() {
                 species: speciesList[species].path,
             });
             console.log(res);
+            let first = false;
 
             //prettier-ignore
             if (reverseCols) {
+                // fix for ref not available on first query
+                if (!gridVisible) {setGridSavedState({sort: {sortModel: [{colId: "gene", sort: "asc"}]}});setGridVisible(true);first = true}
+                
                 setColDefs([
                     { headerName: "Gene", field: "gene", hide: false, width: 200,
                     cellRenderer: p => p.node.rowPinned ? <BarChart data={res} colName={"gene"} width={200} height={90} getFilter={getFilterTerm} setFilter={setFilter} getFilteredData={getFilteredData} addListener={addListener} removeListener={removeListener} /> : <a className="link" href={`/${species}/view?orf=${p.data.orf}`}>{p.data.gene}</a> },
@@ -179,11 +187,14 @@ export default function Main() {
                 ]);
                 setRowData(res);
                 // apply default sort
-                gridRef.current.api.applyColumnState({
+                if (!first) gridRef.current.api.applyColumnState({
                     state: [{ colId: "tf", sort: null }, { colId: "gene", sort: "asc"}],
                 });
             }
             else {
+                // fix for ref not available on first query
+                if (!gridVisible) {setGridSavedState({sort: {sortModel: [{colId: "tf", sort: "asc"}]}});setGridVisible(true);first = true}
+
                 setColDefs([
                     { headerName: "TF", field: "tf", hide: false, width: 200,
                     cellRenderer: p => p.node.rowPinned ? 
@@ -197,13 +208,14 @@ export default function Main() {
                     { headerName: "Evidence", field: "evidence", hide: false, width: 180, 
                     cellRenderer: p => p.node.rowPinned ? <BarChart data={res} colName={"evidence"} width={180} height={90} getFilter={getFilterTerm} setFilter={setFilter} getFilteredData={getFilteredData} addListener={addListener} removeListener={removeListener} /> : p.data.evidence},
                     { headerName: "Association Type", field: "association", hide: false, width: 150, 
-                    cellRenderer: p => p.node.rowPinned ? <BarChart data={res} colName={"association"} width={150} height={90} getFilter={getFilterTerm} setFilter={setFilter} getFilteredData={getFilteredData} addListener={addListener} removeListener={removeListener} /> : p.data.association},
+                    cellRenderer: p => p.node.rowPinned ? <BarChart data={res} colName={"association"} width={150} height={95} getFilter={getFilterTerm} setFilter={setFilter} getFilteredData={getFilteredData} addListener={addListener} removeListener={removeListener} /> : p.data.association},
                     { headerName: "Reference", field: "Reference", width: 100, hide: false, sortable: false, floatingFilter: false, 
                     cellRenderer: p => !p.node.rowPinned && <RegulationModal id={`reg_modal_${p.data.tf}_${p.data.gene}`} orf={p.data.gene === "Uncharacterized" ? p.data.orf : p.data.gene} tf={p.data.tf} species={species} />},
                 ]);
                 setRowData(res);
+                setFilteredData(res)
                 // apply default sort
-                gridRef.current.api.applyColumnState({
+                if (!first) gridRef.current.api.applyColumnState({
                     state: [{ colId: "tf", sort: "asc" }, { colId: "gene", sort: null}],
                 });
             }
@@ -223,6 +235,8 @@ export default function Main() {
                 species: speciesList[species].path,
             });
             console.log(res);
+            if (!gridVisible) setGridVisible(true);
+
             // prettier-ignore
             setColDefs([
                 { headerName: "TF", field: "tf", hide: false },
@@ -249,6 +263,8 @@ export default function Main() {
                 species: speciesList[species].path,
             });
             console.log(res);
+            if (!gridVisible) setGridVisible(true);
+
             // prettier-ignore
             setColDefs([
                 { headerName: "GO ID", field: "goid", hide: false,
@@ -285,6 +301,8 @@ export default function Main() {
                 species: speciesList[species].path,
             });
             console.log(res);
+            if (!gridVisible) setGridVisible(true);
+
             // TODO
         } else {
             console.log("Unknown query name");
@@ -367,17 +385,17 @@ export default function Main() {
             gridRef.current.api.removeEventListener("filterChanged", listener);
     }, []);
 
-    // const onGridPreDestroyed = React.useCallback(
-    //     (params) => {
-    //         // TODO SAVE STATE
-    //         const len = currentEventListeners.length;
-    //         for (let i = 0; i < len; i++) {
-    //             removeListener(currentEventListeners[i], params.api);
-    //         }
-    //         setCurrentEventListeners([])
-    //     },
-    //     [currentEventListeners, removeListener]
-    // );
+    const onGridReady = React.useCallback(() => {
+        addListener(() => {
+            setFilteredData(getFilteredData());
+        });
+        gridRef.current.api.onFilterChanged();
+    }, [addListener]);
+
+    const onGridPreDestroyed = React.useCallback((params) => {
+        const { state } = params;
+        setGridSavedState(state);
+    }, []);
 
     return (
         <div className="w-full h-full">
@@ -388,7 +406,7 @@ export default function Main() {
             >
                 <div className="flex flex-col md:flex-row md:flex-wrap items-center md:items-start gap-2 xl:gap-8">
                     <div className="flex flex-col p-3 max-w-sm rounded-lg shadow-md shadow-gray-300">
-                        <div className="flex flex-row">
+                        <div className="flex flex-row gap-2">
                             {/* <div className="flex flex-col"> */}
                             <label>
                                 <div className="label p-0 mb-2">
@@ -400,7 +418,7 @@ export default function Main() {
                                     id="tfs"
                                     name="tfs"
                                     value={formData.tfs}
-                                    className="textarea textarea-bordered textarea-primary min-h-44 max-h-44 max-w-44 text-color leading-4"
+                                    className="textarea textarea-bordered textarea-primary min-h-44 max-h-44 max-w-40 text-color leading-4"
                                     onChange={handleForm}
                                 ></textarea>
                             </label>
@@ -417,7 +435,7 @@ export default function Main() {
                                     id="genes"
                                     name="genes"
                                     value={formData.genes}
-                                    className="textarea textarea-bordered textarea-primary min-h-44 max-h-44 max-w-44 text-color leading-4"
+                                    className="textarea textarea-bordered textarea-primary min-h-44 max-h-44 max-w-40 text-color leading-4"
                                     onChange={handleForm}
                                 ></textarea>
                             </label>
@@ -703,6 +721,7 @@ export default function Main() {
                         className="btn btn-primary w-20"
                         type="submit"
                         name="rank-tfbs"
+                        disabled
                     >
                         Rank TFBS
                     </button>
@@ -759,7 +778,7 @@ export default function Main() {
                     </button>
                 </div>
                 {showNetwork ? (
-                    <Network dataGetter={getFilteredData} />
+                    <Network data={filteredData} />
                 ) : (
                     <div
                         className="ag-theme-quartz max-w-[100vw] z-0"
@@ -767,36 +786,41 @@ export default function Main() {
                             "--ag-header-background-color": "#f3f4f6",
                             // "--ag-border-color": "#f3f4f6",
                             "--ag-wrapper-border-radius": "none",
+                            "--ag-cell-horizontal-border": "solid #e5e7eb",
                         }}
                     >
-                        <AgGridReact
-                            // table api ref
-                            ref={gridRef}
-                            // table data
-                            rowData={rowData}
-                            columnDefs={colDefs}
-                            // col filters enabled
-                            defaultColDef={defaultColDef}
-                            // display sort icon
-                            unSortIcon={true}
-                            // table height
-                            domLayout={"autoHeight"}
-                            // pagination
-                            pagination={true}
-                            paginationPageSize={50}
-                            // selectable text inside table
-                            enableCellTextSelection={true}
-                            ensureDomOrder={true}
-                            // enable pinned row for graphs
-                            pinnedTopRowData={pinnedTopRowData}
-                            // for pinned row height
-                            getRowHeight={getRowHeight}
-                            // column sizing
-                            // autoSizeStrategy={autoSizeStrategy}
-                            // idk yet
-                            // getRowStyle={rowStyleFunc}
-                            // onGridPreDestroyed={onGridPreDestroyed}
-                        />
+                        {gridVisible && (
+                            <AgGridReact
+                                // table api ref
+                                ref={gridRef}
+                                // table data
+                                rowData={rowData}
+                                columnDefs={colDefs}
+                                // col filters enabled
+                                defaultColDef={defaultColDef}
+                                // display sort icon
+                                unSortIcon={true}
+                                // table height
+                                domLayout={"autoHeight"}
+                                // pagination
+                                pagination={true}
+                                paginationPageSize={50}
+                                // selectable text inside table
+                                enableCellTextSelection={true}
+                                ensureDomOrder={true}
+                                // enable pinned row for graphs
+                                pinnedTopRowData={pinnedTopRowData}
+                                // for pinned row height
+                                getRowHeight={getRowHeight}
+                                // column sizing
+                                // autoSizeStrategy={autoSizeStrategy}
+                                // idk yet
+                                // getRowStyle={rowStyleFunc}
+                                initialState={gridSavedState}
+                                onGridReady={onGridReady}
+                                onGridPreDestroyed={onGridPreDestroyed}
+                            />
+                        )}
                     </div>
                 )}
             </div>

@@ -112,7 +112,6 @@ export default function BarChart({
             });
 
         function filterListener(e) {
-            console.log(getFilteredData());
             setChartData(getFilteredData());
         }
         addListener(filterListener);

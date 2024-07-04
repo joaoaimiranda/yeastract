@@ -1,11 +1,9 @@
 import React from "react";
 import * as d3 from "d3";
 
-export default function Network({ dataGetter }) {
+export default function Network({ data }) {
     const ref = React.useRef();
-
-    const data = dataGetter();
-
+    console.log("depois");
     React.useEffect(() => {
         const width = 700;
         const height = 700;
@@ -31,7 +29,8 @@ export default function Network({ dataGetter }) {
         const LinkTypes = ["Negative", "Dual", "Positive", "N/A"];
         // Construct the scales.
         const colorScheme = d3.schemeSet1;
-        // change color for N/A
+        // change color for N/A and Dual
+        colorScheme.splice(1, 1, "#2c6492");
         colorScheme.splice(3, 1, "#666");
 
         const color = d3.scaleOrdinal(LinkTypes, colorScheme);

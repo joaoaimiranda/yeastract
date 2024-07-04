@@ -6,6 +6,8 @@ import { AgGridReact } from "ag-grid-react";
 import "ag-grid-community/styles/ag-grid.css";
 import "ag-grid-community/styles/ag-theme-quartz.css";
 import CloseIcon from "../svg/CloseIcon.js";
+import HamburgerIcon from "../svg/HamburgerIcon";
+import DownloadIcon from "../svg/DownloadIcon";
 
 export default function Modal(props) {
     const [info, setInfo] = React.useState({});
@@ -37,54 +39,88 @@ export default function Modal(props) {
         };
     }, []);
 
-    // const getRowHeight = (params) =>
-    //     params.data.envcond.length > 1 ? params.data.envcond.length * 17 : 42;
+    const getRowHeight = (params) => {
+        const singleSize = 28;
+        const env = Math.ceil(params.data.envcond.length / 35) * singleSize;
+        const exp = Math.ceil(params.data.experiment.length / 30) * singleSize;
+        const pub =
+            Math.ceil(referenceFormat(params.data).length / 35) * singleSize;
+        return Math.max(env, exp, pub);
+    };
 
-    const colDefs = React.useMemo(
-        () => [
-            {
-                headerName: "TF",
-                field: "protein",
-                width: 100,
-            },
-            {
-                headerName: "Gene",
-                field: "orf",
-                width: 120,
-                cellRenderer: (p) =>
-                    p.data.gene === "Uncharacterized"
-                        ? p.data.orf
-                        : p.data.gene,
-            },
-            {
-                headerName: "References",
-                cellRenderer: (p) => (
-                    <a
-                        className="underline"
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        href={`${constants.pubmedUrl}${p.data.pubmedid}`}
-                    >
-                        {referenceFormat(p.data)}
-                    </a>
-                ),
-                tooltipValueGetter: (p) => referenceFormat(p.data),
-                width: 400,
-            },
-            { headerName: "Evidence", field: "code", width: 120 },
-            { headerName: "Experiment", field: "experiment" },
-            { headerName: "Type", field: "association", width: 100 },
-            { headerName: "Strain", field: "strain", width: 100 },
-            {
-                headerName: "Environmental Condition",
-                field: "envcond",
-                tooltipValueGetter: (p) => p.data.envcond,
-                width: 500,
-                wrapText: true,
-            },
-        ],
-        []
-    );
+    const [colDefs, setColDefs] = React.useState([
+        {
+            headerName: "TF",
+            field: "protein",
+            width: 100,
+            hide: false,
+        },
+        {
+            headerName: "Gene",
+            field: "orf",
+            width: 100,
+            hide: false,
+            cellRenderer: (p) =>
+                p.data.gene === "Uncharacterized" ? p.data.orf : p.data.gene,
+        },
+        {
+            headerName: "References",
+            field: "pubmedid",
+            width: 250,
+            hide: false,
+            cellRenderer: (p) => (
+                <a
+                    className="underline"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    href={`${constants.pubmedUrl}${p.data.pubmedid}`}
+                >
+                    <p className="leading-7">{referenceFormat(p.data)}</p>
+                </a>
+            ),
+            tooltipValueGetter: (p) => referenceFormat(p.data),
+            wrapText: true,
+        },
+        { headerName: "Evidence", field: "code", width: 100, hide: false },
+        {
+            headerName: "Experiment",
+            field: "experiment",
+            width: 200,
+            hide: false,
+            cellRenderer: (p) => (
+                <p className="text-wrap leading-7">{p.data.experiment}</p>
+            ),
+            tooltipValueGetter: (p) => p.data.experiment,
+        },
+        { headerName: "Type", field: "association", width: 100, hide: false },
+        { headerName: "Strain", field: "strain", width: 100, hide: false },
+        {
+            headerName: "Environmental Condition",
+            field: "envcond",
+            tooltipValueGetter: (p) => p.data.envcond,
+            width: 300,
+            // wrapText: true,
+            hide: false,
+            cellRenderer: (p) => (
+                <p className="text-wrap leading-7">{p.data.envcond}</p>
+            ),
+        },
+    ]);
+
+    function handleColumns(event) {
+        const { name, checked } = event.target;
+        setColDefs((prevCols) =>
+            prevCols.map((col) =>
+                col["field"] === name ? { ...col, hide: !checked } : col
+            )
+        );
+    }
+
+    const gridRef = React.useRef();
+
+    const onBtnExport = React.useCallback(() => {
+        gridRef.current.api.exportDataAsCsv();
+    }, []);
 
     return (
         <>
@@ -102,58 +138,69 @@ export default function Modal(props) {
                         </form>
                     </div>
                     {Object.keys(info).length !== 0 && (
-                        // <table className="table">
-                        //     <thead>
-                        //         <tr>
-                        //             <th>Transcription Factor</th>
-                        //             <th>Target ORF/Genes</th>
-                        //             <th>References</th>
-                        //             <th>Evidence Code</th>
-                        //             <th>Evidence Experiment</th>
-                        //             <th>Association Type</th>
-                        //             <th>Strain</th>
-                        //             <th>Environmental Condition</th>
-                        //         </tr>
-                        //     </thead>
-                        //     <tbody>
-                        //         {info.map((row) => (
-                        //             <tr>
-                        //                 <td>{row.protein}</td>
-                        //                 <td>{row.orf}</td>
-                        //                 <td>
-                        //                     <a
-                        //                         className="underline"
-                        //                         target="_blank"
-                        //                         rel="noopener noreferrer"
-                        //                         href={`${constants.pubmedUrl}${row.pubmedid}`}
-                        //                     >
-                        //                         {referenceFormat(row)}
-                        //                     </a>
-                        //                 </td>
-                        //                 <td>{row.code}</td>
-                        //                 <td>{row.experiment}</td>
-                        //                 <td>{row.association}</td>
-                        //                 <td>{row.strain}</td>
-                        //                 <td>{row["envcond"].join("; ")}</td>
-                        //             </tr>
-                        //         ))}
-                        //     </tbody>
-                        // </table>
-                        <div
-                            className="ag-theme-quartz w-full h-full"
-                            style={{
-                                "--ag-header-background-color": "#f3f4f6",
-                            }}
-                        >
-                            <AgGridReact
-                                rowData={info}
-                                columnDefs={colDefs}
-                                defaultColDef={defaultColDef}
-                                unSortIcon={true}
-                                enableCellTextSelection={true}
-                                ensureDomOrder={true}
-                                // getRowHeight={getRowHeight}
-                            />
+                        <div className="w-full h-full">
+                            <div className="p-2 bg-gray-100 rounded-t-lg border-x border-t border-[#e5e7eb] flex gap-5">
+                                <div className="dropdown dropdown-bottom">
+                                    <div
+                                        tabIndex={0}
+                                        role="button"
+                                        className="btn btn-sm btn-ghost p-2"
+                                    >
+                                        <HamburgerIcon />
+                                    </div>
+                                    <ul
+                                        tabIndex={0}
+                                        className="dropdown-content z-40 menu p-2 shadow bg-base-100 rounded-box w-52"
+                                    >
+                                        {colDefs.map((col) => (
+                                            <li key={col.field}>
+                                                <label className="label cursor-pointer">
+                                                    <span className="label-text">
+                                                        {col.headerName}
+                                                    </span>
+                                                    <input
+                                                        type="checkbox"
+                                                        id={col.field}
+                                                        name={col.field}
+                                                        defaultChecked={
+                                                            !col.hide
+                                                        }
+                                                        className="checkbox checkbox-sm checkbox-primary"
+                                                        onChange={handleColumns}
+                                                    />
+                                                </label>
+                                            </li>
+                                        ))}
+                                    </ul>
+                                </div>
+                                <button
+                                    className="btn btn-sm"
+                                    onClick={onBtnExport}
+                                >
+                                    <DownloadIcon />
+                                    Download
+                                </button>
+                            </div>
+                            <div
+                                className="ag-theme-quartz w-full h-full"
+                                style={{
+                                    "--ag-header-background-color": "#f3f4f6",
+                                    "--ag-wrapper-border-radius": "none",
+                                    "--ag-cell-horizontal-border":
+                                        "solid #e5e7eb",
+                                }}
+                            >
+                                <AgGridReact
+                                    rowData={info}
+                                    columnDefs={colDefs}
+                                    defaultColDef={defaultColDef}
+                                    unSortIcon={true}
+                                    enableCellTextSelection={true}
+                                    ensureDomOrder={true}
+                                    domLayout={"autoHeight"}
+                                    getRowHeight={getRowHeight}
+                                />
+                            </div>
                         </div>
                     )}
                 </div>
