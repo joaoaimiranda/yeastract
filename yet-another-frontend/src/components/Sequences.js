@@ -1,17 +1,5 @@
-// import {
-//     Button,
-//     Input,
-//     Select,
-//     SelectItem,
-//     Textarea,
-//     Dropdown,
-//     DropdownTrigger,
-//     DropdownMenu,
-//     DropdownItem,
-// } from "@nextui-org/react";
 import React from "react";
-// import species from "./Species";
-// import { AgGridReact } from "ag-grid-react";
+import { AgGridReact } from "ag-grid-react";
 import "ag-grid-community/styles/ag-grid.css";
 import "ag-grid-community/styles/ag-theme-quartz.css";
 import {
@@ -24,6 +12,12 @@ import {
 } from "../services/remoteServices";
 import { useParams } from "react-router-dom";
 import speciesList from "../conf/speciesList";
+import HamburgerIcon from "../svg/HamburgerIcon";
+import DownloadIcon from "../svg/DownloadIcon";
+import ErrorAlert from "./ErrorAlert";
+import fastaSequenceSample from "../utils/fastaSequenceSample";
+import SampleDataIcon from "../svg/SampleDataIcon";
+import PromoterModal from "./PromoterModal";
 
 export default function Sequences() {
     const { species } = useParams();
@@ -43,26 +37,33 @@ export default function Sequences() {
         to: -1,
     });
 
-    const [tmpResults, setTmpResults] = React.useState("");
+    // const [tmpResults, setTmpResults] = React.useState("");
+    const [showErrorMessage, setShowErrorMessage] = React.useState({
+        flag: false,
+        msg: "",
+    });
+    const [gridVisible, setGridVisible] = React.useState(false);
+    const [rowData, setRowData] = React.useState([]);
 
-    // const [rowData, setRowData] = React.useState([]);
+    // for upstream sequence
+    const [rawData, setRawData] = React.useState([]);
 
-    // const [colDefs, setColDefs] = React.useState([
-    //     { headerName: "TF", field: "tf" },
-    //     { headerName: "Gene", field: "gene" },
-    // ]);
-    // const defaultColDef = React.useMemo(() => {
-    //     return {
-    //         filter: "agTextColumnFilter",
-    //         flex: 1,
-    //     };
-    // }, []);
+    const [colDefs, setColDefs] = React.useState([
+        { headerName: "TF", field: "tf" },
+        { headerName: "Gene", field: "gene" },
+    ]);
+    const defaultColDef = React.useMemo(() => {
+        return {
+            filter: "agTextColumnFilter",
+            floatingFilter: true,
+        };
+    }, []);
 
-    // const gridRef = React.useRef();
+    const gridRef = React.useRef();
 
-    // const onBtnExport = React.useCallback(() => {
-    //     gridRef.current.api.exportDataAsCsv();
-    // }, []);
+    const onBtnExport = React.useCallback(() => {
+        gridRef.current.api.exportDataAsCsv();
+    }, []);
 
     const queries = [
         "Search for DNA motif(s) on promoter regions",
@@ -83,16 +84,80 @@ export default function Sequences() {
 
     function handleForm(event) {
         const { name, value, checked, type } = event.target;
+        let newValue = value;
+        if (name === "from" && value < -1000) newValue = -1000;
+        if (name === "to" && value > -1) newValue = -1;
         setFormData((prevData) => ({
             ...prevData,
-            [name]: type === "checkbox" ? checked : value,
+            [name]: type === "checkbox" ? checked : newValue,
         }));
     }
 
+    function handleColumns(event) {
+        const { name, checked } = event.target;
+        setColDefs((prevCols) =>
+            prevCols.map((col) =>
+                col["field"] === name ? { ...col, hide: !checked } : col
+            )
+        );
+    }
+
+    function setSampleData(event) {
+        let motif;
+        if (query === "Search for DNA motif(s) on promoter regions")
+            motif = "TATATAAG\nTATAWAAM\nTATA[GC]AA[AT]";
+        else if (
+            query === "Search described TF Binding Sites by a given DNA motif"
+        )
+            motif = "CACCAGTCGGTGGCTGTGCGCTTGTTACGTAA";
+        else motif = "";
+
+        const value = event.currentTarget.getAttribute("value");
+        const sample = speciesList[species].sample.find(
+            (el) => el.strain === value
+        );
+        const genes =
+            query !==
+                "Search described TF Binding Sites by a given DNA motif" &&
+            query !== "Find TF Binding Site(s)" &&
+            query !== "TF-Consensus List"
+                ? sample.tgs
+                : "";
+
+        const seq =
+            query === "Find TF Binding Site(s)" ? fastaSequenceSample : "";
+        // prettier-ignore
+        setFormData((prevData) => ({
+            ...prevData,
+            motif: motif === "" ? prevData.motif : motif,
+            genes: genes === "" ? prevData.genes : genes,
+            sequence: seq === "" ? prevData.sequence : seq,
+            substitutions: query === "Search for DNA motif(s) on promoter regions" ? 0 : prevData.substitutions,
+        }));
+    }
+
+    const autoSizeStrategy = React.useMemo(
+        () => ({
+            type: "fitCellContents",
+        }),
+        []
+    );
+
     async function handleQuery(event) {
         event.preventDefault();
+        if (showErrorMessage.flag)
+            setShowErrorMessage({ flag: false, msg: "" });
+        setRawData([]);
+
         console.log(formData);
         if (query === "Search for DNA motif(s) on promoter regions") {
+            if (formData.motif.trim() === "" || formData.genes.trim() === "") {
+                setShowErrorMessage({
+                    flag: true,
+                    msg: "DNA Motif and ORF/Genes fields cannot be empty",
+                });
+                return;
+            }
             const res = await motifOnPromoter({
                 motif: formData.motif,
                 substitutions: formData.substitutions,
@@ -100,23 +165,68 @@ export default function Sequences() {
                 species: speciesList[species].path,
             });
             console.log(res);
-            setTmpResults(JSON.stringify(res));
-            // setColDefs([{headerName: "ORF", field: "orf"}, {headerName: "# Occurences for DNA Motifs"}])
+
+            if (!gridVisible) setGridVisible(true);
+
+            const data = [];
+            for (let key of Object.keys(res)) {
+                data.push({
+                    gene: key,
+                    count: res[key].length,
+                    matches: res[key],
+                });
+            }
+            // prettier-ignore
+            setColDefs([
+                { headerName: "ORF/Gene", field: "gene", cellRenderer: p => <a className="link" href={`${species}/view?orf=${p.data.gene}`}>{p.data.gene}</a> },
+                { headerName: "# Occurences for DNA Motifs", field: "count" },
+                { headerName: "Promoter", field: "Promoter", cellRenderer: p => <PromoterModal id={`prom_modal_${p.data.gene}`} orf={p.data.gene} data={p.data.matches} />}
+            ]);
+            setRowData(data);
         } else if (
             query === "Search described TF Binding Sites by a given DNA motif"
         ) {
+            if (formData.motif.trim() === "") {
+                setShowErrorMessage({
+                    flag: true,
+                    msg: "DNA Motif field cannot be empty",
+                });
+                return;
+            }
             const res = await tfbsByMotif({
                 motif: formData.motif,
                 substitutions: formData.substitutions,
                 species: speciesList[species].path,
             });
             console.log(res);
-            let str = "";
-            for (let x of res[1]) {
-                str += JSON.stringify(x) + "\n";
-            }
-            setTmpResults(str);
+            if (!gridVisible) setGridVisible(true);
+            // let str = "";
+            // for (let x of res[1]) {
+            //     str += JSON.stringify(x) + "\n";
+            // }
+            // setTmpResults(str);
+            const bsWidth =
+                100 + Math.max(...res[1].map((row) => row.seq.length)) * 7;
+            const tfWidth =
+                100 +
+                Math.max(...res[1].map((row) => row.tfs.join("").length)) * 10;
+            // prettier-ignore
+            // FIXME MAKE 2 TABLES - THIS ONLY WORKS FOR 2ND TABLE
+            setColDefs([
+                {headerName: "Binding Site", field: "seq", width: bsWidth},
+                {headerName: "TF", field: "tfs", width: tfWidth, cellRenderer: p => p.data.tfs.map((v) =><><a className="link" href={`/${species}/view?orf=${v}`}>{v}</a><span> </span></>)},
+                {headerName: "F", field:"F", width: 100, valueFormatter: p => p.value ? Object.keys(p.value)[0] : ""},
+                {headerName: "R", field:"R", width: 100, valueFormatter: p => p.value ? Object.keys(p.value)[0] : ""}
+            ])
+            setRowData(res[1]);
         } else if (query === "Find TF Binding Site(s)") {
+            if (formData.sequence.trim() === "") {
+                setShowErrorMessage({
+                    flag: true,
+                    msg: "Please enter a sequence in FASTA format",
+                });
+                return;
+            }
             const res = await tfbsOnSeq({
                 motif: formData.motif,
                 substitutions: formData.substitutions,
@@ -124,7 +234,10 @@ export default function Sequences() {
                 species: speciesList[species].path,
             });
             console.log(res);
+            if (!gridVisible) setGridVisible(true);
+            // TODO
         } else if (query === "Promoter Analysis") {
+            // TODO FORM CHECK
             const res = await promoterAnalysis({
                 genes: formData.genes,
                 tfbs_species: formData.tfbs_species,
@@ -133,11 +246,26 @@ export default function Sequences() {
                 species: speciesList[species].path,
             });
             console.log(res);
+            if (!gridVisible) setGridVisible(true);
+            // TODO
         } else if (query === "TF-Consensus List") {
             const res = await tfConsensus(speciesList[species].path);
             console.log(res);
-            setTmpResults(JSON.stringify(res));
+            if (!gridVisible) setGridVisible(true);
+            // setTmpResults(JSON.stringify(res));
+            setColDefs([
+                { headerName: "TF", field: "tf" },
+                { headerName: "Consensus", field: "seq" },
+            ]);
+            setRowData(res);
         } else if (query === "Upstream Sequence") {
+            if (formData.genes.trim() === "") {
+                setShowErrorMessage({
+                    flag: true,
+                    msg: "ORF/Gene field cannot be empty",
+                });
+                return;
+            }
             const res = await seqRetrieval({
                 genes: formData.genes,
                 from: formData.from,
@@ -145,12 +273,28 @@ export default function Sequences() {
                 species: speciesList[species].path,
             });
             console.log(res);
-            let str = "";
+            // let str = "";
+            // for (let key of Object.keys(res)) {
+            //     str += key + ":\n" + res[key] + "\n";
+            // }
+            // setTmpResults("");
+            const resList = [];
             for (let key of Object.keys(res)) {
-                str += key + ":\n" + res[key] + "\n";
+                let oldStr = res[key];
+                const newSeq = [];
+
+                for (let i = 0; i < res[key].length; i += 60) {
+                    newSeq.push(oldStr.slice(i, i + 60));
+                }
+                resList.push({ tf: key, seq: newSeq });
             }
-            setTmpResults(str);
-        } else console.log("Unknown query name");
+            console.log(resList);
+            setGridVisible(false);
+            setRawData(resList);
+        } else
+            console.error(
+                `Form Submission Error: Unknown query name: ${query}`
+            );
     }
 
     return (
@@ -183,10 +327,15 @@ export default function Sequences() {
                         id="query"
                         name="query"
                         value={query}
-                        onChange={(e) => setQuery(e.target.value)}
+                        onChange={(e) => {
+                            setShowErrorMessage({ flag: false, msg: "" });
+                            setQuery(e.target.value);
+                        }}
                     >
                         {queries.map((option) => (
-                            <option value={option}>{option}</option>
+                            <option key={option} value={option}>
+                                {option}
+                            </option>
                         ))}
                     </select>
                 </div>
@@ -205,7 +354,7 @@ export default function Sequences() {
                                         id="motif"
                                         name="motif"
                                         value={formData.motif}
-                                        className="textarea textarea-bordered textarea-primary text-color"
+                                        className="textarea textarea-bordered textarea-primary text-color min-h-20 max-h-20 leading-4"
                                         onChange={handleForm}
                                     ></textarea>
                                 </label>
@@ -226,7 +375,7 @@ export default function Sequences() {
                                         onChange={handleForm}
                                     >
                                         {[0, 1, 2].map((option) => (
-                                            <option value={option}>
+                                            <option key={option} value={option}>
                                                 {option}
                                             </option>
                                         ))}
@@ -248,7 +397,7 @@ export default function Sequences() {
                                     id="genes"
                                     name="genes"
                                     value={formData.genes}
-                                    className="textarea textarea-bordered textarea-primary max-w-24 min-h-[120px] max-h-[120px] text-color"
+                                    className="textarea textarea-bordered textarea-primary max-w-24 min-h-32 max-h-32 text-color leading-4"
                                     onChange={handleForm}
                                 ></textarea>
                             </label>
@@ -265,7 +414,7 @@ export default function Sequences() {
                                 id="sequence"
                                 name="sequence"
                                 value={formData.sequence}
-                                className="textarea textarea-bordered textarea-primary text-color min-h-[120px] max-h-[120px]"
+                                className="textarea textarea-bordered textarea-primary text-color min-h-32 max-h-32 leading-4"
                                 onChange={handleForm}
                             ></textarea>
                         </label>
@@ -379,10 +528,8 @@ export default function Sequences() {
                             </label>
                         </div>
                     )}
-                    {query !== "TF-Consensus List" && (
-                        // <Button className="self-start mt-10" type="submit">
-                        //     Search
-                        // </Button>
+                    {/* {query !== "TF-Consensus List" && ( */}
+                    <div className="flex flex-col gap-2">
                         <button
                             className="btn btn-primary mt-7"
                             type="submit"
@@ -390,24 +537,125 @@ export default function Sequences() {
                         >
                             Search
                         </button>
+                        {query !== "TF-Consensus List" && (
+                            <div className="flex flex-row gap-1">
+                                {speciesList[species].dbstrains.map(
+                                    (strain) => (
+                                        <div
+                                            className="tooltip"
+                                            key={strain}
+                                            data-tip={`Sample strain ${strain}`}
+                                        >
+                                            <button
+                                                className="btn btn-xs btn-square"
+                                                type="button"
+                                                id={`${strain}-sample-button`}
+                                                value={strain}
+                                                onClick={setSampleData}
+                                            >
+                                                <SampleDataIcon />
+                                            </button>
+                                        </div>
+                                    )
+                                )}
+                            </div>
+                        )}
+                    </div>
+                    {/* )} */}
+                </div>
+                <div className="mt-2">
+                    {showErrorMessage.flag && (
+                        <ErrorAlert msg={showErrorMessage.msg} />
                     )}
                 </div>
             </form>
-            {/* <div
-                className="ag-theme-quartz mt-6 ml-4 "
-                style={{ width: 900, height: 400 }}
-            >
-                <button className="btn mb-6" onClick={onBtnExport}>
-                    Download
-                </button>
-                <AgGridReact
-                    ref={gridRef}
-                    rowData={rowData}
-                    columnDefs={colDefs}
-                    defaultColDef={defaultColDef}
-                />
-            </div> */}
-            <p>{tmpResults}</p>
+            {gridVisible && (
+                <div className="px-4 py-2 w-full h-full">
+                    <div className="p-2 bg-gray-100 rounded-t-lg border-x border-t border-[#e5e7eb] flex gap-5">
+                        <div className="dropdown dropdown-bottom">
+                            <div
+                                tabIndex={0}
+                                role="button"
+                                className="btn btn-sm btn-ghost p-2"
+                            >
+                                <HamburgerIcon />
+                            </div>
+                            <ul
+                                tabIndex={0}
+                                className="dropdown-content z-40 menu p-2 shadow bg-base-100 rounded-box w-52"
+                            >
+                                {colDefs.map((col) => (
+                                    <li key={col.field}>
+                                        <label className="label cursor-pointer">
+                                            <span className="label-text">
+                                                {col.headerName}
+                                            </span>
+                                            <input
+                                                type="checkbox"
+                                                id={col.field}
+                                                name={col.field}
+                                                defaultChecked={!col.hide}
+                                                className="checkbox checkbox-sm checkbox-primary"
+                                                onChange={handleColumns}
+                                            />
+                                        </label>
+                                    </li>
+                                ))}
+                            </ul>
+                        </div>
+                        <button className="btn btn-sm" onClick={onBtnExport}>
+                            <DownloadIcon />
+                            Download
+                        </button>
+                    </div>
+                    <div
+                        className="ag-theme-quartz max-w-[100vw] z-0"
+                        style={{
+                            "--ag-header-background-color": "#f3f4f6",
+                            // "--ag-border-color": "#f3f4f6",
+                            "--ag-wrapper-border-radius": "none",
+                            "--ag-cell-horizontal-border": "solid #e5e7eb",
+                        }}
+                    >
+                        <AgGridReact
+                            ref={gridRef}
+                            rowData={rowData}
+                            columnDefs={colDefs}
+                            defaultColDef={defaultColDef}
+                            autoSizeStrategy={autoSizeStrategy}
+                            unSortIcon={true}
+                            // table height
+                            domLayout={"autoHeight"}
+                            // pagination
+                            pagination={true}
+                            paginationPageSize={50}
+                            // selectable text inside table
+                            enableCellTextSelection={true}
+                            ensureDomOrder={true}
+                        />
+                    </div>
+                </div>
+            )}
+            {rawData.length > 0 && (
+                <pre className="px-4 py-2">
+                    {rawData.map((row) => {
+                        return (
+                            <>
+                                <p key={row.tf} className="text-sm">
+                                    {`>${row.tf}`}
+                                    <br />
+                                    {row.seq.map((line) => (
+                                        <>
+                                            {`${line}`}
+                                            <br />
+                                        </>
+                                    ))}
+                                </p>
+                            </>
+                        );
+                    })}
+                </pre>
+            )}
         </>
     );
 }

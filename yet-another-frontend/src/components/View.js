@@ -11,19 +11,19 @@ import { titleFormat } from "../utils/utils";
 
 export default function View() {
     const { species } = useParams();
-    let [searchParams, setSearchParams] = useSearchParams();
+    let [searchParams] = useSearchParams();
     const [results, setResults] = React.useState({});
 
     React.useEffect(() => {
         async function fetchData() {
-            if (searchParams.get("orf") !== null) {
+            if (searchParams.get("orf")) {
                 const res = await searchORF(
                     searchParams.get("orf"),
                     speciesList[species].path
                 );
                 console.log(res);
                 setResults(res);
-            } else if (searchParams.get("goid") !== null) {
+            } else if (searchParams.get("goid")) {
                 const res = await searchGOterm(
                     searchParams.get("goid"),
                     speciesList[species].path
@@ -41,13 +41,15 @@ export default function View() {
             {Object.keys(results).length !== 0 &&
                 searchParams.get("orf") !== null && (
                     <>
-                        <div className="overflow-x-auto">
+                        <div className="overflow-x-auto px-3">
                             <table className="table">
                                 <tbody>
                                     {Object.keys(results["general"]).map(
                                         (row) => (
                                             <tr>
-                                                <th>{titleFormat(row)}</th>
+                                                <th className="align-top w-24">
+                                                    {titleFormat(row)}
+                                                </th>
                                                 <td>
                                                     {results["general"][row]}
                                                 </td>
@@ -64,7 +66,15 @@ export default function View() {
                                     Locus
                                 </div>
                                 <div className="collapse-content">
-                                    <Locus locus={results["locus"]} />
+                                    <Locus
+                                        locus={results["locus"]}
+                                        orf={
+                                            results["general"][
+                                                "systematic_Name"
+                                            ]
+                                        }
+                                        species={species}
+                                    />
                                 </div>
                             </div>
                             <div className="collapse collapse-arrow join-item bg-base-100 border border-base-300">

@@ -1,16 +1,23 @@
 import React from "react";
 import * as d3 from "d3";
+import TextInput from "../components/TextInput";
 
-export default function Network({ data }) {
+export default function Network({
+    data,
+    filteredData,
+    gridState,
+    setGridState,
+}) {
     const ref = React.useRef();
-    console.log("depois");
+
+    const [chartData, setChartData] = React.useState(filteredData);
+
     React.useEffect(() => {
         const width = 700;
         const height = 700;
 
-        // Replace the input nodes and links with mutable objects for the simulation.
         const nodes = [];
-        for (let row of data) {
+        for (let row of chartData) {
             if (!nodes.some((el) => el.id === row.tf))
                 nodes.push({ id: row.tf, type: "source" });
             if (!nodes.some((el) => el.id === row.gene || el.id === row.orf))
@@ -19,7 +26,7 @@ export default function Network({ data }) {
                     type: "target",
                 });
         }
-        const links = data.map((row) => ({
+        const links = chartData.map((row) => ({
             source: row.tf,
             target: row.gene === "Uncharacterized" ? row.orf : row.gene,
             value: row.association,
@@ -29,7 +36,7 @@ export default function Network({ data }) {
         const LinkTypes = ["Negative", "Dual", "Positive", "N/A"];
         // Construct the scales.
         const colorScheme = d3.schemeSet1;
-        // change color for N/A and Dual
+        // custom color for N/A and Dual
         colorScheme.splice(1, 1, "#2c6492");
         colorScheme.splice(3, 1, "#666");
 
@@ -41,8 +48,6 @@ export default function Network({ data }) {
             .forceLink(links)
             .id((d) => d.id)
             .distance(190);
-        // if (nodeStrength !== undefined) forceNode.strength(nodeStrength);
-        // if (linkStrength !== undefined) forceLink.strength(linkStrength);
 
         const simulation = d3
             .forceSimulation(nodes)
@@ -106,31 +111,14 @@ export default function Network({ data }) {
             );
 
         const node = svg
-            // .append("g")
-            // .attr("fill", "steelbue")
-            // .attr("stroke", "black")
-            // .attr("stroke-opacity", 1)
-            // .attr("stroke-width", 1.5)
             .selectAll(null)
             .data(nodes)
-            // .join("circle")
             .enter()
             .append("g")
             .attr("fill", "steelbue")
             .attr("stroke", "black")
             .attr("stroke-opacity", 1)
             .attr("stroke-width", 1.5);
-
-        // .append("text")
-        // // .attr("x", 8)
-        // .text(function (d) {
-        //     return d.id;
-        // })
-        // .attr("fill", "gray")
-        // .attr("stroke", "none")
-        // .attr("font-size", "0.7em")
-        // .attr("dx", 8)
-        // .attr("dy", (d) => d.y)
 
         const circle = node
             .append("circle")
@@ -158,50 +146,19 @@ export default function Network({ data }) {
         // text.attr("transform", function (d) {
         //     return "translate(" + d.x + "," + d.y + ")";
         // });
-
+        // prettier-ignore
         function ticked() {
             // link.attr("x1", (d) => d.source.x)
             //     .attr("y1", (d) => d.source.y)
             //     .attr("x2", (d) => d.target.x)
             //     .attr("y2", (d) => d.target.y);
             link.attr("d", function (d) {
-                const dx = d.target.x - d.source.x,
-                    dy = d.target.y - d.source.y,
-                    dr = Math.sqrt(dx * dx + dy * dy);
+                const dx = d.target.x - d.source.x, dy = d.target.y - d.source.y, dr = Math.sqrt(dx * dx + dy * dy);
                 if (dx !== 0 || dy !== 0) {
-                    return (
-                        "M" +
-                        d.source.x +
-                        "," +
-                        d.source.y +
-                        "A" +
-                        dr +
-                        "," +
-                        dr +
-                        " 0 0,1 " +
-                        d.target.x +
-                        "," +
-                        d.target.y
-                    );
+                    return ("M" + d.source.x + "," + d.source.y + "A" + dr + "," + dr + " 0 0,1 " + d.target.x + "," + d.target.y);
                 }
-                return (
-                    "M" +
-                    d.source.x +
-                    "," +
-                    d.source.y +
-                    "C" +
-                    (d.source.x - 30) +
-                    "," +
-                    (d.source.y - 30) +
-                    " " +
-                    (d.target.x + 30) +
-                    "," +
-                    (d.target.y - 30) +
-                    " " +
-                    d.target.x +
-                    "," +
-                    d.target.y
-                );
+                return ("M" + d.source.x + "," + d.source.y + "C" + (d.source.x - 30) + "," + (d.source.y - 30) + " " + 
+                    (d.target.x + 30) + "," + (d.target.y - 30) + " " + d.target.x + "," +d.target.y);
             });
 
             // node.attr("cx", (d) => d.x).attr("cy", (d) => d.y);
@@ -237,11 +194,63 @@ export default function Network({ data }) {
                 .on("drag", dragged)
                 .on("end", dragended);
         }
-    }, [data]);
+        return () => {
+            svg.selectAll("*").remove();
+        };
+    }, [chartData]);
 
+    function handleFilter(event) {
+        const { name, value } = event.target;
+        const key = name.split("-")[1];
+        const regex = new RegExp(value, "gi");
+        const newData = data.filter((row) => regex.test(row[key]));
+        // update table state filter
+        if (
+            gridState.filter === undefined ||
+            gridState.filter.filterModel === undefined
+        ) {
+            setGridState((prevState) => ({
+                ...prevState,
+                filter: {
+                    filterModel: {
+                        [key]: {
+                            filter: value,
+                            filterType: "text",
+                            type: "contains",
+                        },
+                    },
+                },
+            }));
+        } else {
+            setGridState((prevState) => ({
+                ...prevState,
+                filter: {
+                    filterModel: {
+                        ...prevState.filter.filterModel,
+                        [key]: {
+                            filter: value,
+                            filterType: "text",
+                            type: "contains",
+                        },
+                    },
+                },
+            }));
+        }
+        setChartData(newData);
+    }
+    // prettier-ignore
     return (
-        <div className="border ">
-            <svg ref={ref}></svg>
+        <div>
+            <div className="flex flex-row flex-wrap gap-2 px-2 pb-2 bg-gray-100 border-x border-[#e5e7eb]">
+                <TextInput id="tf" labelText="TF" filterState={gridState.filter} handler={handleFilter}/>
+                <TextInput id="gene" labelText="Gene" filterState={gridState.filter} handler={handleFilter}/>
+                <TextInput id="orf" labelText="ORF" filterState={gridState.filter} handler={handleFilter}/>
+                <TextInput id="evidence" labelText="Evidence" filterState={gridState.filter} handler={handleFilter}/>
+                <TextInput id="association" labelText="Association" filterState={gridState.filter} handler={handleFilter}/>
+            </div>
+            <div className="border">
+                <svg ref={ref}></svg>
+            </div>
         </div>
     );
 }

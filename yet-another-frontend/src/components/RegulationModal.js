@@ -54,14 +54,30 @@ export default function Modal(props) {
             field: "protein",
             width: 100,
             hide: false,
+            cellRenderer: (p) => (
+                <a
+                    className="link"
+                    href={`${props.species}/view?orf=${p.data.protein}`}
+                >
+                    {p.data.protein}
+                </a>
+            ),
         },
         {
             headerName: "Gene",
             field: "orf",
             width: 100,
             hide: false,
-            cellRenderer: (p) =>
-                p.data.gene === "Uncharacterized" ? p.data.orf : p.data.gene,
+            cellRenderer: (p) => (
+                <a
+                    className="link"
+                    href={`/${props.species}/view?orf=${p.data.orf}`}
+                >
+                    {p.data.gene === "Uncharacterized"
+                        ? p.data.orf
+                        : p.data.gene}
+                </a>
+            ),
         },
         {
             headerName: "References",
@@ -70,7 +86,7 @@ export default function Modal(props) {
             hide: false,
             cellRenderer: (p) => (
                 <a
-                    className="underline"
+                    className="link"
                     target="_blank"
                     rel="noopener noreferrer"
                     href={`${constants.pubmedUrl}${p.data.pubmedid}`}

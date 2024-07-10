@@ -12,3 +12,28 @@ export function referenceFormat(ref) {
     abbrev += ":" + ref["pages"];
     return abbrev;
 }
+
+export function sequenceFormat(text) {
+    const seq = text.split("\n");
+    const firstLine = seq.shift();
+    return (
+        <pre>
+            {firstLine}
+            <br />
+            {seq.map((line) => (
+                <>
+                    {line}
+                    <br />
+                </>
+            ))}
+        </pre>
+    );
+}
+
+export function splitSequence(text) {
+    const newSeq = [];
+    for (let i = 0; i < text.length; i += 60) {
+        newSeq.push(text.slice(i, i + 60));
+    }
+    return newSeq;
+}

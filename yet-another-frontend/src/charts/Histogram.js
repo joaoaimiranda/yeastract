@@ -11,13 +11,12 @@ export default function Histogram({ data, width, height }) {
         const marginRight = 0;
         const marginBottom = 0;
         const marginLeft = 0;
-        console.log(data);
+        // console.log(data);
         const bins = d3
             .bin()
             .domain([0, 100])
             .thresholds(10)
             .value((d) => d)(data);
-        console.log(bins);
 
         // Declare the x (horizontal position) scale.
         const x = d3
@@ -38,7 +37,7 @@ export default function Histogram({ data, width, height }) {
             .attr("height", height)
             .attr("viewBox", [0, 0, width, height])
             .attr("style", "max-width: 100%; height: auto;");
-        console.log(bins[0].x1 - bins[0].x0);
+        // console.log(bins[0].x1 - bins[0].x0);
         // Add a rect for each bar.
         svg.append("g")
             .attr("fill", "steelblue")

@@ -1,5 +1,5 @@
 import React from "react";
-import speciesList from "../../conf/speciesList";
+import constants from "../../conf/constants";
 import { findDbSpecies } from "../../utils/speciesUtils";
 export default function GOterm({ goterm, species }) {
     return (
@@ -7,19 +7,28 @@ export default function GOterm({ goterm, species }) {
             <table className="table">
                 <tbody>
                     <tr>
-                        <th>Ontology</th>
+                        <th className="align-top">Ontology</th>
                         <td>{goterm["go"]["onto"]}</td>
                     </tr>
                     <tr>
-                        <th>GO ID</th>
-                        <td>{goterm["go"]["goid"]}</td>
+                        <th className="align-top">GO ID</th>
+                        <td>
+                            <a
+                                className="link"
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                href={`${constants.geneOntologyUrl}${goterm["go"]["goid"]}`}
+                            >
+                                {goterm["go"]["goid"]}
+                            </a>
+                        </td>
                     </tr>
                     <tr>
-                        <th>GO Term</th>
+                        <th className="align-top">GO Term</th>
                         <td>{`level ${goterm["go"]["depth"]}: ${goterm["go"]["term"]}`}</td>
                     </tr>
                     <tr>
-                        <th>Parent Terms</th>
+                        <th className="align-top">Parent Terms</th>
                         <td>
                             <ul>
                                 {goterm["parents"].map((item) => (
@@ -33,7 +42,7 @@ export default function GOterm({ goterm, species }) {
                         </td>
                     </tr>
                     <tr>
-                        <th>Children Terms</th>
+                        <th className="align-top">Children Terms</th>
                         <td>
                             <ul>
                                 {goterm["children"].map((item) => (
@@ -47,20 +56,16 @@ export default function GOterm({ goterm, species }) {
                         </td>
                     </tr>
                     <tr>
-                        <th>Associated ORF/Genes</th>
+                        <th className="align-top">Associated ORF/Genes</th>
                         <td>
                             <ul>
                                 {goterm["genes"].map((item) => (
                                     <li>
                                         <a
-                                            href={`/${Object.keys(
-                                                speciesList
-                                            ).find(
-                                                (key) =>
-                                                    findDbSpecies(key) ===
-                                                    item["species"]
+                                            href={`/${findDbSpecies(
+                                                item["species"]
                                             )}/view?orf=${item["orf"]}`}
-                                            className="underline"
+                                            className="link"
                                         >
                                             {item["gene"] === "Uncharacterized"
                                                 ? item["orf"]

@@ -9,7 +9,7 @@ import speciesList from "./speciesList.js";
 function dbspecies(key) {
     if (speciesList[key] === undefined) throw new Error("Species not found");
     let res = [];
-    for (let strain of speciesList[key].dbstrains.split("\t")) {
+    for (let strain of speciesList[key].dbstrains) {
         res.push(speciesList[key].dbspecies + " " + strain);
     }
     return res.join("','");
@@ -429,13 +429,6 @@ export async function getGOids(geneIds, species, ontology, hyperN) {
         `where T.orfid in (${geneIds.join(", ")}) and G.goid=T.goid and G.onto='${ontology}'`;
     const res = await query(q);
     let terms = [];
-    // res.forEach((row) => {
-    //     terms.some((element) => element["goid"] === row["goid"])
-    //         ? terms[
-    //               terms.findIndex((element) => element["goid"] === row["goid"])
-    //           ]["genes"].push(row["orfid"])
-    //         : terms.push({ goid: row["goid"], genes: [row["orfid"]] });
-    // });
     // prettier-ignore
     for (let row of res) {
         terms.some((element) => element["goid"] === row["goid"])
@@ -444,25 +437,7 @@ export async function getGOids(geneIds, species, ontology, hyperN) {
               ]["genes"].push(row["gene"] === "Uncharacterized" ? row["orf"] : row["gene"])
             : terms.push({ goid: row["goid"], genes: [row["gene"] === "Uncharacterized" ? row["orf"] : row["gene"]] });
     }
-    // return terms.map(async (row) => {
-    //     const q2 =
-    //         "select count(distinct orfid) as assoc from goorflist where " +
-    //         `goid='${row["goid"]}' and orfid in (select distinct orfid from orfgene ` +
-    //         "where species in ('Saccharomyces cerevisiae S288c'))" +
-    //         ` and goid in (select distinct goid from geneontology where onto='${ontology}')`;
-    //     const res2 = await query(q2);
-    //     const q3 = `select term, depth from geneontology where goid='${row["goid"]}' and onto='${ontology}'`;
-    //     const res3 = await query(q3);
-    //     // TODO MISSING HYPERN
-    //     return {
-    //         goid: row["goid"],
-    //         genes: row["genes"],
-    //         setPer: row["genes"].length / geneIds.length,
-    //         dbPer: res2[0][0]["assoc"] / 1,
-    //         term: res3[0][0]["term"],
-    //         depth: res3[0][0]["depth"],
-    //     };
-    // });
+
     let gos = [];
     for (let row of terms) {
         const q_count =
@@ -500,26 +475,33 @@ export async function getSequence(ids, species = null) {
 }
 
 export async function getMotifsFromDB(
-    bsrgOnly = true,
-    species = "Saccharomyces cerevisiae S288c"
+    species,
+    tfcList = false,
+    bsrgOnly = true
 ) {
-    // FIXME SPECIES HARDCODED
     const q =
         "select distinct P.tfid, P.protein, C.IUPACseq from protein as P, " +
         "consensus as C, tfconsensus as TFC, orfgene as O where " +
         "C.consensusid=TFC.consensusid and TFC.tfid=P.tfid and " +
         `P.tfid=O.orfid and O.species in ('${dbspecies(species)}')` +
+        // use flag?
         " and TFC.source='BSRG curated'";
 
     const res = await query(q);
     let ret = [];
-    for (let row of res) {
-        if (ret.some((element) => element["seq"] === row["IUPACseq"])) {
-            ret.find((element) => element["seq"] === row["IUPACseq"])[
-                "tfs"
-            ].push(row["protein"]);
-        } else {
-            ret.push({ tfs: [row["protein"]], seq: row["IUPACseq"] });
+    if (tfcList) {
+        for (let row of res) {
+            ret.push({ tf: row["protein"], seq: row["IUPACseq"] });
+        }
+    } else {
+        for (let row of res) {
+            if (ret.some((element) => element["seq"] === row["IUPACseq"])) {
+                ret.find((element) => element["seq"] === row["IUPACseq"])[
+                    "tfs"
+                ].push(row["protein"]);
+            } else {
+                ret.push({ tfs: [row["protein"]], seq: row["IUPACseq"] });
+            }
         }
     }
     return ret;
@@ -682,23 +664,38 @@ export async function getORFinfo(orfid) {
     const ret = {};
     const general = {};
 
+    // copy paste from frontend because reasons
+    let sstrain = "";
+    for (let key of Object.keys(speciesList)) {
+        const strains = [];
+        for (let strain of speciesList[key].dbstrains) {
+            strains.push(speciesList[key].dbspecies + " " + strain);
+        }
+        if (strains.includes(orf["species"])) {
+            for (let strain of speciesList[key].dbstrains) {
+                if (
+                    speciesList[key].dbspecies + " " + strain ===
+                    orf["species"]
+                ) {
+                    sstrain = strain;
+                    break;
+                }
+            }
+            break;
+        }
+    }
+
     general["standard_Name"] = orf["gene"];
     general["systematic_Name"] = orf["orf"];
-    ret["promoter_Sequence"] = orf["promoterseq"];
-    ret["gene_Sequence"] = orf["geneseq"];
-    ret["chr_Coordinates"] = orf["coords"];
+    general["description"] = desc;
+    ret["alias"] = alias_res.map((row) => row["alias"]).join(", ");
+    ret["strain"] = sstrain;
     const extIndex = orf["gdid"].indexOf(":");
     ret["ext"] =
         extIndex !== -1 ? orf["gdid"].substring(extIndex + 1) : orf["gdid"];
-    // FIXME RE-WRITE FOR STRAIN INSTEAD OF SPECIES
-    ret["strain"] = orf["species"];
-    // ret["proteinname"] = prot["protein"];
-
-    // ret["protein_Name"] = prot;
-
-    // ret["description"] = desc["description"];
-    general["description"] = desc;
-    ret["alias"] = alias_res.map((row) => row["alias"]).join(", ");
+    ret["gene_Sequence"] = orf["geneseq"];
+    ret["promoter_Sequence"] = orf["promoterseq"];
+    ret["chr_Coordinates"] = orf["coords"];
     if (allele) ret["allele"] = allele;
 
     return { general: general, locus: ret };
@@ -763,7 +760,7 @@ export async function getOrthologInfo(orfid, species) {
                 `H.orfidsrc=O.orfid and O.orfid=${orfid} and ` +
                 `H.orfiddest=OD.orfid and OD.species in (${hspString}) and H.classif>${synteny})`;
         const res = await query(q);
-        hList[synteny] = res; //.filter((row) => row["species"] !== species);
+        hList[synteny] = res.map((row) => ({ ...row, synteny: synteny })); //.filter((row) => row["species"] !== species);
     }
     return hList;
 }

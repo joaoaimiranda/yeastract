@@ -23,7 +23,7 @@ export default function AdvancedSearch() {
             }
             setTermInput(searchParams.get("term"));
         }
-        fetchData();
+        if (searchParams.get("term")) fetchData();
     }, [searchParams, species, navigate]);
 
     function handleSearch(event) {
@@ -50,7 +50,7 @@ export default function AdvancedSearch() {
                 </label>
                 {/* </div> */}
             </form>
-            {Object.keys(results) !== 0 && (
+            {Object.keys(results).length !== 0 && (
                 <span className="p-3">{`Showing matches for term "${searchParams.get(
                     "term"
                 )}"`}</span>
@@ -103,7 +103,8 @@ export default function AdvancedSearch() {
                                                                         cell ===
                                                                             "protein" ? (
                                                                             <a
-                                                                                href={`/view?orf=${row[cell]}`}
+                                                                                className="link"
+                                                                                href={`/${species}/view?orf=${row[cell]}`}
                                                                             >
                                                                                 {
                                                                                     row[

@@ -5,12 +5,12 @@ const speciesList = {
         short: "S.cerevisiae",
         long: "Saccharomyces cerevisiae",
         dbspecies: "Saccharomyces cerevisiae",
-        dbstrains: "S288c",
+        dbstrains: ["S288c"],
         ganalytics: "UA-298893-1",
-        ext_name: "SGD ",
-        ext_url: "https://www.yeastgenome.org/locus/",
-        kegg_name: "KEGG",
-        kegg_url: "https://www.genome.jp/entry/sce:",
+        ext: [
+            { name: "SGD ", url: "https://www.yeastgenome.org/locus/" },
+            { name: "KEGG", url: "https://www.genome.jp/entry/sce:" },
+        ],
         sample: [
             {
                 strain: "S288c",
@@ -27,12 +27,15 @@ const speciesList = {
         short: "C.glabrata",
         long: "Candida glabrata",
         dbspecies: "Candida glabrata",
-        dbstrains: "CBS138",
+        dbstrains: ["CBS138"],
         ganalytics: "UA-79262015-2",
-        ext_name: "CGD",
-        ext_url: "http://www.candidagenome.org/cgi-bin/locus.pl?locus=",
-        kegg_name: "KEGG",
-        kegg_url: "https://www.genome.jp/entry/cgr:",
+        ext: [
+            {
+                name: "CGD",
+                url: "http://www.candidagenome.org/cgi-bin/locus.pl?locus=",
+            },
+            { name: "KEGG", url: "https://www.genome.jp/entry/cgr:" },
+        ],
         sample: [
             {
                 strain: "CBS138",
@@ -49,12 +52,15 @@ const speciesList = {
         short: "C.albicans",
         long: "Candida albicans",
         dbspecies: "Candida albicans",
-        dbstrains: "SC5314",
+        dbstrains: ["SC5314"],
         ganalytics: "UA-79262015-3",
-        ext_name: "CGD",
-        ext_url: "http://www.candidagenome.org/cgi-bin/locus.pl?locus=",
-        kegg_name: "KEGG",
-        kegg_url: "https://www.genome.jp/entry/cal:",
+        ext: [
+            {
+                name: "CGD",
+                url: "http://www.candidagenome.org/cgi-bin/locus.pl?locus=",
+            },
+            { name: "KEGG", url: "https://www.genome.jp/entry/cal:" },
+        ],
         sample: [
             {
                 strain: "SC5314",
@@ -71,10 +77,14 @@ const speciesList = {
         short: "C.parapsilosis",
         long: "Candida parapsilosis",
         dbspecies: "Candida parapsilosis",
-        dbstrains: "CDC317",
+        dbstrains: ["CDC317"],
         ganalytics: "UA-79262015-6",
-        ext_name: "CGD",
-        ext_url: "http://www.candidagenome.org/cgi-bin/locus.pl?locus=",
+        ext: [
+            {
+                name: "CGD",
+                url: "http://www.candidagenome.org/cgi-bin/locus.pl?locus=",
+            },
+        ],
         sample: [
             {
                 strain: "CDC317",
@@ -91,12 +101,15 @@ const speciesList = {
         short: "C.tropicalis",
         long: "Candida tropicalis",
         dbspecies: "Candida tropicalis",
-        dbstrains: "MYA-3404",
+        dbstrains: ["MYA-3404"],
         ganalytics: "UA-79262015-5",
-        ext_name: "CGD",
-        ext_url: "http://www.candidagenome.org/cgi-bin/locus.pl?locus=",
-        kegg_name: "KEGG",
-        kegg_url: "https://www.genome.jp/entry/ctp:",
+        ext: [
+            {
+                name: "CGD",
+                url: "http://www.candidagenome.org/cgi-bin/locus.pl?locus=",
+            },
+            { name: "KEGG", url: "https://www.genome.jp/entry/ctp:" },
+        ],
         sample: [
             {
                 strain: "MYA-3404",
@@ -113,10 +126,14 @@ const speciesList = {
         short: "C.auris",
         long: "Candida auris",
         dbspecies: "Candida auris",
-        dbstrains: "B8441",
+        dbstrains: ["B8441"],
         ganalytics: "UA-79262015-7",
-        ext_name: "CGD",
-        ext_url: "http://www.candidagenome.org/cgi-bin/locus.pl?locus=",
+        ext: [
+            {
+                name: "CGD",
+                url: "http://www.candidagenome.org/cgi-bin/locus.pl?locus=",
+            },
+        ],
         sample: [
             {
                 strain: "B8441",
@@ -133,10 +150,9 @@ const speciesList = {
         short: "Z.bailii",
         long: "Zygosaccharomyces bailii",
         dbspecies: "Zygosaccharomyces bailii",
-        dbstrains: "IST302",
+        dbstrains: ["IST302"],
         ganalytics: "UA-118721662-2",
-        ext_name: "ENA@EBI",
-        ext_url: "https://www.ebi.ac.uk/ena/data/view/",
+        ext: [{ name: "ENA@EBI", url: "https://www.ebi.ac.uk/ena/data/view/" }],
         sample: [
             {
                 strain: "IST302",
@@ -153,12 +169,15 @@ const speciesList = {
         short: "K.lactis",
         long: "Kluyveromyces lactis",
         dbspecies: "Kluyveromyces lactis",
-        dbstrains: "NRRL Y-1140",
+        dbstrains: ["NRRL Y-1140"],
         ganalytics: "UA-118721662-3",
-        ext_name: "GenBank",
-        ext_url: "https://www.ncbi.nlm.nih.gov/gene/?term=",
-        kegg_name: "KEGG",
-        kegg_url: "https://www.genome.jp/entry/kla:",
+        ext: [
+            {
+                name: "GenBank",
+                url: "https://www.ncbi.nlm.nih.gov/gene/?term=",
+            },
+            { name: "KEGG", url: "https://www.genome.jp/entry/kla:" },
+        ],
         sample: [
             {
                 strain: "NRRL Y-1140",
@@ -175,12 +194,15 @@ const speciesList = {
         short: "K.marxianus",
         long: "Kluyveromyces marxianus",
         dbspecies: "Kluyveromyces marxianus",
-        dbstrains: "DMKU3-1042",
+        dbstrains: ["DMKU3-1042"],
         ganalytics: "UA-118721662-4",
-        ext_name: "GenBank",
-        ext_url: "https://www.ncbi.nlm.nih.gov/gene/?term=",
-        kegg_name: "KEGG",
-        kegg_url: "https://www.genome.jp/entry/kmx:",
+        ext: [
+            {
+                name: "GenBank",
+                url: "https://www.ncbi.nlm.nih.gov/gene/?term=",
+            },
+            { name: "KEGG", url: "https://www.genome.jp/entry/kmx:" },
+        ],
         sample: [
             {
                 strain: "DMKU3-1042",
@@ -196,12 +218,15 @@ const speciesList = {
         short: "Y.lipolytica",
         long: "Yarrowia lipolytica",
         dbspecies: "Yarrowia lipolytica",
-        dbstrains: "CLIB122",
+        dbstrains: ["CLIB122"],
         ganalytics: "UA-118721662-5",
-        ext_name: "GenBank",
-        ext_url: "https://www.ncbi.nlm.nih.gov/gene/?term=",
-        kegg_name: "KEGG",
-        kegg_url: "https://www.genome.jp/entry/yli:",
+        ext: [
+            {
+                name: "GenBank",
+                url: "https://www.ncbi.nlm.nih.gov/gene/?term=",
+            },
+            { name: "KEGG", url: "https://www.genome.jp/entry/yli:" },
+        ],
         sample: [
             {
                 strain: "CLIB122",
@@ -218,12 +243,12 @@ const speciesList = {
         short: "K.phaffii",
         long: "Komagataella phaffii",
         dbspecies: "Komagataella phaffii",
-        dbstrains: "GS115",
+        dbstrains: ["GS115"],
         ganalytics: "UA-118721662-7",
-        ext_name: "GenBank",
-        ext_url: "https://www.ncbi.nlm.nih.gov/protein/",
-        kegg_name: "KEGG",
-        kegg_url: "https://www.genome.jp/entry/ppa:",
+        ext: [
+            { name: "GenBank", url: "https://www.ncbi.nlm.nih.gov/protein/" },
+            { name: "KEGG", url: "https://www.genome.jp/entry/ppa:" },
+        ],
         sample: [
             {
                 strain: "GS115",
@@ -240,10 +265,9 @@ const speciesList = {
         short: "S.pombe",
         long: "Schizosaccharomyces pombe",
         dbspecies: "Schizosaccharomyces pombe",
-        dbstrains: "972h-",
+        dbstrains: ["972h-"],
         ganalytics: "G-8P14BF3GBT",
-        ext_name: "PomBase",
-        ext_url: "https://www.pombase.org/gene/",
+        ext: [{ name: "PomBase", url: "https://www.pombase.org/gene/" }],
         sample: [
             {
                 strain: "972h-",
@@ -260,10 +284,11 @@ const speciesList = {
         short: "S.boulardii",
         long: "Saccharomyces boulardii",
         dbspecies: "Saccharomyces sp. 'boulardii'",
-        dbstrains: "biocodex	unique28",
+        dbstrains: ["biocodex", "unique28"],
         ganalytics: "UA-127462082-2",
-        ext_name: "GeneBank",
-        ext_url: "https://www.ncbi.nlm.nih.gov/protein/",
+        ext: [
+            { name: "GeneBank", url: "https://www.ncbi.nlm.nih.gov/protein/" },
+        ],
         sample: [
             {
                 strain: "biocodex",
@@ -287,10 +312,11 @@ const speciesList = {
         short: "R.toruloides",
         long: "Rhodotorula toruloides",
         dbspecies: "Rhodotorula toruloides",
-        dbstrains: "NP11",
+        dbstrains: ["NP11"],
         ganalytics: "G-TGC6L7JM88",
-        ext_name: "GeneBank",
-        ext_url: "https://www.ncbi.nlm.nih.gov/protein/",
+        ext: [
+            { name: "GeneBank", url: "https://www.ncbi.nlm.nih.gov/protein/" },
+        ],
         sample: [
             {
                 strain: "NP11",
@@ -307,10 +333,11 @@ const speciesList = {
         short: "B.soliolivus",
         long: "Blastobotrys soliolivus",
         dbspecies: "Blastobotrys soliolivus",
-        dbstrains: "IST508",
+        dbstrains: ["IST508"],
         ganalytics: "UA-127462082-2",
-        ext_name: "GeneBank",
-        ext_url: "https://www.ncbi.nlm.nih.gov/protein/",
+        ext: [
+            { name: "GeneBank", url: "https://www.ncbi.nlm.nih.gov/protein/" },
+        ],
         sample: [
             {
                 strain: "IST508",

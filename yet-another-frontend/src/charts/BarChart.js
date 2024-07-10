@@ -103,10 +103,11 @@ export default function BarChart({
                 d3.select(this).style("fill", "steelblue");
             })
             .on("click", async function (e, d) {
-                if (getFilter(colName) === d.label) {
+                const label = colName === "depth" ? Number(d.label) : d.label;
+                if (getFilter(colName) === label) {
                     await setFilter(colName, null);
                 } else {
-                    await setFilter(colName, d.label);
+                    await setFilter(colName, label);
                 }
                 setChartData(getFilteredData());
             });

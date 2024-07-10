@@ -1,6 +1,6 @@
 import React from "react";
 import Modal from "../Modal";
-import { titleFormat } from "../../utils/utils";
+import { sequenceFormat, titleFormat } from "../../utils/utils";
 export default function Protein({ protein, species }) {
     return (
         <div className="overflow-x-auto">
@@ -8,7 +8,9 @@ export default function Protein({ protein, species }) {
                 <tbody>
                     {Object.keys(protein).map((row) => (
                         <tr>
-                            <th>{titleFormat(row)}</th>
+                            <th className="align-top w-32">
+                                {titleFormat(row)}
+                            </th>
                             <td>
                                 {row === "TFBS" ? (
                                     <ul>
@@ -24,6 +26,8 @@ export default function Protein({ protein, species }) {
                                             </li>
                                         ))}
                                     </ul>
+                                ) : row === "aminoacid_sequence" ? (
+                                    sequenceFormat(protein[row])
                                 ) : (
                                     protein[row]
                                 )}

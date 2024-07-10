@@ -47,7 +47,11 @@ export async function motifOnPromoter(params) {
 }
 
 export async function tfbsByMotif(params) {
-    if (params.motif === undefined || params.substitutions === undefined) {
+    if (
+        params.motif === undefined ||
+        params.substitutions === undefined ||
+        params.species === undefined
+    ) {
         // res.status(400).send("Bad Request");
         throw new Error("Bad Request");
     }
@@ -58,7 +62,7 @@ export async function tfbsByMotif(params) {
     );
     if (!good) throw new Error("Invalid Motif");
 
-    const dbCons = await getMotifsFromDB();
+    const dbCons = await getMotifsFromDB(params.species);
 
     let ret1 = [];
     let ret2 = [];
@@ -117,6 +121,7 @@ export async function promoterAnalysis(params) {
         throw new Error("Bad Request");
     }
     const geneNames = params.genes.trim().split(/[\s\t\n\r\0,;|]+/);
+    // TODO
 }
 
 export async function tfConsensus(params) {
@@ -124,7 +129,7 @@ export async function tfConsensus(params) {
     if (params.species === undefined) {
         throw new Error("Bad Request");
     }
-    const consList = await getMotifsFromDB(true, params.species);
+    const consList = await getMotifsFromDB(params.species, true, true);
     return consList;
 }
 
@@ -151,7 +156,15 @@ function tfBindingSites(motifs, sequences, subst = 0) {
         const matches = getMatches(recursiveSplit(m), sequences, subst);
         for (let orfid of Object.keys(matches)) {
             if (!retObj[orfid]) retObj[orfid] = [];
-            retObj[orfid].push({ motif: m, matches: matches[orfid] });
+            console.log(IUPACcomplement(sequences[orfid]));
+            retObj[orfid].push({
+                motif: m,
+                promoter: {
+                    F: sequences[orfid],
+                    R: IUPACcomplement(sequences[orfid]),
+                },
+                matches: matches[orfid],
+            });
         }
     }
     return retObj;
@@ -379,6 +392,7 @@ function shiftAnd(pat, seq, subst = 0) {
     const pSize = pattern.length;
     // const nBoxes = 1;
     const b = pSize - 1;
+    // unsure about value of p, but seems to work
     const p = 1 * 4;
     const boxEndBits = 0x01 << b % p;
     const boxBeginBits = (boxEndBits << 1) | 1;
@@ -467,7 +481,7 @@ function shiftAnd(pat, seq, subst = 0) {
 function IUPACcomplement(seq) {
     const n = seq.length;
     let comp = "";
-    for (let i = 0; i < n + 1; i++) {
+    for (let i = 0; i < n; i++) {
         switch (seq[i]) {
             case "A":
                 comp = comp.concat("T");
