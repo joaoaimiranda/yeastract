@@ -25,23 +25,20 @@ export async function motifOnPromoter(params) {
         throw new Error("Bad Request");
     }
 
-    let inputMotif = [];
+    let inputMotif = {};
     for (let c of consensus) {
         const m = c.trim();
         if (m.length !== 0) {
             const [motif, good] = motifIUPACcompress(m);
-            if (good) inputMotif.push(motif);
+            if (good) inputMotif[motif] = motif;
         }
     }
 
     const geneIdList = await getIDs(geneNames, params.species);
-    // Promise.all(geneIdList)
-    //     .then((ids) => upstreamSeq(ids))
-    //     .then((values) =>
-    //         tfBindingSites(inputMotif, values, params.substitutions)
-    //     )
-    //     .then((values) => res.status(200).json(values));
+
     const seqs = await upstreamSeq(geneIdList);
+    console.log(inputMotif);
+    // console.log(seqs);
     const tfbs = tfBindingSites(inputMotif, seqs, params.substitutions);
     return tfbs;
 }
@@ -86,10 +83,8 @@ export async function tfbsByMotif(params) {
         if (!(tmp_ret2["F"] === null && tmp_ret2["R"] === null))
             ret2.push(tmp_ret2);
     }
-    // res.status(200).json([ret1, ret2]);
 
     return [ret1, ret2];
-    //what now
 }
 
 export async function seqRetrieval(params) {
@@ -133,6 +128,63 @@ export async function tfConsensus(params) {
     return consList;
 }
 
+export async function findTFBS(params) {
+    if (params.sequence === undefined) throw new Error("Bad Request");
+    if (params.sequence.trim() === "") throw new Error("emptyseq");
+
+    const sequences = splitFasta(params.sequence);
+    if (params.motif.trim() === "") {
+        const consList = await getMotifsFromDB(false);
+        // console.log(consList);
+        const motifs = {};
+        for (let m of consList) {
+            motifs[m.seq] = m.tfs;
+        }
+        const tfbs = tfBindingSites(motifs, sequences);
+        for (let key of Object.keys(tfbs)) {
+            tfbs[key] = tfbs[key].map((row) => ({
+                ...row,
+                tfs: motifs[row.motif],
+            }));
+        }
+        return tfbs;
+    } else {
+        // identify motifs
+    }
+}
+
+function checkFasta(seq) {
+    const lines = seq.split("\n");
+    if (!lines && lines.length === 1) return false;
+    const matches = seq.match(/^>\s*(\S+)/);
+    if (!matches) return false;
+    // console.log(matches);
+    let s = "";
+    for (let i = 1; i < lines.length; i++) {
+        s += lines[i].trim();
+    }
+    if (s.length === 0) return;
+    return [matches[1], s];
+}
+
+function splitFasta(input) {
+    const retObj = {};
+    const seqs = input.split(">");
+    if (seqs[0].length === 0) {
+        seqs.shift();
+    } else {
+        seqs[0] = "userSeq\n" + seqs[0];
+    }
+    for (let seq of seqs) {
+        const tmp = checkFasta(`>${seq}`);
+        if (tmp) {
+            const [name, s] = tmp;
+            retObj[name] = s;
+        }
+    }
+    return retObj;
+}
+
 async function upstreamSeq(ids, from = -1000, to = -1) {
     if (ids.length === 0) return [];
     const size = to - from + 1;
@@ -152,11 +204,10 @@ async function upstreamSeq(ids, from = -1000, to = -1) {
 
 function tfBindingSites(motifs, sequences, subst = 0) {
     let retObj = {};
-    for (let m of motifs) {
+    for (let m of Object.keys(motifs)) {
         const matches = getMatches(recursiveSplit(m), sequences, subst);
         for (let orfid of Object.keys(matches)) {
             if (!retObj[orfid]) retObj[orfid] = [];
-            console.log(IUPACcomplement(sequences[orfid]));
             retObj[orfid].push({
                 motif: m,
                 promoter: {
@@ -341,7 +392,8 @@ function recursiveSplit(motif) {
     }
     if (motif.includes(",")) {
         motifList = motif.split(/[N]{(\d*),(\d*)}/);
-        gap = [...motif.matchAll(/\d+,\d+/)];
+        // gap = [...motif.matchAll(/\d+,\d+/)];
+        gap = motif.match(/\d+,\d+/g);
     } else {
         let str = "";
         for (let i = 0, last = 0; i < motif.length; i++) {
@@ -366,13 +418,13 @@ function recursiveSplit(motif) {
     for (let box of motifList) {
         if (!box.includes("{")) {
             boxesList.push(box);
-            if (gap[0][k].length !== 0) {
+            if (gap[0] !== undefined && gap[0][k].length !== 0) {
                 const tmp = gap[0][k].split(",");
                 boxesList.push(...tmp);
             }
         } else {
             // recursive call
-            const aux = shiftAndWrapper(box);
+            const aux = recursiveSplit(box);
             for (let subaux of aux) {
                 boxesList.push(...subaux);
             }

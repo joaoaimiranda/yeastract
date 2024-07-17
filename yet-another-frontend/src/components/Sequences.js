@@ -18,6 +18,7 @@ import ErrorAlert from "./ErrorAlert";
 import fastaSequenceSample from "../utils/fastaSequenceSample";
 import SampleDataIcon from "../svg/SampleDataIcon";
 import PromoterModal from "./PromoterModal";
+import TFBSModal from "./TFBSModal";
 
 export default function Sequences() {
     const { species } = useParams();
@@ -36,7 +37,7 @@ export default function Sequences() {
         from: -1000,
         to: -1,
     });
-
+    console.log("bota");
     // const [tmpResults, setTmpResults] = React.useState("");
     const [showErrorMessage, setShowErrorMessage] = React.useState({
         flag: false,
@@ -56,6 +57,7 @@ export default function Sequences() {
         return {
             filter: "agTextColumnFilter",
             floatingFilter: true,
+            suppressHeaderMenuButton: true,
         };
     }, []);
 
@@ -144,6 +146,7 @@ export default function Sequences() {
     );
 
     async function handleQuery(event) {
+        console.log(query);
         event.preventDefault();
         if (showErrorMessage.flag)
             setShowErrorMessage({ flag: false, msg: "" });
@@ -170,17 +173,27 @@ export default function Sequences() {
 
             const data = [];
             for (let key of Object.keys(res)) {
-                data.push({
-                    gene: key,
-                    count: res[key].length,
-                    matches: res[key],
-                });
+                for (let m of res[key]) {
+                    const fcount = m.matches.F
+                        ? Object.keys(m.matches.F).length
+                        : 0;
+                    const rcount = m.matches.R
+                        ? Object.keys(m.matches.R).length
+                        : 0;
+                    data.push({
+                        gene: key,
+                        count: fcount + rcount,
+                        motif: m.motif,
+                        match: m,
+                    });
+                }
             }
             // prettier-ignore
             setColDefs([
                 { headerName: "ORF/Gene", field: "gene", cellRenderer: p => <a className="link" href={`${species}/view?orf=${p.data.gene}`}>{p.data.gene}</a> },
-                { headerName: "# Occurences for DNA Motifs", field: "count" },
-                { headerName: "Promoter", field: "Promoter", cellRenderer: p => <PromoterModal id={`prom_modal_${p.data.gene}`} orf={p.data.gene} data={p.data.matches} />}
+                { headerName: "# Occurences", field: "count" },
+                { headerName: "Motif", field: "motif"},
+                { headerName: "Promoter", field: "Promoter", cellRenderer: p => <PromoterModal id={`prom_modal_${p.data.gene}_${p.data.motif}`} orf={p.data.gene} data={p.data.match} />}
             ]);
             setRowData(data);
         } else if (
@@ -213,10 +226,10 @@ export default function Sequences() {
             // prettier-ignore
             // FIXME MAKE 2 TABLES - THIS ONLY WORKS FOR 2ND TABLE
             setColDefs([
-                {headerName: "Binding Site", field: "seq", width: bsWidth},
-                {headerName: "TF", field: "tfs", width: tfWidth, cellRenderer: p => p.data.tfs.map((v) =><><a className="link" href={`/${species}/view?orf=${v}`}>{v}</a><span> </span></>)},
-                {headerName: "F", field:"F", width: 100, valueFormatter: p => p.value ? Object.keys(p.value)[0] : ""},
-                {headerName: "R", field:"R", width: 100, valueFormatter: p => p.value ? Object.keys(p.value)[0] : ""}
+                { headerName: "Binding Site", field: "seq", width: bsWidth},
+                { headerName: "TF", field: "tfs", width: tfWidth, cellRenderer: p => p.data.tfs.map((v) =><><a className="link" href={`/${species}/view?orf=${v}`}>{v}</a><span> </span></>)},
+                { headerName: "F", field:"F", width: 100, valueFormatter: p => p.value ? Object.keys(p.value)[0] : ""},
+                { headerName: "R", field:"R", width: 100, valueFormatter: p => p.value ? Object.keys(p.value)[0] : ""}
             ])
             setRowData(res[1]);
         } else if (query === "Find TF Binding Site(s)") {
@@ -248,16 +261,21 @@ export default function Sequences() {
             console.log(res);
             if (!gridVisible) setGridVisible(true);
             // TODO
-        } else if (query === "TF-Consensus List") {
-            const res = await tfConsensus(speciesList[species].path);
-            console.log(res);
-            if (!gridVisible) setGridVisible(true);
-            // setTmpResults(JSON.stringify(res));
-            setColDefs([
-                { headerName: "TF", field: "tf" },
-                { headerName: "Consensus", field: "seq" },
-            ]);
-            setRowData(res);
+
+            // } else if (query === "TF-Consensus List") {
+            //     const res = await tfConsensus(speciesList[species].path);
+            //     console.log(res);
+            //     if (!gridVisible) setGridVisible(true);
+            //     // setTmpResults(JSON.stringify(res));
+            //     // prettier-ignore
+            //     setColDefs([
+            //         { headerName: "TF", field: "tf",
+            //         cellRenderer: p => <a className="link" href={`/${species}/view?orf=${p.data.tf}`}>{p.data.tf}</a>},
+            //         { headerName: "Consensus", field: "seq" },
+            //         { headerName: "Reference", field: "Reference", width: 100, hide: false, sortable: false, floatingFilter: false,
+            //         cellRenderer: p => <TFBSModal id={`modal_${p.data.tf}_${p.data.seq}`} species={species} tf={p.data.tf} consensus={p.data.seq} /> }
+            //     ]);
+            //     setRowData(res);
         } else if (query === "Upstream Sequence") {
             if (formData.genes.trim() === "") {
                 setShowErrorMessage({
@@ -296,6 +314,30 @@ export default function Sequences() {
                 `Form Submission Error: Unknown query name: ${query}`
             );
     }
+
+    React.useEffect(() => {
+        async function fetchData() {
+            const res = await tfConsensus(speciesList[species].path);
+            console.log(res);
+            setGridVisible(true);
+            // setTmpResults(JSON.stringify(res));
+            // prettier-ignore
+            setColDefs([
+                { headerName: "TF", field: "tf", 
+                cellRenderer: p => <a className="link" href={`/${species}/view?orf=${p.data.tf}`}>{p.data.tf}</a>},
+                { headerName: "Consensus", field: "seq" },
+                { headerName: "Reference", field: "Reference", width: 100, hide: false, sortable: false, floatingFilter: false, 
+                cellRenderer: p => <TFBSModal id={`modal_${p.data.tf}_${p.data.seq}`} species={species} tf={p.data.tf} consensus={p.data.seq} /> }
+            ]);
+            setRowData(res);
+        }
+        if (query === "TF-Consensus List") fetchData();
+    }, [query, species]);
+
+    const motifTextareaSize =
+        query === "Search described TF Binding Sites by a given DNA motif"
+            ? `min-h-9 max-h-9`
+            : `min-h-20 max-h-20`;
 
     return (
         <>
@@ -354,7 +396,7 @@ export default function Sequences() {
                                         id="motif"
                                         name="motif"
                                         value={formData.motif}
-                                        className="textarea textarea-bordered textarea-primary text-color min-h-20 max-h-20 leading-4"
+                                        className={`textarea textarea-bordered textarea-primary resize-none text-color ${motifTextareaSize} leading-4`}
                                         onChange={handleForm}
                                     ></textarea>
                                 </label>
@@ -397,7 +439,7 @@ export default function Sequences() {
                                     id="genes"
                                     name="genes"
                                     value={formData.genes}
-                                    className="textarea textarea-bordered textarea-primary max-w-24 min-h-32 max-h-32 text-color leading-4"
+                                    className="textarea textarea-bordered textarea-primary resize-none max-w-24 min-h-32 max-h-32 text-color leading-4"
                                     onChange={handleForm}
                                 ></textarea>
                             </label>
@@ -414,7 +456,7 @@ export default function Sequences() {
                                 id="sequence"
                                 name="sequence"
                                 value={formData.sequence}
-                                className="textarea textarea-bordered textarea-primary text-color min-h-32 max-h-32 leading-4"
+                                className="textarea textarea-bordered textarea-primary resize-none text-color min-h-32 max-h-32 leading-4"
                                 onChange={handleForm}
                             ></textarea>
                         </label>
@@ -528,16 +570,15 @@ export default function Sequences() {
                             </label>
                         </div>
                     )}
-                    {/* {query !== "TF-Consensus List" && ( */}
-                    <div className="flex flex-col gap-2">
-                        <button
-                            className="btn btn-primary mt-7"
-                            type="submit"
-                            onSubmit={handleQuery}
-                        >
-                            Search
-                        </button>
-                        {query !== "TF-Consensus List" && (
+                    {query !== "TF-Consensus List" && (
+                        <div className="flex flex-col gap-2">
+                            <button
+                                className="btn btn-primary mt-7"
+                                type="submit"
+                                onSubmit={handleQuery}
+                            >
+                                Search
+                            </button>
                             <div className="flex flex-row gap-1">
                                 {speciesList[species].dbstrains.map(
                                     (strain) => (
@@ -559,9 +600,8 @@ export default function Sequences() {
                                     )
                                 )}
                             </div>
-                        )}
-                    </div>
-                    {/* )} */}
+                        </div>
+                    )}
                 </div>
                 <div className="mt-2">
                     {showErrorMessage.flag && (

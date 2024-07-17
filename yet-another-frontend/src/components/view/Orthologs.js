@@ -2,7 +2,7 @@ import React from "react";
 import { findDbSpecies } from "../../utils/speciesUtils";
 
 export default function Orthologs({ orthologs }) {
-    const merge = orthologs[0].concat(orthologs[1], orthologs[2], orthologs[3]);
+    const merge = orthologs[3].concat(orthologs[2], orthologs[1], orthologs[0]);
     const orths = {};
     for (let orth of merge) {
         if (orths[orth.species] === undefined) orths[orth.species] = [orth];
@@ -13,23 +13,25 @@ export default function Orthologs({ orthologs }) {
             <table className="table">
                 <thead>
                     <tr>
-                        <th></th>
-                        <th>Only Homology</th>
-                        <th>+1 neighbor synteny</th>
-                        <th>+2 neighbors synteny</th>
-                        <th>+3 neighbors synteny</th>
+                        <th className=" m-0 p-1"></th>
+                        <th className=" m-0 p-1">+3 neighbors synteny</th>
+                        <th className=" m-0 p-1">+2 neighbors synteny</th>
+                        <th className=" m-0 p-1">+1 neighbor synteny</th>
+                        <th className=" m-0 p-1">Only Homology</th>
                     </tr>
                 </thead>
                 <tbody>
                     {Object.keys(orths).map((sp) => (
                         <tr>
-                            <th>{orths[sp][0]["species"]}</th>
-                            {[0, 1, 2, 3].map((syn) => {
+                            <th className=" m-0 p-1">
+                                {orths[sp][0]["species"]}
+                            </th>
+                            {[3, 2, 1, 0].map((syn) => {
                                 const filtered = orths[sp].filter(
                                     (el) => el.synteny === syn
                                 );
                                 return filtered.length > 0 ? (
-                                    <td>
+                                    <td className=" m-0 p-1">
                                         {filtered.map((orth, i) => (
                                             <>
                                                 <a
@@ -53,7 +55,7 @@ export default function Orthologs({ orthologs }) {
                                         ))}
                                     </td>
                                 ) : (
-                                    <td></td>
+                                    <td className=" m-0 p-1"></td>
                                 );
                             })}
                             {/* <td>

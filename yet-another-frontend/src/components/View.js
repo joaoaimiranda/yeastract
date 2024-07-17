@@ -47,10 +47,10 @@ export default function View() {
                                     {Object.keys(results["general"]).map(
                                         (row) => (
                                             <tr>
-                                                <th className="align-top w-24">
+                                                <th className="align-top w-24 m-0 p-1">
                                                     {titleFormat(row)}
                                                 </th>
-                                                <td>
+                                                <td className=" m-0 p-1">
                                                     {results["general"][row]}
                                                 </td>
                                             </tr>

@@ -1,12 +1,15 @@
 import React from "react";
 import * as d3 from "d3";
-import TextInput from "../components/TextInput";
+// import TextInput from "../components/TextInput";
 
 export default function Network({
     data,
     filteredData,
-    gridState,
-    setGridState,
+    // gridState,
+    // setGridState,
+    getFilteredData,
+    addListener,
+    removeListener,
 }) {
     const ref = React.useRef();
 
@@ -34,7 +37,7 @@ export default function Network({
         }));
 
         const LinkTypes = ["Negative", "Dual", "Positive", "N/A"];
-        // Construct the scales.
+
         const colorScheme = d3.schemeSet1;
         // custom color for N/A and Dual
         colorScheme.splice(1, 1, "#2c6492");
@@ -42,7 +45,6 @@ export default function Network({
 
         const color = d3.scaleOrdinal(LinkTypes, colorScheme);
 
-        // Construct the forces.
         const forceNode = d3.forceManyBody();
         const forceLink = d3
             .forceLink(links)
@@ -194,63 +196,69 @@ export default function Network({
                 .on("drag", dragged)
                 .on("end", dragended);
         }
+        function filterListener(e) {
+            setChartData(getFilteredData());
+        }
+        addListener(filterListener);
+
         return () => {
             svg.selectAll("*").remove();
+            removeListener(filterListener);
         };
-    }, [chartData]);
+    }, [chartData, getFilteredData, addListener, removeListener]);
 
-    function handleFilter(event) {
-        const { name, value } = event.target;
-        const key = name.split("-")[1];
-        const regex = new RegExp(value, "gi");
-        const newData = data.filter((row) => regex.test(row[key]));
-        // update table state filter
-        if (
-            gridState.filter === undefined ||
-            gridState.filter.filterModel === undefined
-        ) {
-            setGridState((prevState) => ({
-                ...prevState,
-                filter: {
-                    filterModel: {
-                        [key]: {
-                            filter: value,
-                            filterType: "text",
-                            type: "contains",
-                        },
-                    },
-                },
-            }));
-        } else {
-            setGridState((prevState) => ({
-                ...prevState,
-                filter: {
-                    filterModel: {
-                        ...prevState.filter.filterModel,
-                        [key]: {
-                            filter: value,
-                            filterType: "text",
-                            type: "contains",
-                        },
-                    },
-                },
-            }));
-        }
-        setChartData(newData);
-    }
+    // function handleFilter(event) {
+    //     const { name, value } = event.target;
+    //     const key = name.split("-")[1];
+    //     const regex = new RegExp(value, "gi");
+    //     const newData = data.filter((row) => regex.test(row[key]));
+    //     // update table state filter
+    //     if (
+    //         gridState.filter === undefined ||
+    //         gridState.filter.filterModel === undefined
+    //     ) {
+    //         setGridState((prevState) => ({
+    //             ...prevState,
+    //             filter: {
+    //                 filterModel: {
+    //                     [key]: {
+    //                         filter: value,
+    //                         filterType: "text",
+    //                         type: "contains",
+    //                     },
+    //                 },
+    //             },
+    //         }));
+    //     } else {
+    //         setGridState((prevState) => ({
+    //             ...prevState,
+    //             filter: {
+    //                 filterModel: {
+    //                     ...prevState.filter.filterModel,
+    //                     [key]: {
+    //                         filter: value,
+    //                         filterType: "text",
+    //                         type: "contains",
+    //                     },
+    //                 },
+    //             },
+    //         }));
+    //     }
+    //     setChartData(newData);
+    // }
     // prettier-ignore
     return (
         <div>
-            <div className="flex flex-row flex-wrap gap-2 px-2 pb-2 bg-gray-100 border-x border-[#e5e7eb]">
+            {/* <div className="flex flex-row flex-wrap gap-2 px-2 pb-2 bg-gray-100 border-x border-[#e5e7eb]">
                 <TextInput id="tf" labelText="TF" filterState={gridState.filter} handler={handleFilter}/>
                 <TextInput id="gene" labelText="Gene" filterState={gridState.filter} handler={handleFilter}/>
                 <TextInput id="orf" labelText="ORF" filterState={gridState.filter} handler={handleFilter}/>
                 <TextInput id="evidence" labelText="Evidence" filterState={gridState.filter} handler={handleFilter}/>
                 <TextInput id="association" labelText="Association" filterState={gridState.filter} handler={handleFilter}/>
-            </div>
-            <div className="border">
+            </div> */}
+            {/* <div className="border"> */}
                 <svg ref={ref}></svg>
-            </div>
+            {/* </div> */}
         </div>
     );
 }

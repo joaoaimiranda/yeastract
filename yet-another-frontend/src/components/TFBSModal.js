@@ -1,29 +1,29 @@
 import React from "react";
-import { searchRegulationInfo } from "../services/remoteServices.js";
+import { searchTFBS } from "../services/remoteServices.js";
 import { referenceFormat } from "../utils/utils.js";
 import constants from "../conf/constants.js";
+import CloseIcon from "../svg/CloseIcon.js";
+import HamburgerIcon from "../svg/HamburgerIcon.js";
+import DownloadIcon from "../svg/DownloadIcon.js";
 import { AgGridReact } from "ag-grid-react";
 import "ag-grid-community/styles/ag-grid.css";
 import "ag-grid-community/styles/ag-theme-quartz.css";
-import CloseIcon from "../svg/CloseIcon.js";
-import HamburgerIcon from "../svg/HamburgerIcon";
-import DownloadIcon from "../svg/DownloadIcon";
 
-export default function Modal(props) {
+export default function TFBSModal(props) {
     const [info, setInfo] = React.useState({});
     const [opened, setOpened] = React.useState(false);
 
     React.useEffect(() => {
         async function fetchData() {
-            const data = await searchRegulationInfo(
-                props.orf,
+            const data = await searchTFBS(
                 props.tf,
+                props.consensus,
                 props.species
             );
             setInfo(data);
         }
         if (opened) fetchData();
-    }, [props.tf, props.orf, props.species, opened]);
+    }, [props.tf, props.consensus, props.species, opened]);
 
     function openModal() {
         if (!opened) setOpened(true);
@@ -41,7 +41,9 @@ export default function Modal(props) {
 
     const getRowHeight = (params) => {
         const singleSize = 28;
-        const env = Math.ceil(params.data.envcond.length / 35) * singleSize;
+        const env =
+            Math.ceil(params.data.environmental_Condition.length / 35) *
+            singleSize;
         const exp = Math.ceil(params.data.experiment.length / 30) * singleSize;
         const pub =
             Math.ceil(referenceFormat(params.data).length / 35) * singleSize;
@@ -64,20 +66,10 @@ export default function Modal(props) {
             ),
         },
         {
-            headerName: "Gene",
-            field: "orf",
-            width: 100,
+            headerName: "Binding Site",
+            field: "IUPACseq",
+            width: 200,
             hide: false,
-            cellRenderer: (p) => (
-                <a
-                    className="link"
-                    href={`/${props.species}/view?orf=${p.data.orf}`}
-                >
-                    {p.data.gene === "Uncharacterized"
-                        ? p.data.orf
-                        : p.data.gene}
-                </a>
-            ),
         },
         {
             headerName: "References",
@@ -97,6 +89,7 @@ export default function Modal(props) {
             tooltipValueGetter: (p) => referenceFormat(p.data),
             wrapText: true,
         },
+        { headerName: "Strain", field: "strain", width: 100, hide: false },
         { headerName: "Evidence", field: "code", width: 100, hide: false },
         {
             headerName: "Experiment",
@@ -108,11 +101,9 @@ export default function Modal(props) {
             ),
             tooltipValueGetter: (p) => p.data.experiment,
         },
-        { headerName: "Type", field: "association", width: 100, hide: false },
-        { headerName: "Strain", field: "strain", width: 100, hide: false },
         {
             headerName: "Environmental Condition",
-            field: "envcond",
+            field: "environmental_Condition",
             tooltipValueGetter: (p) => p.data.envcond,
             width: 300,
             // wrapText: true,
@@ -140,13 +131,13 @@ export default function Modal(props) {
 
     return (
         <>
-            <button className="ml-2 btn btn-xs" onClick={openModal}>
+            <button className="btn btn-xs p-1" onClick={openModal}>
                 Ref
             </button>
             <dialog id={props.id} className="modal">
-                <div className="modal-box w-11/12 max-w-full h-full flex flex-col">
+                <div className="modal-box w-11/12 max-w-full">
                     <div className="grid grid-cols-2 sticky top-0 z-30 bg-base-100 bg-opacity-90">
-                        <h3 className="text-xl self-center">{`Reference(s) supporting ${props.tf} -> ${props.orf}`}</h3>
+                        <h3 className="text-xl self-center">{`Reference(s) supporting ${props.consensus} Binding Site`}</h3>
                         <form method="dialog" className="justify-self-end mb-2">
                             <button className="btn btn-ghost btn-circle">
                                 <CloseIcon />
@@ -221,7 +212,7 @@ export default function Modal(props) {
                     )}
                 </div>
                 <form method="dialog" className="modal-backdrop">
-                    <button>Close</button>
+                    <button>close</button>
                 </form>
             </dialog>
         </>

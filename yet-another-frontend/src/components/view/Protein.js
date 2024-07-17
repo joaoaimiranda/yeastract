@@ -1,5 +1,5 @@
 import React from "react";
-import Modal from "../Modal";
+import TFBSModal from "../TFBSModal";
 import { sequenceFormat, titleFormat } from "../../utils/utils";
 export default function Protein({ protein, species }) {
     return (
@@ -8,16 +8,16 @@ export default function Protein({ protein, species }) {
                 <tbody>
                     {Object.keys(protein).map((row) => (
                         <tr>
-                            <th className="align-top w-32">
+                            <th className="align-top w-32 m-0 p-1">
                                 {titleFormat(row)}
                             </th>
-                            <td>
+                            <td className=" m-0 p-1">
                                 {row === "TFBS" ? (
                                     <ul>
                                         {protein[row].map((tfbs) => (
                                             <li>
-                                                <span>{tfbs}</span>
-                                                <Modal
+                                                <span>{tfbs} </span>
+                                                <TFBSModal
                                                     id={`modal_${tfbs}`}
                                                     species={species}
                                                     tf={protein["protein_name"]}

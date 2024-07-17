@@ -7,11 +7,11 @@ export default function GOterm({ goterm, species }) {
             <table className="table">
                 <tbody>
                     <tr>
-                        <th className="align-top">Ontology</th>
+                        <th className="align-top w-32">Ontology</th>
                         <td>{goterm["go"]["onto"]}</td>
                     </tr>
                     <tr>
-                        <th className="align-top">GO ID</th>
+                        <th className="align-top w-32">GO ID</th>
                         <td>
                             <a
                                 className="link"
@@ -24,11 +24,11 @@ export default function GOterm({ goterm, species }) {
                         </td>
                     </tr>
                     <tr>
-                        <th className="align-top">GO Term</th>
+                        <th className="align-top w-32">GO Term</th>
                         <td>{`level ${goterm["go"]["depth"]}: ${goterm["go"]["term"]}`}</td>
                     </tr>
                     <tr>
-                        <th className="align-top">Parent Terms</th>
+                        <th className="align-top w-32">Parent Terms</th>
                         <td>
                             <ul>
                                 {goterm["parents"].map((item) => (
@@ -42,7 +42,7 @@ export default function GOterm({ goterm, species }) {
                         </td>
                     </tr>
                     <tr>
-                        <th className="align-top">Children Terms</th>
+                        <th className="align-top w-32">Children Terms</th>
                         <td>
                             <ul>
                                 {goterm["children"].map((item) => (
@@ -56,7 +56,7 @@ export default function GOterm({ goterm, species }) {
                         </td>
                     </tr>
                     <tr>
-                        <th className="align-top">Associated ORF/Genes</th>
+                        <th className="align-top w-32">Associated ORF/Genes</th>
                         <td>
                             <ul>
                                 {goterm["genes"].map((item) => (

@@ -8,10 +8,10 @@ export default function GO({ gos }) {
                 <tbody>
                     {Object.keys(gos).map((row) => (
                         <tr>
-                            <th className="align-top w-32">
+                            <th className="align-top w-32 m-0 p-1">
                                 {titleFormat(row)}
                             </th>
-                            <td>
+                            <td className=" m-0 p-1">
                                 <ul>
                                     {gos[row].map((item) => (
                                         <li>

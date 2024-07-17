@@ -4,6 +4,7 @@ import {
     seqRetrieval,
     promoterAnalysis,
     tfConsensus,
+    findTFBS,
 } from "../service/seqService.js";
 import { Router } from "express";
 const router = Router();
@@ -64,6 +65,19 @@ router.get("/tf-consensus", async (req, res, next) => {
     } catch (err) {
         console.log(err);
         if (err.message === "Bad Request") res.status(400).send("Bad Request");
+        else res.status(500).send("Internal Server Error");
+    }
+});
+
+router.post("/tfbs-on-seq", async (req, res, next) => {
+    try {
+        const result = await findTFBS(req.body);
+        res.status(200).json(result);
+    } catch (err) {
+        console.log(err);
+        if (err.message === "Bad Request") res.status(400).send("Bad Request");
+        else if (err.message === "emptyseq")
+            res.status(400).send("Sequence cannot be empty");
         else res.status(500).send("Internal Server Error");
     }
 });

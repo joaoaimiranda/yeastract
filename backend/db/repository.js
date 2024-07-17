@@ -479,11 +479,15 @@ export async function getMotifsFromDB(
     tfcList = false,
     bsrgOnly = true
 ) {
+    const speciesQ = species
+        ? ` and O.species in ('${dbspecies(species)}')`
+        : "";
     const q =
         "select distinct P.tfid, P.protein, C.IUPACseq from protein as P, " +
         "consensus as C, tfconsensus as TFC, orfgene as O where " +
         "C.consensusid=TFC.consensusid and TFC.tfid=P.tfid and " +
-        `P.tfid=O.orfid and O.species in ('${dbspecies(species)}')` +
+        `P.tfid=O.orfid` +
+        speciesQ +
         // use flag?
         " and TFC.source='BSRG curated'";
 
@@ -565,10 +569,7 @@ export async function multiSearch(
     return null;
 }
 
-export async function getPossibleMatches(
-    term,
-    species = "Saccharomyces cerevisiae S288c"
-) {
+export async function getPossibleMatches(term, species) {
     const q_orf =
         `select O.orf, O.gene, P.protein, A.alias, D.description from protein as P, orfgene as O ` +
         `left outer join alias as A on A.orfid=O.orfid left outer join description as D on O.descriptionid=D.descriptionid where O.orfid=P.tfid and ` +
@@ -579,7 +580,7 @@ export async function getPossibleMatches(
     // const q_alias = `select A.alias, O.orf, O.gene from orfgene as O, alias as A where A.alias like '%${term}%' and A.orfid=O.orfid and species='${dbspecies(species)}'`;
     // const q_protein = `select P.protein from protein as P, orfgene as O where P.protein like '%${term}%' and P.tfid=O.orfid and species='${dbspecies(species)}'`;
     // const q_desc = `select distinct O.orf, O.gene, D.description from description as D, orfgene as O where D.description like '%${term}%' and D.descriptionid=O.descriptionid and O.species='${dbspecies(species)}'`;
-    const q_go = `select distinct term, onto as ontology from geneontology where term like '%${term}%'`;
+    const q_go = `select distinct goid, term, onto as ontology from geneontology where term like '%${term}%'`;
     // const q_func = `select distinct term from geneontology where onto='function' and term like '%${term}%'`;
     // const q_process = `select distinct term from geneontology where onto='process' and term like '%${term}%'`;
     // const q_component = `select distinct term from geneontology where onto='component' and term like '%${term}%'`;
@@ -612,13 +613,14 @@ export async function getPossibleMatches(
     // aggregate all alias of an orf/gene into same row
     for (let row of orf_res) {
         const i = orf_map.findIndex((el) => el["orf"] === row["orf"]);
-        if (i === -1) orf_map.push({ ...row, alias: [row.alias] });
+        if (i === -1)
+            orf_map.push({ ...row, alias: row.alias ? [row.alias] : [] });
         else orf_map[i]["alias"].push(row["alias"]);
     }
 
     return {
         orf: orf_map,
-        gene_Ontology: go_res,
+        go: go_res,
         reaction: reaction_res,
         // gene: gene_res,
         // alias: alias_res,

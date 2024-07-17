@@ -9,6 +9,8 @@ export default function Locus({ locus, orf, species }) {
                 <li key={ext.name}>
                     <a
                         className="link"
+                        target="_blank"
+                        rel="noopener noreferrer"
                         href={
                             ext.name === "KEGG"
                                 ? `${ext.url}${orf}`
@@ -23,6 +25,7 @@ export default function Locus({ locus, orf, species }) {
     );
     const [showPromSeq, setShowPromSeq] = React.useState(false);
     const [showGeneSeq, setShowGeneSeq] = React.useState(false);
+
     return (
         <div className="overflow-x-auto">
             <table className="table">
@@ -31,7 +34,7 @@ export default function Locus({ locus, orf, species }) {
                         if (row === "gene_Sequence") {
                             return (
                                 <tr>
-                                    <th className="align-top w-32">
+                                    <th className="align-top w-32 m-0 p-1">
                                         {titleFormat(row)}
                                         <button
                                             className="btn btn-xs"
@@ -44,7 +47,7 @@ export default function Locus({ locus, orf, species }) {
                                                 : "Show Seq"}
                                         </button>
                                     </th>
-                                    <td>
+                                    <td className=" m-0 p-1">
                                         {showGeneSeq &&
                                             sequenceFormat(locus[row])}
                                     </td>
@@ -53,7 +56,7 @@ export default function Locus({ locus, orf, species }) {
                         } else if (row === "promoter_Sequence") {
                             return (
                                 <tr>
-                                    <th className="align-top w-32">
+                                    <th className="align-top w-32 m-0 p-1">
                                         {titleFormat(row)}
                                         <button
                                             className="btn btn-xs"
@@ -66,7 +69,7 @@ export default function Locus({ locus, orf, species }) {
                                                 : "Show Seq"}
                                         </button>
                                     </th>
-                                    <td>
+                                    <td className=" m-0 p-1">
                                         {showPromSeq &&
                                             sequenceFormat(locus[row])}
                                     </td>
@@ -75,10 +78,12 @@ export default function Locus({ locus, orf, species }) {
                         } else {
                             return (
                                 <tr>
-                                    <th className="align-top w-32">
+                                    <th className="align-top w-32 m-0 p-1">
                                         {titleFormat(row)}
                                     </th>
-                                    <td>{row === "ext" ? exts : locus[row]}</td>
+                                    <td className="m-0 p-1">
+                                        {row === "ext" ? exts : locus[row]}
+                                    </td>
                                 </tr>
                             );
                         }
