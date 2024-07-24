@@ -14,15 +14,11 @@ import seqRouter from "./routes/seq.js";
 import utilsRouter from "./routes/utils.js";
 import infoRouter from "./routes/information.js";
 
-var app = express();
+const app = express();
 
 const __filename = fileURLToPath(import.meta.url);
 
 const __dirname = path.dirname(__filename);
-
-// view engine setup
-//app.set('views', path.join(__dirname, 'views'));
-//app.set('view engine', 'jade');
 
 app.use(cors());
 app.use(logger("dev"));

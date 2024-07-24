@@ -37,7 +37,7 @@ export async function motifOnPromoter(params) {
     const geneIdList = await getIDs(geneNames, params.species);
 
     const seqs = await upstreamSeq(geneIdList);
-    console.log(inputMotif);
+    // console.log(inputMotif);
     // console.log(seqs);
     const tfbs = tfBindingSites(inputMotif, seqs, params.substitutions);
     return tfbs;
@@ -120,7 +120,7 @@ export async function promoterAnalysis(params) {
 }
 
 export async function tfConsensus(params) {
-    console.log(params);
+    // console.log(params);
     if (params.species === undefined) {
         throw new Error("Bad Request");
     }
@@ -210,10 +210,7 @@ function tfBindingSites(motifs, sequences, subst = 0) {
             if (!retObj[orfid]) retObj[orfid] = [];
             retObj[orfid].push({
                 motif: m,
-                promoter: {
-                    F: sequences[orfid],
-                    R: IUPACcomplement(sequences[orfid]),
-                },
+                promoterlen: sequences[orfid].length,
                 matches: matches[orfid],
             });
         }

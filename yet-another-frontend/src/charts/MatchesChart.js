@@ -1,20 +1,21 @@
 import React from "react";
 import * as d3 from "d3";
 
-export default function MatchesChart({ data }) {
+export default function MatchesChart({ data, seqName, width = 1000 }) {
+    const tooltipRef = React.useRef();
     const ref = React.useRef();
 
     React.useEffect(() => {
-        const width = 1000;
-        const height = 100;
+        // const width = 1000;
+        const height = 80;
         const marginTop = 0;
-        const marginRight = 0;
-        const marginBottom = 0;
-        const marginLeft = 0;
-        console.log("bota", data);
+        const marginRight = 4;
+        const marginBottom = 20;
+        const marginLeft = 13;
+        // console.log("bota", data);
         const x = d3
             .scaleLinear()
-            .domain([0, width])
+            .domain([-width, 0])
             // descending frequency
             .range([marginLeft, width - marginRight]);
 
@@ -32,26 +33,75 @@ export default function MatchesChart({ data }) {
 
         svg.append("rect")
             .attr("fill", "steelblue")
-            .attr("x", x(0))
+            .attr("x", x(-width))
             .attr("y", y(height))
-            .attr("height", height)
-            .attr("width", 1000);
+            .attr("height", height - marginBottom)
+            .attr("width", width - marginLeft - marginRight);
 
         svg.append("g")
             .attr("fill", "red")
             .selectAll()
             .data(data)
             .join("rect")
-            .attr("id", (d) => d.pos)
+            .attr("id", (d) => `viz_${seqName}_${d.strand}_${d.motif}_${d.pos}`)
             .attr("x", (d) => x(d.pos))
             .attr("y", y(height))
-            .attr("height", height)
-            .attr("width", (d) => d.size);
+            .attr("height", height - marginBottom)
+            .attr("width", (d) => d.size)
+            .on("mouseover", function (e, d) {
+                const el = document.getElementById(
+                    `data_${seqName}_${d.strand}_${d.motif}_${d.pos}`
+                );
+                if (el) el.setAttribute("style", "background-color: yellow");
+                d3.select(this).style("fill", "yellow");
+                d3.select(tooltipRef.current)
+                    .transition()
+                    .duration(100)
+                    // .style("position", "absolute")
+                    // .style("background", "white")
+                    // .style("background", "rgba(0,0,0,0.6)")
+                    // .style("color", "black")
+                    // .style("color", "white")
+                    // .style("object-position", "top")
+                    // .style("visibility", "visible");
+                    .style("opacity", 1);
+                d3.select(tooltipRef.current).text(
+                    `${d.motif} ${d.pos} ${d.strand}`
+                );
+            })
+            .on("mouseout", function (e, d) {
+                const el = document.getElementById(
+                    `data_${seqName}_${d.strand}_${d.motif}_${d.pos}`
+                );
+                if (el)
+                    el.setAttribute("style", "background-color: transparent");
+                d3.select(this).style("fill", "red");
+                d3.select(tooltipRef.current)
+                    .transition()
+                    .duration(100)
+                    // .style("visibility", "hidden");
+                    .style("opacity", 0);
+            });
+
+        svg.append("g")
+            .attr("transform", `translate(0,${height - marginBottom})`)
+            .call(d3.axisBottom(x).tickSizeOuter(0));
 
         return () => {
             svg.selectAll("*").remove();
         };
-    }, [data]);
+    }, [data, seqName, width]);
 
-    return <svg ref={ref}></svg>;
+    return (
+        <div>
+            <span>{seqName}</span>
+            <div
+                className="bg-transparent text-black object-top px-3"
+                ref={tooltipRef}
+            >
+                Hover for additional info
+            </div>
+            <svg ref={ref}></svg>
+        </div>
+    );
 }

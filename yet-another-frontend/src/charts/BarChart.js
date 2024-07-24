@@ -159,26 +159,6 @@ export default function BarChart({
         <>
             <div ref={tooltipRef}></div>
             <svg ref={ref}></svg>
-            {/* <svg
-                width={width + marginLeft + marginRight}
-                height={height + marginTop + marginBottom}
-                viewBox={`0 0 ${width} ${height}`}
-                style={{ maxWidth: "100%", height: "auto" }}
-            >
-                <g>
-                    {data.map(({ tf, frequency }) => (
-                        <rect
-                            key={`bar-${tf}`}
-                            x={x(tf)}
-                            y={y(frequency)}
-                            width={x.bandwidth()}
-                            height={y(0) - y(frequency)}
-                            fill="steelblue"
-                            onMouseOver={mouseover}
-                        />
-                    ))}
-                </g>
-            </svg> */}
         </>
     );
 }

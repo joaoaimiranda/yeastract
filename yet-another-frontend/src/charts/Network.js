@@ -16,6 +16,7 @@ export default function Network({
     const [chartData, setChartData] = React.useState(filteredData);
 
     React.useEffect(() => {
+        if (!data[0] || !data[0].gene || !data[0].tf || !data[0].orf) return;
         const width = 700;
         const height = 700;
 
@@ -205,7 +206,7 @@ export default function Network({
             svg.selectAll("*").remove();
             removeListener(filterListener);
         };
-    }, [chartData, getFilteredData, addListener, removeListener]);
+    }, [data, chartData, getFilteredData, addListener, removeListener]);
 
     // function handleFilter(event) {
     //     const { name, value } = event.target;

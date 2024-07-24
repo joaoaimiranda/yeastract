@@ -16,19 +16,36 @@ import constants from "../conf/constants";
 import BarChart from "../charts/BarChart";
 import Histogram from "../charts/Histogram";
 import Network from "../charts/Network";
-
+import Loading from "./Loading";
 import ErrorAlert from "./ErrorAlert";
 import SampleDataIcon from "../svg/SampleDataIcon";
 import HamburgerIcon from "../svg/HamburgerIcon";
 import NetworkIcon from "../svg/NetworkIcon";
 // import TableIcon from "../svg/TableIcon";
 import DownloadIcon from "../svg/DownloadIcon";
+import { gridAutoSize } from "../utils/utils";
 
 export default function Main() {
-    // const [crossSpecies, setCrossSpecies] = React.useState(false);
-    // const [documented, setDocumented] = React.useState(true);
-    // const [expression, setExpression] = React.useState(false);
+    const { species } = useParams();
     let [searchParams, setSearchParams] = useSearchParams();
+    const [firstRender, setFirstRender] = React.useState(true);
+    const [historyCall, setHistoryCall] = React.useState("");
+
+    const ontologies = [
+        { option: "Biological process", value: "process" },
+        { option: "Molecular function", value: "function" },
+        { option: "Cellular component", value: "component" },
+    ];
+
+    const [envcons, setEnvcons] = React.useState({});
+    React.useEffect(() => {
+        async function fetchData() {
+            const res = await getEnvCons();
+            setEnvcons(res);
+        }
+        fetchData();
+    }, []);
+
     const [formData, setFormData] = React.useState({
         // query: "rank-none",
         tfs: searchParams.get("tfs") ? searchParams.get("tfs") : "",
@@ -42,12 +59,34 @@ export default function Main() {
         // activator: true,
         // inhibitor: true,
         // noexprinfo: true,
+
+        // DOESNT WORK BECAUSE OF ASYNC
+        // envconGroup:
+        //     searchParams.get("envconGroup") &&
+        //     Object.keys(envcons).includes(searchParams.get("envconGroup"))
+        //         ? searchParams.get("envconGroup")
+        //         : "",
+        // envconSubgroup:
+        //     searchParams.get("envconGroup") &&
+        //     Object.keys(envcons).includes(searchParams.get("envconGroup")) &&
+        //     searchParams.get("envconSubgroup") &&
+        //     envcons[searchParams.get("envconGroup")].includes(
+        //         searchParams.get("envconSubgroup")
+        //     )
+        //         ? searchParams.get("envconSubgroup")
+        //         : "",
+
         envconGroup: "",
         envconSubgroup: "",
-        synteny: 0,
-        homolog: "",
-        ontology: "process",
+        synteny: 0, // TODO
+        homolog: "", // TODO
+        ontology:
+            searchParams.get("ontology") &&
+            ontologies.some((el) => el.value === searchParams.get("ontology"))
+                ? searchParams.get("ontology")
+                : "process",
     });
+    const queries = ["rank-none", "rank-go", "rank-go", "rank-tfbs"];
     const [showErrorMessage, setShowErrorMessage] = React.useState({
         flag: false,
         msg: "",
@@ -58,19 +97,10 @@ export default function Main() {
     const [gridVisible, setGridVisible] = React.useState(false);
     const [gridSavedState, setGridSavedState] = React.useState();
     const [filteredData, setFilteredData] = React.useState();
-
-    const { species } = useParams();
+    const [supressPaginationPanel, setSupressPaginationPanel] =
+        React.useState(false);
 
     console.log("refreshed");
-
-    const [envcons, setEnvcons] = React.useState({});
-    React.useEffect(() => {
-        async function fetchData() {
-            const res = await getEnvCons();
-            setEnvcons(res);
-        }
-        fetchData();
-    }, []);
 
     const subgroupOptions = React.useMemo(() => {
         if (formData.envconGroup === "") return ["---"];
@@ -85,12 +115,6 @@ export default function Main() {
     ];
 
     // const homologs = ["c. albicans", "c. auris", "c. glabrata"];
-
-    const ontologies = [
-        { option: "Biological process", value: "process" },
-        { option: "Molecular function", value: "function" },
-        { option: "Cellular component", value: "component" },
-    ];
 
     const [rowData, setRowData] = React.useState([]);
 
@@ -136,13 +160,13 @@ export default function Main() {
         }));
     }
 
-    async function handleQuery(event) {
+    async function handleQuery(event, q = null) {
         // clean error alert
         if (showErrorMessage.flag)
             setShowErrorMessage({ flag: false, msg: "" });
 
-        event.preventDefault();
-        const query = event.nativeEvent.submitter.name;
+        if (event !== undefined) event.preventDefault();
+        const query = q ? q : event.nativeEvent.submitter.name;
 
         // let documented = "";
         // if (formData.binding && formData.expression)
@@ -165,30 +189,34 @@ export default function Main() {
             const reverseCols =
                 formData.tfs.trim() === "" && formData.genes.trim() !== "";
 
-            if (
-                formData.tfs.concat(
-                    formData.genes,
-                    formData.envconGroup,
-                    formData.envconSubgroup,
-                    formData.synteny,
-                    formData.homolog
-                ).length < 2000
-            ) {
-                const params = {};
-                if (formData.tfs.trim() !== "") params.tfs = formData.tfs;
-                if (formData.genes.trim() !== "") params.genes = formData.genes;
-                // if (formData.envconGroup !== "") {
-                //     params.envconGroup = formData.envconGroup;
-                //     if (formData.envconSubgroup !== "")
-                //         params.envconSubgroup = formData.envconSubgroup;
-                // }
-                // if (formData.homolog !== "") {
-                //     params.homolog = formData.homolog;
-                //     params.synteny = formData.synteny;
-                // }
-                setSearchParams(params);
-            } else {
-                setSearchParams({});
+            if (!q) {
+                if (
+                    formData.tfs.concat(
+                        formData.genes,
+                        formData.envconGroup,
+                        formData.envconSubgroup,
+                        formData.synteny,
+                        formData.homolog
+                    ).length < 2000
+                ) {
+                    const params = {};
+                    params.q = query;
+                    if (formData.tfs.trim() !== "") params.tfs = formData.tfs;
+                    if (formData.genes.trim() !== "")
+                        params.genes = formData.genes;
+                    if (formData.envconGroup !== "") {
+                        params.envconGroup = formData.envconGroup;
+                        if (formData.envconSubgroup !== "")
+                            params.envconSubgroup = formData.envconSubgroup;
+                    }
+                    // if (formData.homolog !== "") {
+                    //     params.homolog = formData.homolog;
+                    //     params.synteny = formData.synteny;
+                    // }
+                    setSearchParams(params);
+                } else {
+                    setSearchParams({});
+                }
             }
             const res = await searchRegulations({
                 ...formData,
@@ -210,24 +238,24 @@ export default function Main() {
                 }
                 
                 setColDefs([
-                    { headerName: "Gene", field: "gene", hide: false, width: 200, colSpan: p => p.node.rowPinned === "bottom" ? 6 : 1,
-                    cellRenderer: p => p.node.rowPinned === "top" ? <BarChart data={res} colName={"gene"} width={200} height={90} getFilter={getFilterTerm} setFilter={setFilter} getFilteredData={getFilteredData} addListener={addListener} removeListener={removeListener} /> 
-                    : p.node.rowPinned === "bottom" ? 
-                    <Network data={res} filteredData={filteredData} gridState={gridSavedState} setGridState={setGridSavedState} getFilteredData={getFilteredData} addListener={addListener} removeListener={removeListener} />
+                    { headerName: "Gene", field: "gene", hide: false, maxWidth: 200, rowDrag: true, colSpan: p => p.node.rowPinned && p.data.id === "network" ? 6 : 1,
+                    cellRenderer: p => p.node.rowPinned && p.data.id === "stats" ? <BarChart data={res} colName={"gene"} width={200} height={90} getFilter={getFilterTerm} setFilter={setFilter} getFilteredData={getFilteredData} addListener={addListener} removeListener={removeListener} /> 
+                    : p.node.rowPinned && p.data.id === "network" ? 
+                    <Network data={res} filteredData={res} gridState={gridSavedState} setGridState={setGridSavedState} getFilteredData={getFilteredData} addListener={addListener} removeListener={removeListener} />
                     : <a className="link" href={`/${species}/view?orf=${p.data.orf}`}>{p.data.gene}</a> },
-                    { headerName: "ORF", field: "orf", hide: false, width: 200,
-                    cellRenderer: p => p.node.rowPinned === "top" ? <BarChart data={res} colName={"orf"} width={200} height={90} getFilter={getFilterTerm} setFilter={setFilter} getFilteredData={getFilteredData} addListener={addListener} removeListener={removeListener} /> 
+                    { headerName: "ORF", field: "orf", hide: false, maxWidth: 200,
+                    cellRenderer: p => p.node.rowPinned && p.data.id === "stats" ? <BarChart data={res} colName={"orf"} width={200} height={90} getFilter={getFilterTerm} setFilter={setFilter} getFilteredData={getFilteredData} addListener={addListener} removeListener={removeListener} /> 
                     : <a className="link" href={`/${species}/view?orf=${p.data.orf}`}>{p.data.orf}</a> },
-                    { headerName: "TF", field: "tf", hide: false, width: 150,
-                    cellRenderer: p => p.node.rowPinned === "top" ? <p className="text-lg font-semibold text-wrap">{`${(new Set(res.map(row => row.tf))).size} unique TFs`}</p> 
+                    { headerName: "TF", field: "tf", hide: false, maxWidth: 150, rowDrag: true,
+                    cellRenderer: p => p.node.rowPinned && p.data.id === "stats" ? <p className="text-lg font-semibold text-wrap">{`${(new Set(res.map(row => row.tf))).size} unique TFs`}</p> 
                     : <a className="link" href={`/${species}/view?orf=${p.data.tf}`}>{p.data.tf}</a> },
-                    { headerName: "Evidence", field: "evidence", hide: false, width: 180, 
-                    cellRenderer: p => p.node.rowPinned === "top" ? <BarChart data={res} colName={"evidence"} width={180} height={90} getFilter={getFilterTerm} setFilter={setFilter} getFilteredData={getFilteredData} addListener={addListener} removeListener={removeListener} /> 
+                    { headerName: "Evidence", field: "evidence", hide: false, maxWidth: 180, 
+                    cellRenderer: p => p.node.rowPinned && p.data.id === "stats" ? <BarChart data={res} colName={"evidence"} width={180} height={90} getFilter={getFilterTerm} setFilter={setFilter} getFilteredData={getFilteredData} addListener={addListener} removeListener={removeListener} /> 
                     : p.data.evidence},
-                    { headerName: "Association Type", field: "association", hide: false, width: 150, 
-                    cellRenderer: p => p.node.rowPinned === "top" ? <BarChart data={res} colName={"association"} width={150} height={90} getFilter={getFilterTerm} setFilter={setFilter} getFilteredData={getFilteredData} addListener={addListener} removeListener={removeListener} /> 
+                    { headerName: "Association Type", field: "association", hide: false, maxWidth: 150, 
+                    cellRenderer: p => p.node.rowPinned && p.data.id === "stats" ? <BarChart data={res} colName={"association"} width={150} height={90} getFilter={getFilterTerm} setFilter={setFilter} getFilteredData={getFilteredData} addListener={addListener} removeListener={removeListener} /> 
                     : p.data.association},
-                    { headerName: "Reference", field: "Reference", width: 100, hide: false, sortable: false, floatingFilter: false, 
+                    { headerName: "Ref", field: "Reference", maxWidth: 80, hide: false, sortable: false, floatingFilter: false, 
                     cellRenderer: p => !p.node.rowPinned && <RegulationModal id={`reg_modal_${p.data.tf}_${p.data.gene}`} orf={p.data.gene === "Uncharacterized" ? p.data.orf : p.data.gene} tf={p.data.tf} species={species} />},
                 ]);
                 setRowData(res);
@@ -235,7 +263,8 @@ export default function Main() {
                 if (!first) gridRef.current.api.applyColumnState({
                     state: [{ colId: "gene", sort: "asc"}],
                 });
-                
+                setTimeout(() => gridAutoSize(gridRef), 100);
+
             }
             else {
                 // fix for ref not available on first query
@@ -247,24 +276,24 @@ export default function Main() {
                 }
 
                 setColDefs([
-                    { headerName: "TF", field: "tf", hide: false, width: 200, colSpan: p => p.node.rowPinned && p.data.id === "network" ? 6 : 1,
+                    { headerName: "TF", field: "tf", hide: false, maxWidth: 200, rowDrag: true, colSpan: p => p.node.rowPinned && p.data.id === "network" ? 6 : 1,
                     cellRenderer: p => p.node.rowPinned && p.data.id === "stats" ? <BarChart data={res} colName={"tf"} width={200} height={90} getFilter={getFilterTerm} setFilter={setFilter} getFilteredData={getFilteredData} addListener={addListener} removeListener={removeListener} />
                     : p.node.rowPinned && p.data.id === "network" ? 
                     <Network data={res} filteredData={res} gridState={gridSavedState} setGridState={setGridSavedState} getFilteredData={getFilteredData} addListener={addListener} removeListener={removeListener} />
                     : <a className="link" href={`/${species}/view?orf=${p.data.tf}`}>{p.data.tf}</a> },
-                    { headerName: "Gene", field: "gene", hide: false, width: 150, 
-                    cellRenderer: p => p.node.rowPinned === "top" ? <p className="text-lg font-semibold text-wrap">{`${(new Set(res.map(row => row.gene))).size} unique Genes`}</p>
+                    { headerName: "Gene", field: "gene", hide: false, maxWidth: 150, rowDrag: true, 
+                    cellRenderer: p => p.node.rowPinned && p.data.id === "stats" ? <p className="text-lg font-semibold text-wrap">{`${(new Set(res.map(row => row.gene))).size} unique Genes`}</p>
                     : <a className="link" href={`/${species}/view?orf=${p.data.orf}`}>{p.data.gene}</a> },
-                    { headerName: "ORF", field: "orf", hide: false, width: 150,
-                    cellRenderer: p => p.node.rowPinned === "top" ? <p className="text-lg font-semibold text-wrap">{`${(new Set(res.map(row => row.orf))).size} unique ORFs`}</p> 
+                    { headerName: "ORF", field: "orf", hide: false, maxWidth: 150,
+                    cellRenderer: p => p.node.rowPinned && p.data.id === "stats" ? <p className="text-lg font-semibold text-wrap">{`${(new Set(res.map(row => row.orf))).size} unique ORFs`}</p> 
                     : <a className="link" href={`/${species}/view?orf=${p.data.orf}`}>{p.data.orf}</a> },
-                    { headerName: "Evidence", field: "evidence", hide: false, width: 180, 
-                    cellRenderer: p => p.node.rowPinned === "top" ? <BarChart data={res} colName={"evidence"} width={180} height={90} getFilter={getFilterTerm} setFilter={setFilter} getFilteredData={getFilteredData} addListener={addListener} removeListener={removeListener} /> 
+                    { headerName: "Evidence", field: "evidence", hide: false, maxWidth: 180, 
+                    cellRenderer: p => p.node.rowPinned && p.data.id === "stats" ? <BarChart data={res} colName={"evidence"} width={180} height={90} getFilter={getFilterTerm} setFilter={setFilter} getFilteredData={getFilteredData} addListener={addListener} removeListener={removeListener} /> 
                     : p.data.evidence},
-                    { headerName: "Association Type", field: "association", hide: false, width: 150, 
-                    cellRenderer: p => p.node.rowPinned === "top" ? <BarChart data={res} colName={"association"} width={150} height={95} getFilter={getFilterTerm} setFilter={setFilter} getFilteredData={getFilteredData} addListener={addListener} removeListener={removeListener} /> 
+                    { headerName: "Association Type", field: "association", hide: false, maxWidth: 150, 
+                    cellRenderer: p => p.node.rowPinned && p.data.id === "stats" ? <BarChart data={res} colName={"association"} width={150} height={95} getFilter={getFilterTerm} setFilter={setFilter} getFilteredData={getFilteredData} addListener={addListener} removeListener={removeListener} /> 
                     : p.data.association},
-                    { headerName: "Reference", field: "Reference", width: 100, hide: false, sortable: false, floatingFilter: false, 
+                    { headerName: "Ref", field: "Reference", maxWidth: 80, hide: false, sortable: false, floatingFilter: false, 
                     cellRenderer: p => !p.node.rowPinned && <RegulationModal id={`reg_modal_${p.data.tf}_${p.data.gene}`} orf={p.data.gene === "Uncharacterized" ? p.data.orf : p.data.gene} tf={p.data.tf} species={species} />},
                 ]);
                 setRowData(res);
@@ -272,6 +301,8 @@ export default function Main() {
                 if (!first) gridRef.current.api.applyColumnState({
                     state: [{ colId: "tf", sort: "asc" }],
                 });
+                setTimeout(() => gridAutoSize(gridRef), 100);
+
             }
         } else if (query === "rank-tf") {
             // if (documented === "") return; //not accepted
@@ -284,21 +315,30 @@ export default function Main() {
                 return;
             }
             setShowLoading(true);
-            if (
-                formData.tfs.concat(
-                    formData.genes,
-                    formData.envconGroup,
-                    formData.envconSubgroup,
-                    formData.synteny,
-                    formData.homolog
-                ).length < 2000
-            ) {
-                const params = {};
-                if (formData.tfs.trim() !== "") params.tfs = formData.tfs;
-                if (formData.genes.trim() !== "") params.genes = formData.genes;
-                setSearchParams(params);
-            } else {
-                setSearchParams({});
+            if (!q) {
+                if (
+                    formData.tfs.concat(
+                        formData.genes,
+                        formData.envconGroup,
+                        formData.envconSubgroup,
+                        formData.synteny,
+                        formData.homolog
+                    ).length < 2000
+                ) {
+                    const params = {};
+                    params.q = query;
+                    if (formData.tfs.trim() !== "") params.tfs = formData.tfs;
+                    if (formData.genes.trim() !== "")
+                        params.genes = formData.genes;
+                    if (formData.envconGroup !== "") {
+                        params.envconGroup = formData.envconGroup;
+                        if (formData.envconSubgroup !== "")
+                            params.envconSubgroup = formData.envconSubgroup;
+                    }
+                    setSearchParams(params);
+                } else {
+                    setSearchParams({});
+                }
             }
             const res = await rankTF({
                 ...formData,
@@ -307,21 +347,22 @@ export default function Main() {
             });
             console.log(res);
             if (!gridVisible) setGridVisible(true);
-            const genesWidth =
-                100 +
-                Math.max(...res.map((row) => row.genes.join("").length)) * 8;
+            // const genesWidth =
+            //     100 +
+            //     Math.max(...res.map((row) => row.genes.join("").length)) * 8;
             // prettier-ignore
             setColDefs([
-                { headerName: "TF", field: "tf", hide: false, width: 120,
-                cellRenderer: p => !p.node.rowPinned === "top" && <a className="link" href={`/${species}/view?orf=${p.data.tf}`}>{p.data.tf}</a>},
-                { headerName: "% in user set", field: "setPer", hide: false, width: 150,
-                cellRenderer: (p) => p.node.rowPinned === "top" ? (<Histogram data={res.map((row) => row.setPer)} width={150} height={95} />) : (p.data.setPer + "%"),},
-                { headerName: "% in species", field: "dbPer", hide: false, width: 150,
-                cellRenderer: (p) => p.node.rowPinned === "top" ? (<Histogram data={res.map((row) => row.dbPer)} width={150} height={95} />) : (p.data.dbPer + "%"),},
-                { headerName: "Target Genes", field: "genes", hide: false, width: genesWidth,
-                cellRenderer: (p) => p.node.rowPinned === "top" ? (<></>) : (p.data.genes.map((v) => (<><a className="link" href={`/${species}/view?orf=${v}`}>{v}</a><span> </span></>))),},
+                { headerName: "TF", field: "tf", hide: false, rowDrag: true,
+                cellRenderer: p => !p.node.rowPinned && <a className="link" href={`/${species}/view?orf=${p.data.tf}`}>{p.data.tf}</a>},
+                { headerName: "% in user set", field: "setPer", filter: 'agNumberColumnFilter', hide: false, maxWidth: 150,
+                cellRenderer: (p) => p.node.rowPinned && p.data.id === "stats" ? (<Histogram data={res.map((row) => row.setPer)} width={150} height={95} />) : (p.data.setPer + "%"),},
+                { headerName: "% in species", field: "dbPer", filter: 'agNumberColumnFilter', hide: false, maxWidth: 150,
+                cellRenderer: (p) => p.node.rowPinned && p.data.id === "stats" ? (<Histogram data={res.map((row) => row.dbPer)} width={150} height={95} />) : (p.data.dbPer + "%"),},
+                { headerName: "Target Genes", field: "genes", hide: false, maxWidth: 500, autoHeight: true, rowDrag: true,
+                cellRenderer: (p) => !p.node.rowPinned && (p.data.genes && p.data.genes.map((v) => (<span key={v}><a className="link" href={`/${species}/view?orf=${v}`}>{v}</a>{` `}</span>))),},
             ]);
             setRowData(res);
+            setTimeout(() => gridAutoSize(gridRef), 100);
         } else if (query === "rank-go") {
             // FORM CHECK
             if (formData.genes.trim() === "") {
@@ -332,12 +373,16 @@ export default function Main() {
                 return;
             }
             setShowLoading(true);
-            if (formData.genes.concat(formData.ontology).length < 2000) {
-                const params = {};
-                if (formData.genes.trim() !== "") params.genes = formData.genes;
-                setSearchParams(params);
-            } else {
-                setSearchParams({});
+            if (!q) {
+                if (formData.genes.concat(formData.ontology).length < 2000) {
+                    const params = {};
+                    params.q = query;
+                    if (formData.genes.trim() !== "")
+                        params.genes = formData.genes;
+                    setSearchParams(params);
+                } else {
+                    setSearchParams({});
+                }
             }
             const res = await rankGO({
                 genes: formData.genes,
@@ -346,27 +391,28 @@ export default function Main() {
             });
             console.log(res);
             if (!gridVisible) setGridVisible(true);
-            const termWidth =
-                Math.max(...res.map((row) => row.term.length)) * 8;
-            const genesWidth =
-                100 +
-                Math.max(...res.map((row) => row.genes.join("").length)) * 10;
+            // const termWidth =
+            //     Math.max(...res.map((row) => row.term.length)) * 8;
+            // const genesWidth =
+            //     100 +
+            //     Math.max(...res.map((row) => row.genes.join("").length)) * 10;
             // prettier-ignore
             setColDefs([
-                { headerName: "GO ID", field: "goid", hide: false, width: 120,
-                cellRenderer: (p) => p.node.rowPinned === "top" ? (<></>) : (<a className="link" target="_blank" rel="noopener noreferrer" href={`${constants.geneOntologyUrl}${p.data.goid}`}>{p.data.goid}</a>),},
-                { headerName: "GO Term", field: "term", hide: false, width: termWidth,
-                cellRenderer: (p) => p.node.rowPinned === "top" ? (<></>) : (<a className="link" href={`/${species}/view?goid=${p.data.goid}`}>{p.data.term}</a>),},
-                { headerName: "Depth level", field: "depth", hide: false, width: 150,
-                cellRenderer: p => p.node.rowPinned === "top" ? <BarChart data={res} colName={"depth"} width={150} height={95} getFilter={getFilterTerm} setFilter={setFilter} getFilteredData={getFilteredData} addListener={addListener} removeListener={removeListener} /> : p.data.depth},
-                { headerName: "% in user set", field: "setPer", hide: false, width: 150,
-                cellRenderer: (p) =>p.node.rowPinned === "top" ? (<Histogram data={res.map((row) => row.setPer)} width={150} height={95} />) : (p.data.setPer + "%"),},
-                { headerName: "% in species", field: "dbPer", hide: false, width: 150,
-                cellRenderer: (p) => p.node.rowPinned === "top" ? (<Histogram data={res.map((row) => row.dbPer)} width={150} height={95} />) : (p.data.dbPer + "%"),},
-                { headerName: "Genes", field: "genes", hide: false, width: genesWidth,
-                cellRenderer: (p) => p.node.rowPinned === "top" ? (<></>) : (p.data.genes.map((v) => (<><a className="link" href={`/${species}/view?orf=${v}`}>{v}</a><span> </span></>))),},
+                { headerName: "GO ID", field: "goid", hide: false, 
+                cellRenderer: (p) => p.node.rowPinned && p.data.id === "stats" ? (<></>) : (<a className="link" target="_blank" rel="noopener noreferrer" href={`${constants.geneOntologyUrl}${p.data.goid}`}>{p.data.goid}</a>),},
+                { headerName: "GO Term", field: "term", hide: false, maxWidth: 500, autoHeight: true,
+                cellRenderer: (p) => p.node.rowPinned && p.data.id === "stats" ? (<></>) : (<a className="link text-wrap leading-5" href={`/${species}/view?goid=${p.data.goid}`}>{p.data.term}</a>),},
+                { headerName: "Depth level", field: "depth", filter: 'agNumberColumnFilter', hide: false, maxWidth: 150,
+                cellRenderer: p => p.node.rowPinned && p.data.id === "stats" ? <BarChart data={res} colName={"depth"} width={150} height={95} getFilter={getFilterTerm} setFilter={setFilter} getFilteredData={getFilteredData} addListener={addListener} removeListener={removeListener} /> : p.data.depth},
+                { headerName: "% in user set", field: "setPer", filter: 'agNumberColumnFilter', hide: false, maxWidth: 150,
+                cellRenderer: (p) =>p.node.rowPinned && p.data.id === "stats" ? (<Histogram data={res.map((row) => row.setPer)} width={150} height={95} />) : (p.data.setPer + "%"),},
+                { headerName: "% in species", field: "dbPer", filter: 'agNumberColumnFilter', hide: false, maxWidth: 150,
+                cellRenderer: (p) => p.node.rowPinned && p.data.id === "stats" ? (<Histogram data={res.map((row) => row.dbPer)} width={150} height={95} />) : (p.data.dbPer + "%"),},
+                { headerName: "Genes", field: "genes", hide: false, maxWidth: 500, autoHeight: true, rowDrag: true,
+                cellRenderer: (p) => p.node.rowPinned && p.data.id === "stats" ? (<></>) : (p.data.genes && <span className="text-wrap leading-6">{p.data.genes.map((v) => (<a key={v} className="link" href={`/${species}/view?orf=${v}`}>{`${v} `}</a>))}</span>),},
             ]);
             setRowData(res);
+            setTimeout(() => gridAutoSize(gridRef), 100);
         } else if (query === "rank-tfbs") {
             // FORM CHECK
             if (formData.genes.trim() === "") {
@@ -384,21 +430,23 @@ export default function Main() {
                 return;
             }
             setShowLoading(true);
-            if (
-                formData.tfs.concat(
-                    formData.genes,
-                    formData.envconGroup,
-                    formData.envconSubgroup,
-                    formData.synteny,
-                    formData.homolog
-                ).length < 2000
-            ) {
-                const params = {};
-                if (formData.tfs.trim() !== "") params.tfs = formData.tfs;
-                if (formData.genes.trim() !== "") params.genes = formData.genes;
-                setSearchParams(params);
-            } else {
-                setSearchParams({});
+            if (!q) {
+                if (
+                    formData.tfs.concat(
+                        formData.genes,
+                        formData.synteny,
+                        formData.homolog
+                    ).length < 2000
+                ) {
+                    const params = {};
+                    params.q = query;
+                    if (formData.tfs.trim() !== "") params.tfs = formData.tfs;
+                    if (formData.genes.trim() !== "")
+                        params.genes = formData.genes;
+                    setSearchParams(params);
+                } else {
+                    setSearchParams({});
+                }
             }
             const res = await rankTFBS({
                 ...formData,
@@ -416,6 +464,60 @@ export default function Main() {
         setShowLoading(false);
     }
 
+    // run query on first page load if url params are provided
+    if (firstRender) {
+        // if query is valid
+        if (queries.includes(searchParams.get("q"))) {
+            setHistoryCall(searchParams.get("q"));
+        }
+        setFirstRender(false);
+    }
+
+    // re-running query if user hits "go back" or "go forward" buttons on browser
+    React.useEffect(() => {
+        function runQuery(e) {
+            const search = e.target.location.search.substring(1);
+            if (search) {
+                const params = JSON.parse(
+                    '{"' +
+                        search.replace(/&/g, '","').replace(/=/g, '":"') +
+                        '"}',
+                    function (key, value) {
+                        return key === "" ? value : decodeURIComponent(value);
+                    }
+                );
+                const q = params["q"];
+                if (queries.includes(q)) {
+                    setFormData((prevData) => {
+                        const formKeys = Object.keys(prevData);
+                        let newForm = { ...prevData };
+                        for (let key of Object.keys(params)) {
+                            if (formKeys.includes(key)) {
+                                newForm = { ...newForm, [key]: params[key] };
+                            }
+                        }
+                        console.log(newForm);
+                        return newForm;
+                    });
+                    setHistoryCall(q);
+                }
+            }
+        }
+        window.addEventListener("popstate", runQuery);
+        return () => {
+            window.removeEventListener("popstate", runQuery);
+        };
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, []);
+
+    React.useEffect(() => {
+        if (historyCall) {
+            handleQuery(undefined, historyCall);
+            setHistoryCall("");
+        }
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [historyCall]);
+
     const pinnedTopRowData = React.useMemo(() => {
         console.log(showNetwork);
         return [{ id: "stats" }, { id: "network" }];
@@ -424,34 +526,61 @@ export default function Main() {
     const getRowHeight = (params) => {
         if (!showNetwork && params.data.id === "network") return 1;
         else if (showNetwork && params.data.id === "network") return 700;
+        else if (showNetwork && !params.node.rowPinned) return 1;
         else if (params.data.id === "stats") return 80;
         else return 35;
     };
 
+    React.useEffect(() => {
+        if (gridRef.current) {
+            gridRef.current.api.forEachNode((node) => {
+                if (showNetwork && !node.rowPinned) {
+                    node.setRowHeight(1);
+                    gridRef.current.api.suppressPaginationPanel = true;
+                }
+                if (!showNetwork && !node.rowPinned) {
+                    node.setRowHeight(35);
+                    gridRef.current.api.suppressPaginationPanel = false;
+                }
+            });
+            setSupressPaginationPanel((prev) => !prev);
+            gridRef.current.api.onRowHeightChanged();
+        }
+    }, [showNetwork]);
+
     // const updateRowHeight = React.useCallback((networkVisible) => {
-    //     // console.log(networkVisible);
-    //     // console.log(gridRef.current.api.getPinnedTopRow(1));
-    //     // gridRef.current.api.getPinnedTopRow(1).setRowHeight(null);
-    //     // gridRef.current.api.onRowHeightChanged();
+    //     gridRef.current.api.forEachNode((node) => {
+    //         if (networkVisible && !node.rowPinned) {
+    //             node.setRowHeight(1);
+    //             gridRef.current.api.suppressPaginationPanel = true;
+    //         }
+    //         if (!networkVisible && !node.rowPinned) {
+    //             node.setRowHeight(35);
+    //             gridRef.current.api.suppressPaginationPanel = false;
+    //         }
+    //     });
     //     // gridRef.current.api.resetRowHeights();
-    //     // gridRef.current.api.onRowHeightChanged();
+    //     gridRef.current.api.onRowHeightChanged();
     // }, []);
 
     const getRowStyle = React.useCallback(
         (params) => {
-            if (!showNetwork && params.node.data.id === "network") {
+            if (
+                (!showNetwork && params.node.data.id === "network") ||
+                (showNetwork && !params.node.rowPinned)
+            ) {
                 return { visibility: "hidden" };
             } else return { visibility: "visible" };
         },
         [showNetwork]
     );
 
-    // const autoSizeStrategy = React.useMemo(
-    //     () => ({
-    //         type: "fitCellContents",
-    //     }),
-    //     []
-    // );
+    const autoSizeStrategy = React.useMemo(
+        () => ({
+            type: "fitCellContents",
+        }),
+        []
+    );
 
     const gridRef = React.useRef();
 
@@ -468,18 +597,40 @@ export default function Main() {
     }
 
     const setFilter = React.useCallback(async (col, val) => {
-        await gridRef.current.api.setColumnFilterModel(col, {
-            filterType: "text",
-            type: "contains",
-            filter: val,
-        });
+        await gridRef.current.api.setColumnFilterModel(
+            col,
+            val === null
+                ? null
+                : {
+                      filterType: "text",
+                      type: "contains",
+                      filter: val,
+                  }
+        );
         gridRef.current.api.onFilterChanged();
     }, []);
+
+    // const setNumberFilter = React.useCallback(async (col, min, max) => {
+    //     await gridRef.current.api.setColumnFilterModel(col, min === null ? null : {
+    //         filterType: "number",
+    //         type: "inRange",
+    //         filter: min,
+    //         filterTo: max,
+    //     });
+    //     gridRef.current.api.onFilterChanged();
+    // }, []);
 
     const getFilterTerm = React.useCallback((col) => {
         const filter = gridRef.current.api.getColumnFilterModel(col);
         return filter === null ? null : filter.filter;
     }, []);
+
+    // const getFilterInterval = React.useCallback((col) => {
+    //     const filter = gridRef.current.api.getColumnFilterModel(col);
+    //     return filter === null || filter.type !== "inRange"
+    //         ? null
+    //         : [filter.filter, filter.filterTo];
+    // }, []);
 
     const addListener = React.useCallback((listener) => {
         gridRef.current.api.addEventListener("filterChanged", listener);
@@ -490,12 +641,59 @@ export default function Main() {
             gridRef.current.api.removeEventListener("filterChanged", listener);
     }, []);
 
-    const onGridReady = React.useCallback(() => {
-        addListener(() => {
-            setFilteredData(getFilteredData());
-        });
-        gridRef.current.api.onFilterChanged();
-    }, [addListener]);
+    const enableDropZones = React.useCallback((params) => {
+        const tfTargetContainer = document.querySelector("#tfs");
+        const geneTargetContainer = document.querySelector("#genes");
+        const tfDropZoneParams = {
+            getContainer: () => tfTargetContainer,
+            onDragStop: (params) => {
+                console.log(params);
+                const value = params.node.data.tf;
+                setFormData((prevData) => ({
+                    ...prevData,
+                    tfs:
+                        prevData.tfs.trim() === ""
+                            ? value
+                            : prevData.tfs + "\n" + value,
+                }));
+            },
+        };
+        const geneDropZoneParams = {
+            getContainer: () => geneTargetContainer,
+            onDragStop: (params) => {
+                let value = "";
+                if (params.node.data.gene !== undefined) {
+                    value =
+                        params.node.data.gene === "Uncharacterized"
+                            ? params.node.data.orf
+                            : params.node.data.gene;
+                } else if (params.node.data.genes !== undefined) {
+                    value = params.node.data.genes.join("\n");
+                }
+
+                setFormData((prevData) => ({
+                    ...prevData,
+                    genes:
+                        prevData.genes.trim() === ""
+                            ? value
+                            : prevData.genes + "\n" + value,
+                }));
+            },
+        };
+        params.api.addRowDropZone(tfDropZoneParams);
+        params.api.addRowDropZone(geneDropZoneParams);
+    }, []);
+
+    const onGridReady = React.useCallback(
+        (params) => {
+            addListener(() => {
+                setFilteredData(getFilteredData());
+            });
+            gridRef.current.api.onFilterChanged();
+            enableDropZones(params);
+        },
+        [addListener, enableDropZones]
+    );
 
     const onGridPreDestroyed = React.useCallback((params) => {
         const { state } = params;
@@ -880,6 +1078,10 @@ export default function Main() {
                             className="btn btn-sm"
                             onClick={() => {
                                 setShowNetwork((prev) => !prev);
+                                // setSupressPaginationPanel(
+                                //     !supressPaginationPanel
+                                // );
+                                // negative operator because state is not up to date yet
                                 // updateRowHeight(!showNetwork);
                             }}
                         >
@@ -924,6 +1126,7 @@ export default function Main() {
                             // pagination
                             pagination={true}
                             paginationPageSize={50}
+                            suppressPaginationPanel={supressPaginationPanel}
                             // selectable text inside table
                             enableCellTextSelection={true}
                             ensureDomOrder={true}
@@ -932,11 +1135,13 @@ export default function Main() {
                             // for pinned row height
                             getRowHeight={getRowHeight}
                             // column sizing
-                            // autoSizeStrategy={autoSizeStrategy}
+                            autoSizeStrategy={autoSizeStrategy}
                             // idk yet
                             // getRowStyle={rowStyleFunc}
                             initialState={gridSavedState}
                             onGridReady={onGridReady}
+                            rowDrag={true}
+                            // suppressMoveWhenRowDragging={true}
                             onGridPreDestroyed={onGridPreDestroyed}
                             getRowStyle={getRowStyle}
                         />
@@ -944,14 +1149,7 @@ export default function Main() {
                     {/* )} */}
                 </div>
             )}
-            {showLoading && (
-                <div className="toast toast-end">
-                    <div className="alert bg-primary">
-                        <span className="loading loading-spinner loading-sm"></span>
-                        <span>Loading...</span>
-                    </div>
-                </div>
-            )}
+            {showLoading && <Loading />}
         </div>
     );
 }

@@ -8,29 +8,25 @@ export default function PromoterModal({ id, orf, data }) {
         document.getElementById(id).showModal();
     }
 
-    // const getRowHeight = (params) => {
-    //     const singleSize = 28;
-    //     const env = Math.ceil(params.data.envcond.length / 35) * singleSize;
-    //     const exp = Math.ceil(params.data.experiment.length / 30) * singleSize;
-    //     return Math.max(env, exp);
-    // };
-    console.log(data, id, orf);
+    // console.log(data, id, orf);
     const chartData = [];
     if (data.matches.F) {
         for (let pos of Object.keys(data.matches.F)) {
             chartData.push({
-                pos: Number(pos),
+                pos: Number(pos) - 1000,
                 size: data.matches.F[pos],
                 motif: data.motif,
+                strand: "F",
             });
         }
     }
     if (data.matches.R) {
         for (let pos of Object.keys(data.matches.R)) {
             chartData.push({
-                pos: Number(pos),
+                pos: Number(pos) * -1,
                 size: data.matches.R[pos],
                 motif: data.motif,
+                strand: "R",
             });
         }
     }
@@ -38,10 +34,25 @@ export default function PromoterModal({ id, orf, data }) {
     // const promR = data.promoter.R;
     // const promFsplit = splitSequence(promF);
     // const promRsplit = splitSequence(promR);
+
+    function handleMouseOver(e, pos, strand) {
+        e.target.setAttribute("style", "background-color: yellow");
+        document
+            .getElementById(`viz_${orf}_${strand}_${data.motif}_${pos}`)
+            .setAttribute("style", "fill: yellow");
+    }
+
+    function handleMouseLeave(e, pos, strand) {
+        e.target.setAttribute("style", "background-color: transparent");
+        document
+            .getElementById(`viz_${orf}_${strand}_${data.motif}_${pos}`)
+            .setAttribute("style", "fill: red");
+    }
+
     return (
         <>
             <button className="ml-2 btn btn-xs" onClick={openModal}>
-                Ref
+                View
             </button>
             <dialog id={id} className="modal">
                 <div className="modal-box w-10/12 max-w-full h-full flex flex-col">
@@ -54,7 +65,8 @@ export default function PromoterModal({ id, orf, data }) {
                         </form>
                     </div>
                     <div className="my-5">
-                        <MatchesChart data={chartData} />
+                        <span className="ml-3">{`${orf} Promoter Sequence`}</span>
+                        <MatchesChart data={chartData} seqName={orf} />
                     </div>
                     <div className="flex flex-col">
                         <div className="grid grid-cols-6">
@@ -65,32 +77,23 @@ export default function PromoterModal({ id, orf, data }) {
                                 <ul>
                                     {data.matches.F ? (
                                         Object.keys(data.matches.F).map(
-                                            (pos) => (
-                                                <li
-                                                    key={pos}
-                                                    className="px-2 border rounded-lg hover:bg-yellow-200"
-                                                    onMouseEnter={() => {
-                                                        document
-                                                            .getElementById(pos)
-                                                            .setAttribute(
-                                                                "style",
-                                                                "fill: yellow"
-                                                            );
-                                                    }}
-                                                    onMouseLeave={() =>
-                                                        document
-                                                            .getElementById(pos)
-                                                            .setAttribute(
-                                                                "style",
-                                                                "fill: red"
-                                                            )
-                                                    }
-                                                >
-                                                    {`${data.motif}: ${
-                                                        pos - 1000
-                                                    }`}
-                                                </li>
-                                            )
+                                            (pos) => {
+                                                const newPos =
+                                                    Number(pos) - 1000;
+                                                return (
+                                                    <li
+                                                        id={`data_${orf}_F_${data.motif}_${newPos}`}
+                                                        key={newPos}
+                                                        className="px-2 border rounded-lg"
+                                                        // prettier-ignore
+                                                        onMouseOver={(e) => handleMouseOver(e, newPos, "F")}
+                                                        // prettier-ignore
+                                                        onMouseLeave={(e) => handleMouseLeave(e, newPos, "F")}
+                                                    >
+                                                        {`${data.motif}: ${newPos}`}
+                                                    </li>
+                                                );
+                                            }
                                         )
                                     ) : (
                                         <li>no matches found</li>
@@ -119,31 +122,22 @@ export default function PromoterModal({ id, orf, data }) {
                                 <ul>
                                     {data.matches.R ? (
                                         Object.keys(data.matches.R).map(
-                                            (pos) => (
-                                                <li
-                                                    className="px-2 border rounded-lg hover:bg-yellow-200"
-                                                    onMouseEnter={() => {
-                                                        document
-                                                            .getElementById(pos)
-                                                            .setAttribute(
-                                                                "style",
-                                                                "fill: yellow"
-                                                            );
-                                                    }}
-                                                    onMouseLeave={() =>
-                                                        document
-                                                            .getElementById(pos)
-                                                            .setAttribute(
-                                                                "style",
-                                                                "fill: red"
-                                                            )
-                                                    }
-                                                >
-                                                    {`${data.motif}: ${
-                                                        pos * -1
-                                                    }`}
-                                                </li>
-                                            )
+                                            (pos) => {
+                                                const newPos = Number(pos) * -1;
+                                                return (
+                                                    <li
+                                                        key={newPos}
+                                                        id={`data_${orf}_R_${data.motif}_${newPos}`}
+                                                        className="px-2 border rounded-lg"
+                                                        // prettier-ignore
+                                                        onMouseOver={(e) => handleMouseOver(e, newPos, "R")}
+                                                        // prettier-ignore
+                                                        onMouseLeave={(e) => handleMouseLeave(e, newPos, "R")}
+                                                    >
+                                                        {`${data.motif}: ${newPos}`}
+                                                    </li>
+                                                );
+                                            }
                                         )
                                     ) : (
                                         <span>no matches found</span>

@@ -14,7 +14,7 @@ export default function Histogram({ data, width, height }) {
         // console.log(data);
         const bins = d3
             .bin()
-            .domain([0, 100])
+            .domain([0, Math.max(...data)])
             .thresholds(10)
             .value((d) => d)(data);
 
@@ -53,18 +53,20 @@ export default function Histogram({ data, width, height }) {
                 d3.select(tooltipRef.current)
                     .transition()
                     .duration(100)
-                    .style("opacity", 0.9)
+                    // .style("opacity", 0.9)
                     .style("position", "absolute")
                     // .style("z-index", "10")
                     .style("background", "rgba(0,0,0,0.6)")
                     .style("color", "white")
-                    .style("object-position", "top");
+                    .style("object-position", "top")
+                    .style("visibility", "visible");
                 // .style("left", event.pageX + "px")
                 // .style("top", event.pageY - 28 + "px");
-                d3.select(this)
-                    .style("stroke", "black")
-                    .style("stroke-width", "4px")
-                    .style("stroke-opacity", "1");
+                // d3.select(this)
+                //     .style("stroke", "black")
+                //     .style("stroke-width", "4px")
+                //     .style("stroke-opacity", "1");
+                d3.select(this).style("fill", "orange");
                 d3.select(tooltipRef.current).text(
                     `${d.x0}%-${d.x1}%: ${d.length}`
                 );
@@ -73,8 +75,10 @@ export default function Histogram({ data, width, height }) {
                 d3.select(tooltipRef.current)
                     .transition()
                     .duration(200)
-                    .style("opacity", 0);
-                d3.select(this).style("stroke-opacity", "0");
+                    // .style("opacity", 0);
+                    .style("visibility", "hidden");
+                // d3.select(this).style("stroke-opacity", "0");
+                d3.select(this).style("fill", "steelblue");
             });
     }, [data, width, height]);
 

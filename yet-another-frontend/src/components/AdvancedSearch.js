@@ -4,6 +4,8 @@ import { useSearchParams, useNavigate, useParams } from "react-router-dom";
 import speciesList from "../conf/speciesList";
 import SearchIcon from "../svg/SearchIcon";
 import Table from "./Table";
+import { gridAutoSize } from "../utils/utils";
+
 export default function AdvancedSearch() {
     const { species } = useParams();
     let [searchParams, setSearchParams] = useSearchParams();
@@ -15,16 +17,6 @@ export default function AdvancedSearch() {
     const goGridRef = React.useRef();
     const reactionGridRef = React.useRef();
 
-    const autoSize = React.useCallback(() => {
-        if (orfGridRef.current) {
-            console.log("bota");
-            orfGridRef.current.api.autoSizeAllColumns();
-        }
-        if (goGridRef.current) goGridRef.current.api.autoSizeAllColumns();
-        if (reactionGridRef.current)
-            reactionGridRef.current.api.autoSizeAllColumns();
-    }, []);
-
     React.useEffect(() => {
         async function fetchData() {
             const res = await searchTerm(
@@ -35,12 +27,14 @@ export default function AdvancedSearch() {
             else {
                 console.log(res.matches);
                 setResults(res.matches);
-                autoSize();
+                gridAutoSize(orfGridRef);
+                gridAutoSize(goGridRef);
+                gridAutoSize(reactionGridRef);
             }
             setTermInput(searchParams.get("term"));
         }
         if (searchParams.get("term")) fetchData();
-    }, [searchParams, species, navigate, autoSize]);
+    }, [searchParams, species, navigate]);
 
     function handleSearch(event) {
         event.preventDefault();

@@ -42,73 +42,29 @@ function App() {
     //     return list;
     // }, []);
 
+    // prettier-ignore
     return (
         <BrowserRouter>
             <Routes>
                 <Route element={<Layout />}>
-                    <Route
-                        path="/"
-                        element={
-                            <Navigate
-                                to={`/${defaultSpecies}`}
-                                replace={true}
-                            />
-                        }
-                    />
+                    <Route path="/" element={<Navigate to={`/${defaultSpecies}`} replace={true} />} />
                     <Route path="/:species" element={<Main />} />
-                    <Route
-                        path="/sequences"
-                        element={
-                            <Navigate
-                                to={`/${defaultSpecies}/sequences`}
-                                replace={true}
-                            />
-                        }
-                    />
-                    <Route path="/:species/sequences" element={<Sequences />} />
-                    <Route
-                        path="/advanced-search"
-                        element={
-                            <Navigate
-                                to={`/${defaultSpecies}/advanced-search`}
-                                replace={true}
-                            />
-                        }
-                    />
-                    <Route
-                        path="/:species/advanced-search"
-                        element={<AdvancedSearch />}
-                    />
-                    <Route
-                        path="/view"
-                        element={
-                            <Navigate
-                                to={`/${defaultSpecies}/view`}
-                                replace={true}
-                            />
-                        }
-                    />
+
+                    <Route path="/sequences" element={<Navigate to={`/${defaultSpecies}/sequences`} replace={true} />} />
+                    <Route path="/:species/sequences/" element={<Sequences />} />
+
+                    <Route path="/advanced-search" element={<Navigate to={`/${defaultSpecies}/advanced-search`} replace={true} />} />
+                    <Route path="/:species/advanced-search" element={<AdvancedSearch />} />
+
+                    <Route path="/view" element={<Navigate to={`/${defaultSpecies}/view`} replace={true} />} />
                     <Route path="/:species/view" element={<View />} />
-                    <Route
-                        path="/about"
-                        element={
-                            <Navigate
-                                to={`/${defaultSpecies}/about`}
-                                replace={true}
-                            />
-                        }
-                    />
+
+                    <Route path="/about" element={<Navigate to={`/${defaultSpecies}/about`} replace={true} />} />
                     <Route path="/:species/about" element={<About />} />
-                    <Route
-                        path="/help"
-                        element={
-                            <Navigate
-                                to={`/${defaultSpecies}/help`}
-                                replace={true}
-                            />
-                        }
-                    />
+
+                    <Route path="/help" element={<Navigate to={`/${defaultSpecies}/help`} replace={true} />} />
                     <Route path="/:species/help" element={<Help />} />
+                    
                     <Route path="*" element={<span>404 not found</span>} />
                 </Route>
             </Routes>

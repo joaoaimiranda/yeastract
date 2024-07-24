@@ -37,3 +37,9 @@ export function splitSequence(text) {
     }
     return newSeq;
 }
+
+export function gridAutoSize(gridRef) {
+    if (gridRef.current) {
+        gridRef.current.api.autoSizeAllColumns();
+    }
+}

@@ -79,7 +79,9 @@ export default function Locus({ locus, orf, species }) {
                             return (
                                 <tr>
                                     <th className="align-top w-32 m-0 p-1">
-                                        {titleFormat(row)}
+                                        {row === "ext"
+                                            ? "External Sources"
+                                            : titleFormat(row)}
                                     </th>
                                     <td className="m-0 p-1">
                                         {row === "ext" ? exts : locus[row]}
