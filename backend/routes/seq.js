@@ -17,6 +17,8 @@ router.post("/motif-on-promoter", async (req, res, next) => {
         console.log(err);
         if (err.message === "Bad Request")
             res.status(400).send("Request Body format not accepted");
+        else if (err.message === "Species not found")
+            res.status(400).send("Unknown species");
         else res.status(500).send("Internal Server Error");
     }
 });
@@ -29,6 +31,8 @@ router.post("/tfbs-by-motif", async (req, res, next) => {
         console.log(err);
         if (err.message === "Bad Request")
             res.status(400).send("Request Body format not accepted");
+        else if (err.message === "Species not found")
+            res.status(400).send("Unknown species");
         else res.status(500).send("Internal Server Error");
     }
 });
@@ -41,6 +45,8 @@ router.post("/seq-retrieval", async (req, res, next) => {
         console.log(err);
         if (err.message === "Bad Request")
             res.status(400).send("Request Body format not accepted");
+        else if (err.message === "Species not found")
+            res.status(400).send("Unknown species");
         else res.status(500).send("Internal Server Error");
     }
 });
@@ -53,6 +59,8 @@ router.post("/prom-analysis", async (req, res, next) => {
         console.log(err);
         if (err.message === "Bad Request")
             res.status(400).send("Request Body format not accepted");
+        else if (err.message === "Species not found")
+            res.status(400).send("Unknown species");
         else res.status(500).send("Internal Server Error");
     }
 });
@@ -64,6 +72,8 @@ router.get("/tf-consensus", async (req, res, next) => {
     } catch (err) {
         console.log(err);
         if (err.message === "Bad Request") res.status(400).send("Bad Request");
+        else if (err.message === "Species not found")
+            res.status(400).send("Unknown species");
         else res.status(500).send("Internal Server Error");
     }
 });
@@ -77,6 +87,8 @@ router.post("/tfbs-on-seq", async (req, res, next) => {
         if (err.message === "Bad Request") res.status(400).send("Bad Request");
         else if (err.message === "emptyseq")
             res.status(400).send("Sequence cannot be empty");
+        else if (err.message === "Species not found")
+            res.status(400).send("Unknown species");
         else res.status(500).send("Internal Server Error");
     }
 });

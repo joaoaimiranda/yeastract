@@ -7,14 +7,14 @@ export default function GO({ gos }) {
             <table className="table">
                 <tbody>
                     {Object.keys(gos).map((row) => (
-                        <tr>
+                        <tr key={row}>
                             <th className="align-top w-32 m-0 p-1">
                                 {titleFormat(row)}
                             </th>
                             <td className=" m-0 p-1">
                                 <ul>
-                                    {gos[row].map((item) => (
-                                        <li>
+                                    {gos[row].map((item, i) => (
+                                        <li key={i}>
                                             <a
                                                 className="link"
                                                 href={`${window.location.pathname}?goid=${item["goid"]}`}

@@ -15,6 +15,8 @@ router.post("/search", async (req, res, next) => {
         console.log(err);
         if (err.message === "Bad Request")
             res.status(400).send("Request Body format not accepted");
+        else if (err.message === "Species not found")
+            res.status(400).send("Unknown species");
         else res.status(500).send("Internal Server Error");
     }
 });
@@ -27,6 +29,8 @@ router.post("/ranktf", async (req, res, next) => {
         console.log(err);
         if (err.message === "Bad Request")
             res.status(400).send("Request Body format not accepted");
+        else if (err.message === "Species not found")
+            res.status(400).send("Unknown species");
         else res.status(500).send("Internal Server Error");
     }
 });
@@ -41,6 +45,8 @@ router.post("/rankgo", async (req, res, next) => {
             res.status(400).send("Request Body format not accepted");
         else if (err.message === "No genes provided")
             res.status(400).send("No genes provided");
+        else if (err.message === "Species not found")
+            res.status(400).send("Unknown species");
         else res.status(500).send("Internal Server Error");
     }
 });
@@ -58,22 +64,5 @@ router.post("/rankgo", async (req, res, next) => {
 //         res.status(500).send("oops");
 //     }
 // });
-
-// async function getID(element) {
-//     const q1 = `select O.orfid from orfgene as O LEFT OUTER JOIN protein as P ON P.tfid=O.orfid WHERE (O.orf='${element}' or O.gene='${element}') and O.species in ('Saccharomyces cerevisiae S288c');`;
-
-//     const q2 = `select O.orfid from orfgene as O, alias as A, protein as P where A.orfid=O.orfid and P.tfid=O.orfid and A.alias='${element}' and O.species in ('Saccharomyces cerevisiae S288c');`;
-
-//     const q3 = `select O.orfid from orfgene as O, protein as P where P.tfid=O.orfid and P.protein='${element}' and O.species in ('Saccharomyces cerevisiae S288c');`;
-
-//     return Promise.any([
-//         dbaccess.query(q1),
-//         dbaccess.query(q2),
-//         dbaccess.query(q3),
-//     ]).then((value) => {
-//         if (value[0][0]["orfid"] !== undefined) return value[0][0]["orfid"];
-//         else throw new Error("Database query error");
-//     });
-// }
 
 export default router;

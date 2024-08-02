@@ -21,8 +21,8 @@ export default function Orthologs({ orthologs }) {
                     </tr>
                 </thead>
                 <tbody>
-                    {Object.keys(orths).map((sp) => (
-                        <tr>
+                    {Object.keys(orths).map((sp, i) => (
+                        <tr key={i}>
                             <th className=" m-0 p-1">
                                 {orths[sp][0]["species"]}
                             </th>
@@ -31,9 +31,9 @@ export default function Orthologs({ orthologs }) {
                                     (el) => el.synteny === syn
                                 );
                                 return filtered.length > 0 ? (
-                                    <td className=" m-0 p-1">
+                                    <td key={syn} className=" m-0 p-1">
                                         {filtered.map((orth, i) => (
-                                            <>
+                                            <span key={i}>
                                                 <a
                                                     className="link"
                                                     href={`/${findDbSpecies(
@@ -51,11 +51,11 @@ export default function Orthologs({ orthologs }) {
                                                 {i < filtered.length - 1 && (
                                                     <br />
                                                 )}
-                                            </>
+                                            </span>
                                         ))}
                                     </td>
                                 ) : (
-                                    <td className=" m-0 p-1"></td>
+                                    <td key={syn} className=" m-0 p-1"></td>
                                 );
                             })}
                             {/* <td>

@@ -10,6 +10,7 @@ import Help from "./components/Help";
 // import { getSpecies } from "./services/remoteServices";
 import View from "./components/View";
 import speciesList from "./conf/speciesList.js";
+import NotFound from "./components/NotFound.js";
 
 function App() {
     // const [sidebar, setSidebar] = React.useState(true);
@@ -65,7 +66,7 @@ function App() {
                     <Route path="/help" element={<Navigate to={`/${defaultSpecies}/help`} replace={true} />} />
                     <Route path="/:species/help" element={<Help />} />
                     
-                    <Route path="*" element={<span>404 not found</span>} />
+                    <Route path="*" element={<NotFound />} />
                 </Route>
             </Routes>
         </BrowserRouter>

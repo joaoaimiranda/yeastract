@@ -35,19 +35,19 @@ export default function PromoterModal({ id, orf, data }) {
     // const promFsplit = splitSequence(promF);
     // const promRsplit = splitSequence(promR);
 
-    function handleMouseOver(e, pos, strand) {
-        e.target.setAttribute("style", "background-color: yellow");
-        document
-            .getElementById(`viz_${orf}_${strand}_${data.motif}_${pos}`)
-            .setAttribute("style", "fill: yellow");
-    }
+    // function handleMouseOver(e, pos, strand) {
+    //     e.target.setAttribute("style", "background-color: yellow");
+    //     document
+    //         .getElementById(`viz_${orf}_${strand}_${data.motif}_${pos}`)
+    //         .setAttribute("style", "fill: yellow");
+    // }
 
-    function handleMouseLeave(e, pos, strand) {
-        e.target.setAttribute("style", "background-color: transparent");
-        document
-            .getElementById(`viz_${orf}_${strand}_${data.motif}_${pos}`)
-            .setAttribute("style", "fill: red");
-    }
+    // function handleMouseLeave(e, pos, strand) {
+    //     e.target.setAttribute("style", "background-color: transparent");
+    //     document
+    //         .getElementById(`viz_${orf}_${strand}_${data.motif}_${pos}`)
+    //         .setAttribute("style", "fill: red");
+    // }
 
     return (
         <>
@@ -65,10 +65,9 @@ export default function PromoterModal({ id, orf, data }) {
                         </form>
                     </div>
                     <div className="my-5">
-                        <span className="ml-3">{`${orf} Promoter Sequence`}</span>
                         <MatchesChart data={chartData} seqName={orf} />
                     </div>
-                    <div className="flex flex-col">
+                    {/* <div className="flex flex-col">
                         <div className="grid grid-cols-6">
                             <div className="flex flex-col">
                                 <span className="text-lg">
@@ -100,19 +99,6 @@ export default function PromoterModal({ id, orf, data }) {
                                     )}
                                 </ul>
                             </div>
-                            {/* <div className="col-span-5">
-                                <span>Promoter Sequence</span>
-                                <pre className="leading-5">
-                                    {`> ${orf}`}
-                                    <br />
-                                    {promFsplit.map((line) => (
-                                        <>
-                                            {line}
-                                            <br />
-                                        </>
-                                    ))}
-                                </pre>
-                            </div> */}
                         </div>
                         <div className="grid grid-cols-6">
                             <div className="flex flex-col">
@@ -144,23 +130,8 @@ export default function PromoterModal({ id, orf, data }) {
                                     )}
                                 </ul>
                             </div>
-                            {/* <div className="col-span-5">
-                                <span>
-                                    Promoter Sequence Complementary Strand
-                                </span>
-                                <pre className="leading-5">
-                                    {`> ${orf}`}
-                                    <br />
-                                    {promRsplit.map((line) => (
-                                        <>
-                                            {line}
-                                            <br />
-                                        </>
-                                    ))}
-                                </pre>
-                            </div> */}
                         </div>
-                    </div>
+                    </div> */}
                 </div>
                 <form method="dialog" className="modal-backdrop">
                     <button>Close</button>

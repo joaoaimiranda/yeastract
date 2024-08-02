@@ -33,7 +33,7 @@ export default function Locus({ locus, orf, species }) {
                     {Object.keys(locus).map((row) => {
                         if (row === "gene_Sequence") {
                             return (
-                                <tr>
+                                <tr key={row}>
                                     <th className="align-top w-32 m-0 p-1">
                                         {titleFormat(row)}
                                         <button
@@ -55,7 +55,7 @@ export default function Locus({ locus, orf, species }) {
                             );
                         } else if (row === "promoter_Sequence") {
                             return (
-                                <tr>
+                                <tr key={row}>
                                     <th className="align-top w-32 m-0 p-1">
                                         {titleFormat(row)}
                                         <button
@@ -77,7 +77,7 @@ export default function Locus({ locus, orf, species }) {
                             );
                         } else {
                             return (
-                                <tr>
+                                <tr key={row}>
                                     <th className="align-top w-32 m-0 p-1">
                                         {row === "ext"
                                             ? "External Sources"

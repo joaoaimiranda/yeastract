@@ -2,8 +2,9 @@ import React from "react";
 import * as d3 from "d3";
 
 export default function BarChart({
-    data,
+    // data,
     colName,
+    complex = false,
     width,
     height,
     getFilter,
@@ -11,12 +12,14 @@ export default function BarChart({
     getFilteredData,
     addListener,
     removeListener,
+    // fix for sequences 2nd table reference
+    tbm0 = false,
 }) {
     const tooltipRef = React.useRef();
     const ref = React.useRef();
 
-    const [chartData, setChartData] = React.useState(data);
-
+    const [chartData, setChartData] = React.useState(getFilteredData());
+    const [count, setCount] = React.useState(0);
     React.useEffect(() => {
         // const width = 200;
         // const height = 80;
@@ -26,15 +29,26 @@ export default function BarChart({
         const marginLeft = 0;
 
         let auxData = {};
-        for (let row of chartData) {
-            if (!auxData[row[colName]]) auxData[row[colName]] = 1;
-            else auxData[row[colName]]++;
-        }
-        const newData = [];
+        if (complex)
+            for (let row of chartData) {
+                for (let val of row[colName]) {
+                    if (!auxData[val]) auxData[val] = 1;
+                    else auxData[val]++;
+                }
+            }
+        else
+            for (let row of chartData) {
+                if (!auxData[row[colName]]) auxData[row[colName]] = 1;
+                else auxData[row[colName]]++;
+            }
+        let newData = [];
         for (let key of Object.keys(auxData)) {
             newData.push({ label: key, frequency: auxData[key] });
         }
-
+        newData.sort((a, b) => b.frequency - a.frequency);
+        // limit of 20 bars
+        newData = newData.slice(0, 20);
+        setCount(newData.length);
         // Declare the x (horizontal position) scale.
         const x = d3
             .scaleBand()
@@ -73,6 +87,13 @@ export default function BarChart({
             .attr("y", (d) => y(d.frequency))
             .attr("height", (d) => y(0) - y(d.frequency))
             .attr("width", x.bandwidth())
+            .style("stroke", "black")
+            .style("stroke-width", (d) => {
+                const label = colName === "depth" ? Number(d.label) : d.label;
+                const filter = getFilter(colName, tbm0);
+                if (filter && filter.includes(label)) return "3px";
+                return "0px";
+            })
             .on("mouseover", function (event, d) {
                 d3.select(tooltipRef.current)
                     .transition()
@@ -104,10 +125,11 @@ export default function BarChart({
             })
             .on("click", async function (e, d) {
                 const label = colName === "depth" ? Number(d.label) : d.label;
-                if (getFilter(colName) === label) {
-                    await setFilter(colName, null);
+                const filter = getFilter(colName, tbm0);
+                if (filter && filter.includes(label)) {
+                    await setFilter(colName, label, true, tbm0);
                 } else {
-                    await setFilter(colName, label);
+                    await setFilter(colName, label, false, tbm0);
                 }
                 setChartData(getFilteredData());
             });
@@ -115,15 +137,16 @@ export default function BarChart({
         function filterListener(e) {
             setChartData(getFilteredData());
         }
-        addListener(filterListener);
+        addListener(filterListener, tbm0);
 
         return () => {
             svg.selectAll("*").remove();
-            removeListener(filterListener);
+            removeListener(filterListener, tbm0);
         };
     }, [
         chartData,
         colName,
+        complex,
         width,
         height,
         getFilter,
@@ -131,6 +154,7 @@ export default function BarChart({
         getFilteredData,
         addListener,
         removeListener,
+        tbm0,
     ]);
 
     // // Add the x-axis and label.
@@ -159,6 +183,9 @@ export default function BarChart({
         <>
             <div ref={tooltipRef}></div>
             <svg ref={ref}></svg>
+            {count === 20 && (
+                <span className="absolute -bottom-3 right-1">...</span>
+            )}
         </>
     );
 }

@@ -416,6 +416,17 @@ export async function getTotalNumDBGenes(species) {
     return res;
 }
 
+export async function getAllTFids(species) {
+    const q =
+        "select O.orfid from orfgene as O, protein " +
+        `as P where O.species in ('${dbspecies(species)}') ` +
+        `and O.orfid=P.tfid and (O.orfid ` +
+        "in (select distinct tfid from regulation)" +
+        ") order by P.protein asc";
+    const res = await querySingleCol(q);
+    return res;
+}
+
 export async function getGOids(geneIds, species, ontology, hyperN) {
     if (
         ontology !== "process" &&
@@ -511,12 +522,11 @@ export async function getMotifsFromDB(
     return ret;
 }
 
-// FIXME GENE VS PROT STRING
 export async function multiSearch(
     term,
     species = "Saccharomyces cerevisiae S288c"
 ) {
-    let orfgene = term.trim();
+    let orfgene = term.repeat(1).trim();
     if (orfgene.length > 0) {
         switch (orfgene[orfgene.length - 1]) {
             case "p":

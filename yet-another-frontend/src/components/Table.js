@@ -5,7 +5,14 @@ import { AgGridReact } from "ag-grid-react";
 import "ag-grid-community/styles/ag-grid.css";
 import "ag-grid-community/styles/ag-theme-quartz.css";
 
-export default function Table(props) {
+export default function Table({
+    gridRef,
+    colDefs,
+    setColDefs,
+    rowData,
+    onGridReady,
+    charts = false,
+}) {
     const defaultColDef = React.useMemo(() => {
         return {
             filter: true,
@@ -19,6 +26,11 @@ export default function Table(props) {
         return [{ id: "stats" }];
     }, []);
 
+    const getRowHeight = (params) => {
+        if (params.node.rowPinned) return 80;
+        else return 30;
+    };
+
     const autoSizeStrategy = React.useMemo(
         () => ({
             type: "fitCellContents",
@@ -28,7 +40,7 @@ export default function Table(props) {
 
     function handleColumns(event) {
         const { name, checked } = event.target;
-        props.setColDefs((prevCols) =>
+        setColDefs((prevCols) =>
             prevCols.map((col) =>
                 col["field"] === name ? { ...col, hide: !checked } : col
             )
@@ -36,8 +48,8 @@ export default function Table(props) {
     }
 
     const onBtnExport = React.useCallback(() => {
-        props.gridRef.current.api.exportDataAsCsv();
-    }, [props.gridRef]);
+        gridRef.current.api.exportDataAsCsv();
+    }, [gridRef]);
 
     return (
         <div className="w-full h-full">
@@ -54,7 +66,7 @@ export default function Table(props) {
                         tabIndex={0}
                         className="dropdown-content z-40 menu p-2 shadow bg-base-100 rounded-box w-52"
                     >
-                        {props.colDefs.map((col) => (
+                        {colDefs.map((col) => (
                             <li key={col.field}>
                                 <label className="label cursor-pointer">
                                     <span className="label-text">
@@ -89,10 +101,10 @@ export default function Table(props) {
             >
                 <AgGridReact
                     // table api ref
-                    ref={props.gridRef}
+                    ref={gridRef}
                     // table data
-                    rowData={props.rowData}
-                    columnDefs={props.colDefs}
+                    rowData={rowData}
+                    columnDefs={colDefs}
                     // col filters enabled
                     defaultColDef={defaultColDef}
                     // display sort icon
@@ -106,15 +118,12 @@ export default function Table(props) {
                     enableCellTextSelection={true}
                     ensureDomOrder={true}
                     // enable pinned row for graphs
-                    pinnedTopRowData={pinnedTopRowData}
+                    pinnedTopRowData={charts ? pinnedTopRowData : undefined}
                     // for pinned row height
-                    // getRowHeight={props.getRowHeight}
+                    getRowHeight={getRowHeight}
                     // column sizing
                     autoSizeStrategy={autoSizeStrategy}
-
-                    // initialState={gridSavedState}
-                    // onGridReady={onGridReady}
-                    // onGridPreDestroyed={onGridPreDestroyed}
+                    onGridReady={onGridReady}
                     // getRowStyle={getRowStyle}
                 />
             </div>

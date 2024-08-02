@@ -1,18 +1,34 @@
 import React from "react";
 import * as d3 from "d3";
 
-export default function MatchesChart({ data, seqName, width = 1000 }) {
+export default function MatchesChart({
+    data,
+    seqName,
+    width = 1000,
+    height = 80,
+    marginTop = 0,
+    addListener = false,
+    removeListener = false,
+    getFilteredData = false,
+    setMotifFilter = false,
+    isMotifFilter = false,
+}) {
     const tooltipRef = React.useRef();
     const ref = React.useRef();
 
+    const [chartData, setChartData] = React.useState(
+        getFilteredData ? getFilteredData(seqName) : data
+    );
+
     React.useEffect(() => {
         // const width = 1000;
-        const height = 80;
-        const marginTop = 0;
+        // const height = 70;
+        // const marginTop = 20;
+        // const height = 80;
         const marginRight = 4;
         const marginBottom = 20;
         const marginLeft = 13;
-        // console.log("bota", data);
+
         const x = d3
             .scaleLinear()
             .domain([-width, 0])
@@ -32,42 +48,49 @@ export default function MatchesChart({ data, seqName, width = 1000 }) {
             .attr("style", "max-width: 100%; height: auto;");
 
         svg.append("rect")
-            .attr("fill", "steelblue")
+            .attr("fill", "#9ca398")
             .attr("x", x(-width))
             .attr("y", y(height))
-            .attr("height", height - marginBottom)
+            .attr("height", height - marginBottom - marginTop)
             .attr("width", width - marginLeft - marginRight);
 
         svg.append("g")
             .attr("fill", "red")
             .selectAll()
-            .data(data)
+            .data(chartData)
             .join("rect")
             .attr("id", (d) => `viz_${seqName}_${d.strand}_${d.motif}_${d.pos}`)
-            .attr("x", (d) => x(d.pos))
+            .attr("x", (d) => (d.strand === "F" ? x(d.pos) : x(d.pos - d.size)))
             .attr("y", y(height))
-            .attr("height", height - marginBottom)
+            .attr("height", height - marginBottom - marginTop)
             .attr("width", (d) => d.size)
             .on("mouseover", function (e, d) {
                 const el = document.getElementById(
                     `data_${seqName}_${d.strand}_${d.motif}_${d.pos}`
                 );
                 if (el) el.setAttribute("style", "background-color: yellow");
-                d3.select(this).style("fill", "yellow");
-                d3.select(tooltipRef.current)
-                    .transition()
-                    .duration(100)
-                    // .style("position", "absolute")
-                    // .style("background", "white")
-                    // .style("background", "rgba(0,0,0,0.6)")
-                    // .style("color", "black")
-                    // .style("color", "white")
-                    // .style("object-position", "top")
-                    // .style("visibility", "visible");
-                    .style("opacity", 1);
-                d3.select(tooltipRef.current).text(
-                    `${d.motif} ${d.pos} ${d.strand}`
-                );
+                d3.select(this).attr("fill", "yellow");
+                const text = `${d.motif} ${d.tfs ? d.tfs.join(", ") : ""} ${
+                    d.pos
+                } ${d.strand}`;
+                if (d.pos < -width / 2)
+                    d3.select(tooltipRef.current)
+                        // .transition()
+                        // .duration(100)
+                        // .style("position", "absolute")
+                        // .style("background", "white")
+                        // .style("background", "rgba(0,0,0,0.6)")
+                        // .style("color", "black")
+                        // .style("color", "white")
+                        // .style("object-position", "top")
+                        .style("visibility", "visible")
+                        // .style("opacity", 1)
+                        .style("left", width + d.pos + "px");
+                else
+                    d3.select(tooltipRef.current)
+                        .style("visibility", "visible")
+                        .style("right", -d.pos - 10 + "px");
+                d3.select(tooltipRef.current).text(text);
             })
             .on("mouseout", function (e, d) {
                 const el = document.getElementById(
@@ -75,32 +98,59 @@ export default function MatchesChart({ data, seqName, width = 1000 }) {
                 );
                 if (el)
                     el.setAttribute("style", "background-color: transparent");
-                d3.select(this).style("fill", "red");
+                d3.select(this).attr("fill", "red");
                 d3.select(tooltipRef.current)
-                    .transition()
-                    .duration(100)
-                    // .style("visibility", "hidden");
-                    .style("opacity", 0);
+                    // .transition()
+                    // .duration(100)
+                    .style("visibility", "hidden")
+                    .style("left", null)
+                    .style("right", null);
+                // .style("opacity", 0);
+            })
+            .on("click", function (e, d) {
+                if (isMotifFilter && setMotifFilter) {
+                    if (isMotifFilter(d.seqName, d.motif, d.pos, d.strand))
+                        setMotifFilter(null, null, null, null);
+                    else setMotifFilter(d.seqName, d.motif, d.pos, d.strand);
+                }
             });
 
         svg.append("g")
             .attr("transform", `translate(0,${height - marginBottom})`)
             .call(d3.axisBottom(x).tickSizeOuter(0));
 
+        function filterListener(e) {
+            setChartData(getFilteredData(seqName));
+        }
+        if (addListener && removeListener && getFilteredData) {
+            addListener(filterListener);
+        }
+
         return () => {
             svg.selectAll("*").remove();
+            if (addListener && removeListener && getFilteredData)
+                removeListener(filterListener);
         };
-    }, [data, seqName, width]);
+    }, [
+        chartData,
+        seqName,
+        width,
+        height,
+        marginTop,
+        addListener,
+        removeListener,
+        getFilteredData,
+        isMotifFilter,
+        setMotifFilter,
+    ]);
 
     return (
-        <div>
-            <span>{seqName}</span>
+        <div className="relative">
+            {/* <span className="px-3 font-semibold">{seqName}</span> */}
             <div
-                className="bg-transparent text-black object-top px-3"
+                className="bg-transparent top-0 absolute text-black px-3 text-sm"
                 ref={tooltipRef}
-            >
-                Hover for additional info
-            </div>
+            ></div>
             <svg ref={ref}></svg>
         </div>
     );

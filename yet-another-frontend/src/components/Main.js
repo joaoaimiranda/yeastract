@@ -18,6 +18,8 @@ import Histogram from "../charts/Histogram";
 import Network from "../charts/Network";
 import Loading from "./Loading";
 import ErrorAlert from "./ErrorAlert";
+import WarningAlert from "./WarningAlert";
+import ErrorToast from "./ErrorToast";
 import SampleDataIcon from "../svg/SampleDataIcon";
 import HamburgerIcon from "../svg/HamburgerIcon";
 import NetworkIcon from "../svg/NetworkIcon";
@@ -87,16 +89,15 @@ export default function Main() {
                 : "process",
     });
     const queries = ["rank-none", "rank-go", "rank-go", "rank-tfbs"];
-    const [showErrorMessage, setShowErrorMessage] = React.useState({
-        flag: false,
-        msg: "",
-    });
+    const [showFormError, setShowFormError] = React.useState("");
+    const [showWarning, setShowWarning] = React.useState("");
     const [showLoading, setShowLoading] = React.useState(false);
     const [showNetwork, setShowNetwork] = React.useState(false);
+    const [showError, setShowError] = React.useState("");
 
     const [gridVisible, setGridVisible] = React.useState(false);
-    const [gridSavedState, setGridSavedState] = React.useState();
-    const [filteredData, setFilteredData] = React.useState();
+    // const [gridSavedState, setGridSavedState] = React.useState();
+    // const [filteredData, setFilteredData] = React.useState();
     const [supressPaginationPanel, setSupressPaginationPanel] =
         React.useState(false);
 
@@ -162,8 +163,8 @@ export default function Main() {
 
     async function handleQuery(event, q = null) {
         // clean error alert
-        if (showErrorMessage.flag)
-            setShowErrorMessage({ flag: false, msg: "" });
+        if (showFormError) setShowFormError("");
+        if (showWarning) setShowWarning("");
 
         if (event !== undefined) event.preventDefault();
         const query = q ? q : event.nativeEvent.submitter.name;
@@ -179,10 +180,7 @@ export default function Main() {
         if (query === "rank-none") {
             // FORM CHECK
             if (formData.tfs.trim() === "" && formData.genes.trim() === "") {
-                setShowErrorMessage({
-                    flag: true,
-                    msg: 'Either "TFs" or "Genes" must be filled',
-                });
+                setShowFormError('Either "TFs" or "Genes" must be filled');
                 return;
             }
             setShowLoading(true);
@@ -224,6 +222,15 @@ export default function Main() {
                 species: speciesList[species].path,
             });
             console.log(res);
+
+            // HTTP ERROR
+            if (typeof res === "string") {
+                setShowLoading(false);
+                setShowError(res);
+                return;
+            }
+            if (res.length === 0) setShowWarning("No regulations found!");
+
             let first = false;
             if (gridRef.current) gridRef.current.api.setFilterModel(null);
 
@@ -231,29 +238,29 @@ export default function Main() {
             if (reverseCols) {
                 // fix for ref not available on first query
                 if (!gridVisible) {
-                    setGridSavedState({ sort: { sortModel: [{colId: "gene", sort: "asc"}]}});
-                    setFilteredData(res);
+                    // setGridSavedState({ sort: { sortModel: [{colId: "gene", sort: "asc"}]}});
+                    // setFilteredData(res);
                     setGridVisible(true);
                     first = true;
                 }
                 
                 setColDefs([
                     { headerName: "Gene", field: "gene", hide: false, maxWidth: 200, rowDrag: true, colSpan: p => p.node.rowPinned && p.data.id === "network" ? 6 : 1,
-                    cellRenderer: p => p.node.rowPinned && p.data.id === "stats" ? <BarChart data={res} colName={"gene"} width={200} height={90} getFilter={getFilterTerm} setFilter={setFilter} getFilteredData={getFilteredData} addListener={addListener} removeListener={removeListener} /> 
+                    cellRenderer: p => p.node.rowPinned && p.data.id === "stats" ? <BarChart colName={"gene"} width={200} height={90} getFilter={getFilterTerm} setFilter={setFilter} getFilteredData={getFilteredData} addListener={addListener} removeListener={removeListener} /> 
                     : p.node.rowPinned && p.data.id === "network" ? 
-                    <Network data={res} filteredData={res} gridState={gridSavedState} setGridState={setGridSavedState} getFilteredData={getFilteredData} addListener={addListener} removeListener={removeListener} />
+                    <Network getFilteredData={getFilteredData} addListener={addListener} removeListener={removeListener} />
                     : <a className="link" href={`/${species}/view?orf=${p.data.orf}`}>{p.data.gene}</a> },
                     { headerName: "ORF", field: "orf", hide: false, maxWidth: 200,
-                    cellRenderer: p => p.node.rowPinned && p.data.id === "stats" ? <BarChart data={res} colName={"orf"} width={200} height={90} getFilter={getFilterTerm} setFilter={setFilter} getFilteredData={getFilteredData} addListener={addListener} removeListener={removeListener} /> 
+                    cellRenderer: p => p.node.rowPinned && p.data.id === "stats" ? <BarChart colName={"orf"} width={200} height={90} getFilter={getFilterTerm} setFilter={setFilter} getFilteredData={getFilteredData} addListener={addListener} removeListener={removeListener} /> 
                     : <a className="link" href={`/${species}/view?orf=${p.data.orf}`}>{p.data.orf}</a> },
                     { headerName: "TF", field: "tf", hide: false, maxWidth: 150, rowDrag: true,
                     cellRenderer: p => p.node.rowPinned && p.data.id === "stats" ? <p className="text-lg font-semibold text-wrap">{`${(new Set(res.map(row => row.tf))).size} unique TFs`}</p> 
                     : <a className="link" href={`/${species}/view?orf=${p.data.tf}`}>{p.data.tf}</a> },
-                    { headerName: "Evidence", field: "evidence", hide: false, maxWidth: 180, 
-                    cellRenderer: p => p.node.rowPinned && p.data.id === "stats" ? <BarChart data={res} colName={"evidence"} width={180} height={90} getFilter={getFilterTerm} setFilter={setFilter} getFilteredData={getFilteredData} addListener={addListener} removeListener={removeListener} /> 
+                    { headerName: "Evidence", field: "evidence", hide: false, maxWidth: 150, 
+                    cellRenderer: p => p.node.rowPinned && p.data.id === "stats" ? <BarChart colName={"evidence"} width={150} height={90} getFilter={getFilterTerm} setFilter={setFilter} getFilteredData={getFilteredData} addListener={addListener} removeListener={removeListener} /> 
                     : p.data.evidence},
                     { headerName: "Association Type", field: "association", hide: false, maxWidth: 150, 
-                    cellRenderer: p => p.node.rowPinned && p.data.id === "stats" ? <BarChart data={res} colName={"association"} width={150} height={90} getFilter={getFilterTerm} setFilter={setFilter} getFilteredData={getFilteredData} addListener={addListener} removeListener={removeListener} /> 
+                    cellRenderer: p => p.node.rowPinned && p.data.id === "stats" ? <BarChart colName={"association"} width={150} height={90} getFilter={getFilterTerm} setFilter={setFilter} getFilteredData={getFilteredData} addListener={addListener} removeListener={removeListener} /> 
                     : p.data.association},
                     { headerName: "Ref", field: "Reference", maxWidth: 80, hide: false, sortable: false, floatingFilter: false, 
                     cellRenderer: p => !p.node.rowPinned && <RegulationModal id={`reg_modal_${p.data.tf}_${p.data.gene}`} orf={p.data.gene === "Uncharacterized" ? p.data.orf : p.data.gene} tf={p.data.tf} species={species} />},
@@ -261,7 +268,7 @@ export default function Main() {
                 setRowData(res);
                 // apply default sort
                 if (!first) gridRef.current.api.applyColumnState({
-                    state: [{ colId: "gene", sort: "asc"}],
+                    state: [{ colId: "gene", sort: "asc"}, { colId: "tf", sort: null}],
                 });
                 setTimeout(() => gridAutoSize(gridRef), 100);
 
@@ -269,17 +276,17 @@ export default function Main() {
             else {
                 // fix for ref not available on first query
                 if (!gridVisible) {
-                    setGridSavedState({ sort: { sortModel: [{colId: "tf", sort: "asc"}]}});
-                    setFilteredData(res);
+                    // setGridSavedState({ sort: { sortModel: [{colId: "tf", sort: "asc"}]}});
+                    // setFilteredData(res);
                     setGridVisible(true);
                     first = true;
                 }
 
                 setColDefs([
                     { headerName: "TF", field: "tf", hide: false, maxWidth: 200, rowDrag: true, colSpan: p => p.node.rowPinned && p.data.id === "network" ? 6 : 1,
-                    cellRenderer: p => p.node.rowPinned && p.data.id === "stats" ? <BarChart data={res} colName={"tf"} width={200} height={90} getFilter={getFilterTerm} setFilter={setFilter} getFilteredData={getFilteredData} addListener={addListener} removeListener={removeListener} />
+                    cellRenderer: p => p.node.rowPinned && p.data.id === "stats" ? <BarChart colName={"tf"} width={200} height={90} getFilter={getFilterTerm} setFilter={setFilter} getFilteredData={getFilteredData} addListener={addListener} removeListener={removeListener} />
                     : p.node.rowPinned && p.data.id === "network" ? 
-                    <Network data={res} filteredData={res} gridState={gridSavedState} setGridState={setGridSavedState} getFilteredData={getFilteredData} addListener={addListener} removeListener={removeListener} />
+                    <Network getFilteredData={getFilteredData} addListener={addListener} removeListener={removeListener} />
                     : <a className="link" href={`/${species}/view?orf=${p.data.tf}`}>{p.data.tf}</a> },
                     { headerName: "Gene", field: "gene", hide: false, maxWidth: 150, rowDrag: true, 
                     cellRenderer: p => p.node.rowPinned && p.data.id === "stats" ? <p className="text-lg font-semibold text-wrap">{`${(new Set(res.map(row => row.gene))).size} unique Genes`}</p>
@@ -287,11 +294,11 @@ export default function Main() {
                     { headerName: "ORF", field: "orf", hide: false, maxWidth: 150,
                     cellRenderer: p => p.node.rowPinned && p.data.id === "stats" ? <p className="text-lg font-semibold text-wrap">{`${(new Set(res.map(row => row.orf))).size} unique ORFs`}</p> 
                     : <a className="link" href={`/${species}/view?orf=${p.data.orf}`}>{p.data.orf}</a> },
-                    { headerName: "Evidence", field: "evidence", hide: false, maxWidth: 180, 
-                    cellRenderer: p => p.node.rowPinned && p.data.id === "stats" ? <BarChart data={res} colName={"evidence"} width={180} height={90} getFilter={getFilterTerm} setFilter={setFilter} getFilteredData={getFilteredData} addListener={addListener} removeListener={removeListener} /> 
+                    { headerName: "Evidence", field: "evidence", hide: false, maxWidth: 170, 
+                    cellRenderer: p => p.node.rowPinned && p.data.id === "stats" ? <BarChart colName={"evidence"} width={105} height={75} getFilter={getFilterTerm} setFilter={setFilter} getFilteredData={getFilteredData} addListener={addListener} removeListener={removeListener} />
                     : p.data.evidence},
-                    { headerName: "Association Type", field: "association", hide: false, maxWidth: 150, 
-                    cellRenderer: p => p.node.rowPinned && p.data.id === "stats" ? <BarChart data={res} colName={"association"} width={150} height={95} getFilter={getFilterTerm} setFilter={setFilter} getFilteredData={getFilteredData} addListener={addListener} removeListener={removeListener} /> 
+                    { headerName: "Association Type", field: "association", hide: false, maxWidth: 140, 
+                    cellRenderer: p => p.node.rowPinned && p.data.id === "stats" ? <BarChart colName={"association"} width={140} height={97} getFilter={getFilterTerm} setFilter={setFilter} getFilteredData={getFilteredData} addListener={addListener} removeListener={removeListener} /> 
                     : p.data.association},
                     { headerName: "Ref", field: "Reference", maxWidth: 80, hide: false, sortable: false, floatingFilter: false, 
                     cellRenderer: p => !p.node.rowPinned && <RegulationModal id={`reg_modal_${p.data.tf}_${p.data.gene}`} orf={p.data.gene === "Uncharacterized" ? p.data.orf : p.data.gene} tf={p.data.tf} species={species} />},
@@ -299,7 +306,7 @@ export default function Main() {
                 setRowData(res);
                 // apply default sort
                 if (!first) gridRef.current.api.applyColumnState({
-                    state: [{ colId: "tf", sort: "asc" }],
+                    state: [{ colId: "tf", sort: "asc" }, {colId: "gene", sort: null}],
                 });
                 setTimeout(() => gridAutoSize(gridRef), 100);
 
@@ -308,10 +315,7 @@ export default function Main() {
             // if (documented === "") return; //not accepted
             // FORM CHECK
             if (formData.genes.trim() === "") {
-                setShowErrorMessage({
-                    flag: true,
-                    msg: '"Genes" field cannot be empty',
-                });
+                setShowFormError('"Genes" field cannot be empty');
                 return;
             }
             setShowLoading(true);
@@ -346,6 +350,15 @@ export default function Main() {
                 species: speciesList[species].path,
             });
             console.log(res);
+
+            // HTTP ERROR
+            if (typeof res === "string") {
+                setShowLoading(false);
+                setShowError(res);
+                return;
+            }
+            if (res.length === 0) setShowWarning("No regulations found!");
+
             if (!gridVisible) setGridVisible(true);
             // const genesWidth =
             //     100 +
@@ -366,10 +379,7 @@ export default function Main() {
         } else if (query === "rank-go") {
             // FORM CHECK
             if (formData.genes.trim() === "") {
-                setShowErrorMessage({
-                    flag: true,
-                    msg: '"Genes" field cannot be empty',
-                });
+                setShowFormError('"Genes" field cannot be empty');
                 return;
             }
             setShowLoading(true);
@@ -390,6 +400,14 @@ export default function Main() {
                 species: speciesList[species].path,
             });
             console.log(res);
+            // HTTP ERROR
+            if (typeof res === "string") {
+                setShowLoading(false);
+                setShowError(res);
+                return;
+            }
+            if (res.length === 0) setShowWarning("No GO terms found!");
+
             if (!gridVisible) setGridVisible(true);
             // const termWidth =
             //     Math.max(...res.map((row) => row.term.length)) * 8;
@@ -416,17 +434,11 @@ export default function Main() {
         } else if (query === "rank-tfbs") {
             // FORM CHECK
             if (formData.genes.trim() === "") {
-                setShowErrorMessage({
-                    flag: true,
-                    msg: '"Genes" field cannot be empty',
-                });
+                setShowFormError('"Genes" field cannot be empty');
                 return;
             }
             if (formData.homolog === "") {
-                setShowErrorMessage({
-                    flag: true,
-                    msg: "Please select a Homolog Species",
-                });
+                setShowFormError("Please select a Homolog Species");
                 return;
             }
             setShowLoading(true);
@@ -528,7 +540,7 @@ export default function Main() {
         else if (showNetwork && params.data.id === "network") return 700;
         else if (showNetwork && !params.node.rowPinned) return 1;
         else if (params.data.id === "stats") return 80;
-        else return 35;
+        else return 30;
     };
 
     React.useEffect(() => {
@@ -536,11 +548,11 @@ export default function Main() {
             gridRef.current.api.forEachNode((node) => {
                 if (showNetwork && !node.rowPinned) {
                     node.setRowHeight(1);
-                    gridRef.current.api.suppressPaginationPanel = true;
+                    // gridRef.current.api.suppressPaginationPanel = true;
                 }
                 if (!showNetwork && !node.rowPinned) {
-                    node.setRowHeight(35);
-                    gridRef.current.api.suppressPaginationPanel = false;
+                    node.setRowHeight(30);
+                    // gridRef.current.api.suppressPaginationPanel = false;
                 }
             });
             setSupressPaginationPanel((prev) => !prev);
@@ -590,23 +602,81 @@ export default function Main() {
 
     function getFilteredData() {
         const rowData = [];
-        gridRef.current.api.forEachNodeAfterFilter((node) => {
-            rowData.push(node.data);
-        });
+        if (gridRef.current) {
+            gridRef.current.api.forEachNodeAfterFilter((node) => {
+                rowData.push(node.data);
+            });
+        }
         return rowData;
     }
 
-    const setFilter = React.useCallback(async (col, val) => {
-        await gridRef.current.api.setColumnFilterModel(
-            col,
-            val === null
-                ? null
-                : {
-                      filterType: "text",
-                      type: "contains",
-                      filter: val,
-                  }
-        );
+    const getFilterTerm = React.useCallback((col) => {
+        const filter = gridRef.current.api.getColumnFilterModel(col);
+        const ret = [];
+        if (!filter) return null;
+        if (filter.conditions) {
+            ret.push(...filter.conditions.map((c) => c.filter));
+        } else {
+            ret.push(filter.filter);
+        }
+        // return filter === null ? null : filter.filter;
+        return ret;
+    }, []);
+
+    const setFilter = React.useCallback(async (col, val, remove = false) => {
+        let filter = null;
+        const currentFilter = gridRef.current.api.getColumnFilterModel(col);
+        if (remove) {
+            if (currentFilter) {
+                const cds = currentFilter.conditions;
+                if (cds) {
+                    if (cds.some((c) => c.filter === val)) {
+                        if (cds.length > 2) {
+                            filter = {
+                                filterType: "text",
+                                operator: "AND",
+                                conditions: cds.filter((c) => c.filter !== val),
+                            };
+                        } else {
+                            filter = {
+                                filterType: "text",
+                                type: "contains",
+                                filter: cds.filter((c) => c.filter !== val)[0]
+                                    .filter,
+                            };
+                        }
+                    } else filter = currentFilter;
+                } else filter = null;
+            } else filter = null;
+        } else {
+            if (currentFilter) {
+                let conditions = currentFilter.conditions;
+                if (conditions)
+                    conditions.push({
+                        filterType: "text",
+                        type: "contains",
+                        filter: val,
+                    });
+                else
+                    conditions = [
+                        currentFilter,
+                        { filterType: "text", type: "contains", filter: val },
+                    ];
+                filter = {
+                    filterType: "text",
+                    operator: "AND",
+                    conditions: conditions,
+                };
+            } else {
+                filter = {
+                    filterType: "text",
+                    type: "contains",
+                    filter: val,
+                };
+            }
+        }
+        // prettier-ignore
+        await gridRef.current.api.setColumnFilterModel(col, filter);
         gridRef.current.api.onFilterChanged();
     }, []);
 
@@ -619,11 +689,6 @@ export default function Main() {
     //     });
     //     gridRef.current.api.onFilterChanged();
     // }, []);
-
-    const getFilterTerm = React.useCallback((col) => {
-        const filter = gridRef.current.api.getColumnFilterModel(col);
-        return filter === null ? null : filter.filter;
-    }, []);
 
     // const getFilterInterval = React.useCallback((col) => {
     //     const filter = gridRef.current.api.getColumnFilterModel(col);
@@ -686,20 +751,20 @@ export default function Main() {
 
     const onGridReady = React.useCallback(
         (params) => {
-            addListener(() => {
-                setFilteredData(getFilteredData());
-            });
+            // addListener(() => {
+            //     setFilteredData(getFilteredData());
+            // });
             gridRef.current.api.onFilterChanged();
             enableDropZones(params);
         },
-        [addListener, enableDropZones]
+        [enableDropZones]
     );
 
-    const onGridPreDestroyed = React.useCallback((params) => {
-        const { state } = params;
-        console.log(state);
-        setGridSavedState(state);
-    }, []);
+    // const onGridPreDestroyed = React.useCallback((params) => {
+    //     const { state } = params;
+    //     console.log(state);
+    //     setGridSavedState(state);
+    // }, []);
 
     return (
         <div className="w-full h-full">
@@ -721,7 +786,7 @@ export default function Main() {
                                     id="tfs"
                                     name="tfs"
                                     value={formData.tfs}
-                                    className="textarea textarea-bordered textarea-primary resize-none min-h-44 max-h-44 max-w-40 text-color leading-4"
+                                    className="textarea textarea-bordered textarea-primary resize-none min-h-[194px] max-h-[194px] max-w-40 text-color leading-4"
                                     onChange={handleForm}
                                 ></textarea>
                             </label>
@@ -735,29 +800,31 @@ export default function Main() {
                                     id="genes"
                                     name="genes"
                                     value={formData.genes}
-                                    className="textarea textarea-bordered textarea-primary resize-none min-h-44 max-h-44 max-w-40 text-color leading-4"
+                                    className="textarea textarea-bordered textarea-primary resize-none min-h-[194px] max-h-[194px] max-w-40 text-color leading-4"
                                     onChange={handleForm}
                                 ></textarea>
                             </label>
-                        </div>
-                        <div className="flex flex-row gap-1 justify-end">
-                            {speciesList[species].dbstrains.map((strain) => (
-                                <div
-                                    className="tooltip"
-                                    key={strain}
-                                    data-tip={`Sample strain ${strain}`}
-                                >
-                                    <button
-                                        className="btn btn-xs btn-square"
-                                        type="button"
-                                        id={`${strain}-sample-button`}
-                                        value={strain}
-                                        onClick={setSampleData}
-                                    >
-                                        <SampleDataIcon />
-                                    </button>
-                                </div>
-                            ))}
+                            <div className="flex flex-col gap-1 justify-end">
+                                {speciesList[species].dbstrains.map(
+                                    (strain) => (
+                                        <div
+                                            className="tooltip"
+                                            key={strain}
+                                            data-tip={`Sample strain ${strain}`}
+                                        >
+                                            <button
+                                                className="btn btn-xs btn-square"
+                                                type="button"
+                                                id={`${strain}-sample-button`}
+                                                value={strain}
+                                                onClick={setSampleData}
+                                            >
+                                                <SampleDataIcon />
+                                            </button>
+                                        </div>
+                                    )
+                                )}
+                            </div>
                         </div>
                     </div>
                     {/* <div className="grid row-span-2 gap-6 max-w-sm">
@@ -858,7 +925,7 @@ export default function Main() {
                         </label>
                     </div>
                 </div> */}
-                    <div className="flex flex-col gap-3">
+                    <div className="flex flex-col gap-2">
                         <div className="flex flex-col p-3 items-center rounded-lg shadow-md shadow-gray-300 max-w-sm">
                             <label>
                                 <div className="label p-0 mb-2">
@@ -1034,12 +1101,14 @@ export default function Main() {
                     </button>
                 </div>
                 <div className="mt-2">
-                    {showErrorMessage.flag && (
-                        <ErrorAlert msg={showErrorMessage.msg} />
-                    )}
+                    {showFormError && <ErrorAlert msg={showFormError} />}
                 </div>
             </form>
-
+            {showWarning && (
+                <div className="px-4 py-2">
+                    <WarningAlert msg={showWarning} />
+                </div>
+            )}
             {gridVisible && (
                 <div className="px-4 py-2 w-full h-full">
                     <div className="p-2 bg-gray-100 rounded-t-lg border-x border-t border-[#e5e7eb] flex gap-5">
@@ -1138,17 +1207,24 @@ export default function Main() {
                             autoSizeStrategy={autoSizeStrategy}
                             // idk yet
                             // getRowStyle={rowStyleFunc}
-                            initialState={gridSavedState}
+                            // initialState={gridSavedState}
                             onGridReady={onGridReady}
                             rowDrag={true}
                             // suppressMoveWhenRowDragging={true}
-                            onGridPreDestroyed={onGridPreDestroyed}
+                            // onGridPreDestroyed={onGridPreDestroyed}
                             getRowStyle={getRowStyle}
                         />
                     </div>
                     {/* )} */}
                 </div>
             )}
+            {showError && (
+                    <ErrorToast msg={showError} setShow={setShowError} />
+                ) &&
+                // disappear after 10 seconds
+                setTimeout(() => {
+                    if (showError) setShowError("");
+                }, 10000)}
             {showLoading && <Loading />}
         </div>
     );

@@ -8,11 +8,13 @@ import Protein from "./view/Protein";
 import Locus from "./view/Locus";
 import GOterm from "./view/GOterm";
 import { titleFormat } from "../utils/utils";
+import ErrorToast from "./ErrorToast";
 
 export default function View() {
     const { species } = useParams();
     let [searchParams] = useSearchParams();
     const [results, setResults] = React.useState({});
+    const [showError, setShowError] = React.useState("");
 
     React.useEffect(() => {
         async function fetchData() {
@@ -22,6 +24,11 @@ export default function View() {
                     speciesList[species].path
                 );
                 console.log(res);
+                // HTTP ERROR
+                if (typeof res === "string") {
+                    setShowError(res);
+                    return;
+                }
                 setResults(res);
             } else if (searchParams.get("goid")) {
                 const res = await searchGOterm(
@@ -29,6 +36,11 @@ export default function View() {
                     speciesList[species].path
                 );
                 console.log(res);
+                // HTTP ERROR
+                if (typeof res === "string") {
+                    setShowError(res);
+                    return;
+                }
                 setResults(res);
             }
         }
@@ -46,7 +58,7 @@ export default function View() {
                                 <tbody>
                                     {Object.keys(results["general"]).map(
                                         (row) => (
-                                            <tr>
+                                            <tr key={row}>
                                                 <th className="align-top w-24 m-0 p-1">
                                                     {titleFormat(row)}
                                                 </th>
@@ -116,6 +128,13 @@ export default function View() {
                 searchParams.get("goid") !== null && (
                     <GOterm goterm={results} species={species} />
                 )}
+            {showError && (
+                    <ErrorToast msg={showError} setShow={setShowError} />
+                ) &&
+                // disappear after 10 seconds
+                setTimeout(() => {
+                    if (showError) setShowError("");
+                }, 10000)}
         </>
     );
 }

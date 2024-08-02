@@ -21,6 +21,8 @@ router.get("/", async (req, res, next) => {
             res.status(400).send("No species specified");
         else if (err.message === "Search Term Not Accepted")
             res.status(400).send("Invalid Search Term");
+        else if (err.message === "Species not found")
+            res.status(400).send("Unknown species");
         else res.status(500).send("Internal Server Error");
     }
 });
@@ -35,6 +37,8 @@ router.get("/orf", async (req, res, next) => {
             res.status(400).send(err.message);
         else if (err.message === "ORF/Gene Not Found")
             res.status(404).send(err.message);
+        else if (err.message === "Species not found")
+            res.status(400).send("Unknown species");
         else res.status(500).send("Internal Server Error");
     }
 });
@@ -48,6 +52,8 @@ router.get("/tfbs", async (req, res, next) => {
         if (err.message === "Bad Request") res.status(400).send(err.message);
         else if (err.message === "nf")
             res.status(404).send("Transcription Factor Not Found");
+        else if (err.message === "Species not found")
+            res.status(400).send("Unknown species");
         else res.status(500).send("Internal Server Error");
     }
 });
@@ -59,6 +65,8 @@ router.get("/mreaction", async (req, res, next) => {
     } catch (err) {
         console.log(err);
         if (err.message === "Bad Request") res.status(400).send(err.message);
+        else if (err.message === "Species not found")
+            res.status(400).send("Unknown species");
         else res.status(500).send("Internal Server Error");
     }
 });
@@ -70,6 +78,8 @@ router.get("/goterm", async (req, res, next) => {
     } catch (err) {
         console.log(err);
         if (err.message === "Bad Request") res.status(400).send(err.message);
+        else if (err.message === "Species not found")
+            res.status(400).send("Unknown species");
         else res.status(500).send("Internal Server Error");
     }
 });
@@ -85,6 +95,8 @@ router.get("/regulation", async (req, res, next) => {
             res.status(404).send("ORF/Gene Not Found");
         else if (err.message === "tfnf")
             res.status(404).send("Transcription Factor Not Found");
+        else if (err.message === "Species not found")
+            res.status(400).send("Unknown species");
         else res.status(500).send("Internal Server Error");
     }
 });

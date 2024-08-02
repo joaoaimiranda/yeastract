@@ -10,7 +10,9 @@ export async function searchRegulations(reqData) {
         body: JSON.stringify(reqData),
     });
     if (!res.ok) {
-        throw new Error(`HTTP error! status: ${res.status}`);
+        const msg = await res.text();
+        console.error(`HTTP error: ${res.status} - ${msg}`);
+        return msg;
     }
 
     const data = await res.json();
@@ -27,7 +29,9 @@ export async function rankTF(reqData) {
         body: JSON.stringify(reqData),
     });
     if (!res.ok) {
-        throw new Error(`HTTP error! status: ${res.status}`);
+        const msg = await res.text();
+        console.error(`HTTP error: ${res.status} - ${res.message}`);
+        return msg;
     }
     const data = await res.json();
     return data;
@@ -43,7 +47,9 @@ export async function rankGO(reqData) {
         body: JSON.stringify(reqData),
     });
     if (!res.ok) {
-        throw new Error(`HTTP error! status: ${res.status}`);
+        const msg = await res.text();
+        console.error(`HTTP error: ${res.status} - ${res.message}`);
+        return msg;
     }
     const data = await res.json();
     return data;
@@ -59,7 +65,9 @@ export async function rankTFBS(reqData) {
         body: JSON.stringify(reqData),
     });
     if (!res.ok) {
-        throw new Error(`HTTP error! status: ${res.status}`);
+        const msg = await res.text();
+        console.error(`HTTP error: ${res.status} - ${res.message}`);
+        return msg;
     }
     const data = await res.json();
     return data;
@@ -75,7 +83,9 @@ export async function motifOnPromoter(reqData) {
         body: JSON.stringify(reqData),
     });
     if (!res.ok) {
-        throw new Error(`HTTP error! status: ${res.status}`);
+        const msg = await res.text();
+        console.error(`HTTP error: ${res.status} - ${res.message}`);
+        return msg;
     }
     const data = await res.json();
     return data;
@@ -91,7 +101,9 @@ export async function tfbsByMotif(reqData) {
         body: JSON.stringify(reqData),
     });
     if (!res.ok) {
-        throw new Error(`HTTP error! status: ${res.status}`);
+        const msg = await res.text();
+        console.error(`HTTP error: ${res.status} - ${res.message}`);
+        return msg;
     }
     const data = await res.json();
     return data;
@@ -107,7 +119,9 @@ export async function tfbsOnSeq(reqData) {
         body: JSON.stringify(reqData),
     });
     if (!res.ok) {
-        throw new Error(`HTTP error! status: ${res.status}`);
+        const msg = await res.text();
+        console.error(`HTTP error: ${res.status} - ${res.message}`);
+        return msg;
     }
     const data = await res.json();
     return data;
@@ -123,7 +137,9 @@ export async function seqRetrieval(reqData) {
         body: JSON.stringify(reqData),
     });
     if (!res.ok) {
-        throw new Error(`HTTP error! status: ${res.status}`);
+        const msg = await res.text();
+        console.error(`HTTP error: ${res.status} - ${res.message}`);
+        return msg;
     }
     const data = await res.json();
     return data;
@@ -139,7 +155,9 @@ export async function promoterAnalysis(reqData) {
         body: JSON.stringify(reqData),
     });
     if (!res.ok) {
-        throw new Error(`HTTP error! status: ${res.status}`);
+        const msg = await res.text();
+        console.error(`HTTP error: ${res.status} - ${res.message}`);
+        return msg;
     }
     const data = await res.json();
     return data;
@@ -150,7 +168,9 @@ export async function tfConsensus(species) {
         `${constants.baseUrl}/seq/tf-consensus?species=${species}`
     );
     if (!res.ok) {
-        throw new Error(`HTTP error! status: ${res.status}`);
+        const msg = await res.text();
+        console.error(`HTTP error: ${res.status} - ${res.message}`);
+        return msg;
     }
     const data = await res.json();
     return data;
@@ -161,7 +181,9 @@ export async function searchTerm(term, species) {
         `${constants.baseUrl}/info?term=${term}&species=${species}`
     );
     if (!res.ok) {
-        throw new Error(`HTTP error! status: ${res.status}`);
+        const msg = await res.text();
+        console.error(`HTTP error: ${res.status} - ${res.message}`);
+        return msg;
     }
     const data = await res.json();
     return data;
@@ -172,7 +194,9 @@ export async function searchORF(orf, species) {
         `${constants.baseUrl}/info/orf?orf=${orf}&species=${species}`
     );
     if (!res.ok) {
-        throw new Error(`HTTP error! status: ${res.status}`);
+        const msg = await res.text();
+        console.error(`HTTP error: ${res.status} - ${res.message}`);
+        return msg;
     }
     const data = await res.json();
     return data;
@@ -183,7 +207,9 @@ export async function searchTFBS(tf, consensus, species) {
         `${constants.baseUrl}/info/tfbs?protein=${tf}&consensus=${consensus}&species=${species}`
     );
     if (!res.ok) {
-        throw new Error(`HTTP error! status: ${res.status}`);
+        const msg = await res.text();
+        console.error(`HTTP error: ${res.status} - ${res.message}`);
+        return msg;
     }
     const data = await res.json();
     return data;
@@ -194,7 +220,9 @@ export async function searchMetabInfo(rid, model, species) {
         `${constants.baseUrl}/info/tfbs?rid=${rid}&model${model}&species=${species}`
     );
     if (!res.ok) {
-        throw new Error(`HTTP error! status: ${res.status}`);
+        const msg = await res.text();
+        console.error(`HTTP error: ${res.status} - ${res.message}`);
+        return msg;
     }
     const data = await res.json();
     return data;
@@ -205,7 +233,9 @@ export async function searchGOterm(goid, species) {
         `${constants.baseUrl}/info/goterm?goid=${goid}&species=${species}`
     );
     if (!res.ok) {
-        throw new Error(`HTTP error! status: ${res.status}`);
+        const msg = await res.text();
+        console.error(`HTTP error: ${res.status} - ${res.message}`);
+        return msg;
     }
     const data = await res.json();
     return data;
@@ -216,7 +246,9 @@ export async function searchRegulationInfo(orf, tf, species) {
         `${constants.baseUrl}/info/regulation?orf=${orf}&protein=${tf}&species=${species}`
     );
     if (!res.ok) {
-        throw new Error(`HTTP error! status: ${res.status}`);
+        const msg = await res.text();
+        console.error(`HTTP error: ${res.status} - ${res.message}`);
+        return msg;
     }
     const data = await res.json();
     return data;
@@ -225,7 +257,9 @@ export async function searchRegulationInfo(orf, tf, species) {
 export async function getSpecies() {
     const res = await fetch(`${constants.baseUrl}/utils/species`);
     if (!res.ok) {
-        throw new Error(`HTTP error! status: ${res.status}`);
+        const msg = await res.text();
+        console.error(`HTTP error: ${res.status} - ${res.message}`);
+        return msg;
     }
     const data = await res.json();
     return data;
@@ -234,7 +268,9 @@ export async function getSpecies() {
 export async function getEnvCons() {
     const res = await fetch(`${constants.baseUrl}/utils/envcons`);
     if (!res.ok) {
-        throw new Error(`HTTP error! status: ${res.status}`);
+        const msg = await res.text();
+        console.error(`HTTP error: ${res.status} - ${res.message}`);
+        return msg;
     }
     const data = await res.json();
     return data;

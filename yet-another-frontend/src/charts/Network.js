@@ -3,8 +3,8 @@ import * as d3 from "d3";
 // import TextInput from "../components/TextInput";
 
 export default function Network({
-    data,
-    filteredData,
+    // data,
+    // filteredData,
     // gridState,
     // setGridState,
     getFilteredData,
@@ -13,10 +13,9 @@ export default function Network({
 }) {
     const ref = React.useRef();
 
-    const [chartData, setChartData] = React.useState(filteredData);
-
+    const [chartData, setChartData] = React.useState(getFilteredData());
+    console.log(chartData);
     React.useEffect(() => {
-        if (!data[0] || !data[0].gene || !data[0].tf || !data[0].orf) return;
         const width = 700;
         const height = 700;
 
@@ -200,13 +199,14 @@ export default function Network({
         function filterListener(e) {
             setChartData(getFilteredData());
         }
+
         addListener(filterListener);
 
         return () => {
             svg.selectAll("*").remove();
             removeListener(filterListener);
         };
-    }, [data, chartData, getFilteredData, addListener, removeListener]);
+    }, [chartData, getFilteredData, addListener, removeListener]);
 
     // function handleFilter(event) {
     //     const { name, value } = event.target;

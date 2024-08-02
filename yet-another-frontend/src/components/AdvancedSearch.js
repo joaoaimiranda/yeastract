@@ -5,6 +5,7 @@ import speciesList from "../conf/speciesList";
 import SearchIcon from "../svg/SearchIcon";
 import Table from "./Table";
 import { gridAutoSize } from "../utils/utils";
+import ErrorToast from "./ErrorToast";
 
 export default function AdvancedSearch() {
     const { species } = useParams();
@@ -12,17 +13,23 @@ export default function AdvancedSearch() {
     const navigate = useNavigate();
     const [results, setResults] = React.useState({});
     const [termInput, setTermInput] = React.useState("");
-
+    const [showError, setShowError] = React.useState("");
     const orfGridRef = React.useRef();
     const goGridRef = React.useRef();
     const reactionGridRef = React.useRef();
 
     React.useEffect(() => {
         async function fetchData() {
+            setTermInput(searchParams.get("term"));
             const res = await searchTerm(
                 searchParams.get("term"),
                 speciesList[species].path
             );
+            // HTTP ERROR
+            if (typeof res === "string") {
+                setShowError(res);
+                return;
+            }
             if (res.fullMatch) navigate(`/${species}/view?orf=${res.matches}`);
             else {
                 console.log(res.matches);
@@ -31,7 +38,6 @@ export default function AdvancedSearch() {
                 gridAutoSize(goGridRef);
                 gridAutoSize(reactionGridRef);
             }
-            setTermInput(searchParams.get("term"));
         }
         if (searchParams.get("term")) fetchData();
     }, [searchParams, species, navigate]);
@@ -134,6 +140,13 @@ export default function AdvancedSearch() {
                     )}
                 </div>
             )}
+            {showError && (
+                    <ErrorToast msg={showError} setShow={setShowError} />
+                ) &&
+                // disappear after 10 seconds
+                setTimeout(() => {
+                    if (showError) setShowError("");
+                }, 10000)}
         </>
     );
 }

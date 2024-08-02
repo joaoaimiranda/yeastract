@@ -69,11 +69,14 @@ export async function tfbsByMotif(params) {
         const tmp_ret2 = { seq: seq, tfs: dbRes["tfs"], F: null, R: null };
         const matches1 = shiftAnd(motif, seq, params.substitutions);
         if (!objectEmpty(matches1)) tmp_ret1["F"] = matches1;
+
         // prettier-ignore
         const matches2 = shiftAnd(motifComplement(motif), seq, params.substitutions);
         if (!objectEmpty(matches2)) tmp_ret1["R"] = matches2;
+
         const matches3 = shiftAnd(seq, motif, params.substitutions);
         if (!objectEmpty(matches3)) tmp_ret2["F"] = matches3;
+
         // prettier-ignore
         const matches4 = shiftAnd(seq, motifComplement(motif), params.substitutions);
         if (!objectEmpty(matches4)) tmp_ret2["R"] = matches4;
@@ -208,9 +211,32 @@ function tfBindingSites(motifs, sequences, subst = 0) {
         const matches = getMatches(recursiveSplit(m), sequences, subst);
         for (let orfid of Object.keys(matches)) {
             if (!retObj[orfid]) retObj[orfid] = [];
+            const pm = [];
+            if (matches[orfid].F)
+                pm.push(
+                    ...Object.entries(matches[orfid].F).map(([pos, size]) => {
+                        pos = Number(pos);
+                        size = Number(size);
+                        return sequences[orfid].substring(pos, pos + size);
+                    })
+                );
+            if (matches[orfid].R)
+                pm.push(
+                    ...Object.entries(matches[orfid].R).map(([pos, size]) => {
+                        pos = Number(pos);
+                        size = Number(size);
+                        return IUPACcomplement(
+                            sequences[orfid].substring(
+                                sequences[orfid].length - pos - size,
+                                sequences[orfid].length - pos
+                            )
+                        );
+                    })
+                );
             retObj[orfid].push({
                 motif: m,
                 promoterlen: sequences[orfid].length,
+                promoterMatch: pm,
                 matches: matches[orfid],
             });
         }

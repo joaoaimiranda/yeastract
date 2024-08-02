@@ -7,15 +7,15 @@ export default function Protein({ protein, species }) {
             <table className="table">
                 <tbody>
                     {Object.keys(protein).map((row) => (
-                        <tr>
+                        <tr key={row}>
                             <th className="align-top w-32 m-0 p-1">
                                 {titleFormat(row)}
                             </th>
                             <td className=" m-0 p-1">
                                 {row === "TFBS" ? (
                                     <ul>
-                                        {protein[row].map((tfbs) => (
-                                            <li>
+                                        {protein[row].map((tfbs, i) => (
+                                            <li key={i}>
                                                 <span>{tfbs} </span>
                                                 <TFBSModal
                                                     id={`modal_${tfbs}`}
