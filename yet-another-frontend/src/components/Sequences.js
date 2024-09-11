@@ -136,7 +136,7 @@ export default function Sequences() {
     const mopColDefs = [
         { headerName: "Gene", field: "gene", maxWidth: 200,
         cellRenderer: (p) => p.node.rowPinned ? <BarChart colName={"gene"} width={200} height={90} getFilter={getFilterTerm} setFilter={setFilter} getFilteredData={getFilteredData} addListener={addListener} removeListener={removeListener} /> : 
-        <a className="link" href={`${species}/view?orf=${p.data.gene}`}>{p.data.gene}</a>},
+        <a className="link" href={`/${species}/view?orf=${p.data.gene}`}>{p.data.gene}</a>},
         { headerName: "#", field: "count", filter: 'agNumberColumnFilter' },
         { headerName: "Motif", field: "motif" },
         { headerName: "Promoter", field: "promoterMatch", sortable: false, floatingFilter: false, autoHeight: true,
@@ -1451,7 +1451,7 @@ export default function Sequences() {
             </form>
             {showTbmTable && (
                 <div className="px-4 py-2">
-                    <h3 className="mb-2 font-semibold">{`Inserted motif inside ${species} binding sites`}</h3>
+                    <h3 className="mb-2 font-semibold">{`Inserted motif inside ${speciesList[species].short} binding sites`}</h3>
                     <Table
                         gridRef={tbmGridRef}
                         colDefs={tbmGridColDefs}
@@ -1459,7 +1459,7 @@ export default function Sequences() {
                         rowData={tbmGridRowData}
                         charts={true}
                     />
-                    <h3 className="mt-2 font-semibold">{`${species} binding sites inside inserted motif`}</h3>
+                    <h3 className="mt-2 font-semibold">{`${speciesList[species].short} binding sites inside inserted motif`}</h3>
                 </div>
             )}
             {showTos && (
@@ -1474,6 +1474,7 @@ export default function Sequences() {
                                     seqName={row.seqName}
                                     width={row.len}
                                     marginTop={25}
+                                    height={60}
                                     addListener={addListener}
                                     removeListener={removeListener}
                                     getFilteredData={getFTFBSFilteredData}

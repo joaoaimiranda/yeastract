@@ -824,7 +824,7 @@ export async function getReactionInfo(modname, rid) {
         "FROM mmodel as M, mreaction as R WHERE M.modid=R.modid " +
         `AND M.modname='${modname}' AND R.reactionid='${reactionid}'`;
     const res = await query(q);
-    //FIXME GENE RULE ?
+    //MAYBE FIXME GENE RULE ?
     let ret = [];
     for (let row of res) {
         const q_orf =

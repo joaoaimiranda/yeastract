@@ -12,16 +12,12 @@ export async function motifOnPromoter(params) {
         params.substitutions === undefined ||
         params.species === undefined
     ) {
-        // res.status(400).send("Bad Request");
         throw new Error("Bad Request");
     }
 
     const geneNames = params.genes.trim().split(/[\s\t\n\r\0,;|]+/);
     const consensus = params.motif.trim().split(/[\s|]+/);
     if (geneNames[0] === "" || consensus[0] === "") {
-        // res.status(400).send(
-        //     "Bad Request - no valid genes or motifs specified"
-        // );
         throw new Error("Bad Request");
     }
 
@@ -37,8 +33,7 @@ export async function motifOnPromoter(params) {
     const geneIdList = await getIDs(geneNames, params.species);
 
     const seqs = await upstreamSeq(geneIdList);
-    // console.log(inputMotif);
-    // console.log(seqs);
+
     const tfbs = tfBindingSites(inputMotif, seqs, params.substitutions);
     return tfbs;
 }
@@ -49,7 +44,6 @@ export async function tfbsByMotif(params) {
         params.substitutions === undefined ||
         params.species === undefined
     ) {
-        // res.status(400).send("Bad Request");
         throw new Error("Bad Request");
     }
 
@@ -95,6 +89,8 @@ export async function seqRetrieval(params) {
         // res.status(400).send("Bad Request");
         throw new Error("Bad Request");
     }
+    // TODO CONSIDER ALL GENES OPTION
+    // CURRENTLY ONLY WORKS IF GENES ARE PROVIDED
     const geneNames = params.genes.trim().split(/[\s\t\n\r\0,;|]+/);
     const from = isNaN(params.from) ? -1000 : Number(params.from);
     const to = isNaN(params.to) ? -1 : Number(params.to);
@@ -123,7 +119,6 @@ export async function promoterAnalysis(params) {
 }
 
 export async function tfConsensus(params) {
-    // console.log(params);
     if (params.species === undefined) {
         throw new Error("Bad Request");
     }
@@ -136,6 +131,9 @@ export async function findTFBS(params) {
     if (params.sequence.trim() === "") throw new Error("emptyseq");
 
     const sequences = splitFasta(params.sequence);
+
+    // FIXME
+    // i think this is producing wrong results
     if (params.motif.trim() === "") {
         const consList = await getMotifsFromDB(false);
         // console.log(consList);
@@ -152,6 +150,7 @@ export async function findTFBS(params) {
         }
         return tfbs;
     } else {
+        // TODO
         // identify motifs
     }
 }
