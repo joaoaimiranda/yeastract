@@ -23,7 +23,7 @@ import ErrorToast from "./ErrorToast";
 import SampleDataIcon from "../svg/SampleDataIcon";
 import HamburgerIcon from "../svg/HamburgerIcon";
 import NetworkIcon from "../svg/NetworkIcon";
-// import TableIcon from "../svg/TableIcon";
+import TableIcon from "../svg/TableIcon";
 import DownloadIcon from "../svg/DownloadIcon";
 import { gridAutoSize } from "../utils/utils";
 
@@ -369,8 +369,9 @@ export default function Main() {
                 cellRenderer: p => !p.node.rowPinned && <a className="link" href={`/${species}/view?orf=${p.data.tf}`}>{p.data.tf}</a>},
                 { headerName: "% in user set", field: "setPer", filter: 'agNumberColumnFilter', hide: false, maxWidth: 150,
                 cellRenderer: (p) => p.node.rowPinned && p.data.id === "stats" ? (<Histogram data={res.map((row) => row.setPer)} width={150} height={95} />) : (p.data.setPer + "%"),},
-                { headerName: "% in species", field: "dbPer", filter: 'agNumberColumnFilter', hide: false, maxWidth: 150,
+                { headerName: `% in ${speciesList[species].short}`, field: "dbPer", filter: 'agNumberColumnFilter', hide: false, maxWidth: 150,
                 cellRenderer: (p) => p.node.rowPinned && p.data.id === "stats" ? (<Histogram data={res.map((row) => row.dbPer)} width={150} height={95} />) : (p.data.dbPer + "%"),},
+                { headerName: "p-value", field: "pvalue", filter: 'agNumberColumnFilter', hide: false},
                 { headerName: "Target Genes", field: "genes", hide: false, maxWidth: 500, autoHeight: true, rowDrag: true,
                 cellRenderer: (p) => !p.node.rowPinned && (p.data.genes && p.data.genes.map((v) => (<span key={v}><a className="link" href={`/${species}/view?orf=${v}`}>{v}</a>{` `}</span>))),},
             ]);
@@ -424,8 +425,9 @@ export default function Main() {
                 cellRenderer: p => p.node.rowPinned && p.data.id === "stats" ? <BarChart data={res} colName={"depth"} width={150} height={95} getFilter={getFilterTerm} setFilter={setFilter} getFilteredData={getFilteredData} addListener={addListener} removeListener={removeListener} /> : p.data.depth},
                 { headerName: "% in user set", field: "setPer", filter: 'agNumberColumnFilter', hide: false, maxWidth: 150,
                 cellRenderer: (p) =>p.node.rowPinned && p.data.id === "stats" ? (<Histogram data={res.map((row) => row.setPer)} width={150} height={95} />) : (p.data.setPer + "%"),},
-                { headerName: "% in species", field: "dbPer", filter: 'agNumberColumnFilter', hide: false, maxWidth: 150,
+                { headerName: `% in ${speciesList[species].short}`, field: "dbPer", filter: 'agNumberColumnFilter', hide: false, maxWidth: 150,
                 cellRenderer: (p) => p.node.rowPinned && p.data.id === "stats" ? (<Histogram data={res.map((row) => row.dbPer)} width={150} height={95} />) : (p.data.dbPer + "%"),},
+                { headerName: "p-value", field: "pvalue", filter: 'agNumberColumnFilter', hide: false},
                 { headerName: "Genes", field: "genes", hide: false, maxWidth: 500, autoHeight: true, rowDrag: true,
                 cellRenderer: (p) => p.node.rowPinned && p.data.id === "stats" ? (<></>) : (p.data.genes && <span className="text-wrap leading-6">{p.data.genes.map((v) => (<a key={v} className="link" href={`/${species}/view?orf=${v}`}>{`${v} `}</a>))}</span>),},
             ]);
@@ -1154,13 +1156,15 @@ export default function Main() {
                                 // updateRowHeight(!showNetwork);
                             }}
                         >
-                            {/* {showNetwork ? <TableIcon /> : <NetworkIcon />} */}
-                            <NetworkIcon />
-                            {showNetwork ? `Hide Network` : `Show Network`}
+                            {showNetwork ? <TableIcon /> : <NetworkIcon />}
+                            {/* <NetworkIcon /> */}
+                            <span className="hidden md:block">
+                                {showNetwork ? `Table` : `Network`}
+                            </span>
                         </button>
                         <button className="btn btn-sm" onClick={onBtnExport}>
                             <DownloadIcon />
-                            Download
+                            <span className="hidden md:block">Download</span>
                         </button>
                     </div>
                     {/* {showNetwork ? (

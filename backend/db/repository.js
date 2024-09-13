@@ -1,3 +1,4 @@
+import hypergeometric from "../service/hypergeometric.js";
 import {
     query,
     querySingleCol,
@@ -29,8 +30,9 @@ export async function getAllIDs(species) {
         species
     )}')`;
 
-    const res = await query(q);
-    return res.map((row) => row["orfid"]);
+    const res = await querySingleCol(q);
+    // return res.map((row) => row["orfid"]);
+    return res;
 }
 
 export async function getID(element, species) {
@@ -427,7 +429,7 @@ export async function getAllTFids(species) {
     return res;
 }
 
-export async function getGOids(geneIds, species, ontology, hyperN) {
+export async function getGOids(geneIds, species, ontology, hyperN, hypern) {
     if (
         ontology !== "process" &&
         ontology !== "function" &&
@@ -460,7 +462,7 @@ export async function getGOids(geneIds, species, ontology, hyperN) {
 
         const res_count = await querySingleValue(q_count);
         const res_ontology = await querySingleRow(q_ontology);
-        // TODO MISSING HYPERGEOMETRIC
+
         gos.push({
             goid: row["goid"],
             genes: row["genes"],
@@ -470,6 +472,12 @@ export async function getGOids(geneIds, species, ontology, hyperN) {
             dbPer: Number.parseFloat((res_count / hyperN) * 100).toFixed(2),
             term: res_ontology["term"],
             depth: res_ontology["depth"],
+            pvalue: hypergeometric(
+                hyperN,
+                res_count,
+                hypern,
+                row["genes"].length
+            ),
         });
     }
     return gos;

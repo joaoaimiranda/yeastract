@@ -86,20 +86,22 @@ export async function tfbsByMotif(params) {
 
 export async function seqRetrieval(params) {
     if (params.genes === undefined || params.species === undefined) {
-        // res.status(400).send("Bad Request");
         throw new Error("Bad Request");
     }
     // TODO CONSIDER ALL GENES OPTION
     // CURRENTLY ONLY WORKS IF GENES ARE PROVIDED
-    const geneNames = params.genes.trim().split(/[\s\t\n\r\0,;|]+/);
+    const geneNames = params.genes
+        ? params.genes.trim().split(/[\s\t\n\r\0,;|]+/)
+        : "";
     const from = isNaN(params.from) ? -1000 : Number(params.from);
     const to = isNaN(params.to) ? -1 : Number(params.to);
     let idList = [];
-    if (geneNames[0] === "") {
+    if (geneNames === "" || geneNames[0] === "") {
         idList = await getAllIDs(params.species);
     } else {
         idList = await getIDs(geneNames, params.species);
     }
+
     const seqs = await upstreamSeq(idList, from, to);
     return seqs;
 }
@@ -195,6 +197,7 @@ async function upstreamSeq(ids, from = -1000, to = -1) {
 
     let seqs = {};
     for (let row of res) {
+        if (!row["promoterseq"]) continue;
         const lines = row["promoterseq"].split("\n");
         lines.shift();
         const seq = lines.join("").substring(start, size);

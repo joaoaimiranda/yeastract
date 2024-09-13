@@ -15,6 +15,7 @@ import {
     getTotalNumDBGenes,
     getAllTFids,
 } from "../db/repository.js";
+import hypergeometric from "./hypergeometric.js";
 
 export async function searchRegulations(params) {
     if (
@@ -180,18 +181,25 @@ export async function rankTF(params) {
         params.inhibitor,
         params.noexprinfo
     );
-    const ranks = await getRankByTfs(regs, tfIdList, geneIdList.length);
+    const ranks = await getRankByTfs(
+        regs,
+        tfIdList,
+        params.species,
+        geneIdList.length
+    );
     return ranks;
 }
 
-async function getRankByTfs(regs, tfIDs, hypern) {
+async function getRankByTfs(regs, tfIDs, species, hypern) {
     let ranks = [];
+    const hyperN = await getTotalNumDBGenes(species);
     for (let id of tfIDs) {
         const dbNum = await getAllGenesByTF(id);
         const idRegs = regs.filter((row) => row["tfid"] === id);
         const dbPer = Number.parseFloat((idRegs.length / dbNum) * 100).toFixed(
             2
         );
+
         if (idRegs.length > 0)
             ranks.push({
                 tf: idRegs[0]["protein"],
@@ -204,6 +212,7 @@ async function getRankByTfs(regs, tfIDs, hypern) {
                 ).toFixed(2),
                 // dbNum: dbNum,
                 dbPer: dbPer,
+                pvalue: hypergeometric(hyperN, dbNum, hypern, idRegs.length),
             });
     }
     return ranks;
@@ -226,7 +235,8 @@ export async function rankGO(params) {
         geneIdList,
         params.species,
         params.ontology,
-        hyperN
+        hyperN,
+        geneIdList.length
     );
     return gos;
 }

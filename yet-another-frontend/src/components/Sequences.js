@@ -677,10 +677,10 @@ export default function Sequences() {
             //     ]);
             //     setRowData(res);
         } else if (query.value === "upstream-seq") {
-            if (formData.genesups.trim() === "") {
-                setShowFormError("ORF/Gene field cannot be empty");
-                return;
-            }
+            // if (formData.genesups.trim() === "") {
+            //     setShowFormError("ORF/Gene field cannot be empty");
+            //     return;
+            // }
             setShowLoading(true);
 
             if (
@@ -1052,10 +1052,13 @@ export default function Sequences() {
 
     function sequenceDownload() {
         const fileName = "sequence" + Date.now() + ".fasta";
-
+        const from = Number(searchParams.get("from"));
+        const to = Number(searchParams.get("to"));
+        const size = to - from + 1;
+        // prettier-ignore
         const sequenceStr =
             upsData
-                .map((row) => `> ${row.tf}\n${row.seq.join("\n")}`)
+                .map((row) => `>${row.tf}    upstream sequence, from ${from} to ${to}, size ${size}\n${row.seq.join("\n")}`)
                 .join("\n") + "\n";
 
         const element = document.createElement("a");
@@ -1585,7 +1588,9 @@ export default function Sequences() {
                                     onClick={sequenceDownload}
                                 >
                                     <DownloadIcon />
-                                    Download
+                                    <span className="hidden md:block">
+                                        Download
+                                    </span>
                                 </button>
                             </span>
                             <br />
