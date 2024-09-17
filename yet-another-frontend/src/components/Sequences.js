@@ -29,6 +29,7 @@ import SelectHorizontal from "./SelectHorizontal";
 import Table from "./Table";
 import BarChart from "../charts/BarChart";
 import ErrorToast from "./ErrorToast";
+import InfoIcon from "../svg/InfoIcon";
 
 export default function Sequences() {
     const { species } = useParams();
@@ -311,9 +312,12 @@ export default function Sequences() {
 
                 setRowData(tbmRowData[1]);
                 setTbmRowData(tbmGridRowData[0]);
+
+                if (tbmRowData[1].length === 0) setGridVisible(false);
+
                 setTimeout(() => {
-                    gridAutoSize(gridRef);
-                    gridAutoSize(tbmGridRef);
+                    if (tbmRowData[1].length > 0) gridAutoSize(gridRef);
+                    if (tbmRowData[0].length > 0) gridAutoSize(tbmGridRef);
                 }, 100);
             } else {
                 setGridVisible(false);
@@ -540,9 +544,12 @@ export default function Sequences() {
             setTbmGridRowData(res[0]);
             // data saving
             setTbmRowData(res);
+
+            if (res[1].length === 0) setGridVisible(false);
+
             setTimeout(() => {
-                gridAutoSize(gridRef);
-                gridAutoSize(tbmGridRef);
+                if (res[1].length > 0) gridAutoSize(gridRef);
+                if (res[0].length > 0) gridAutoSize(tbmGridRef);
             }, 100);
         } else if (query.value === "tfbs-on-seq") {
             if (formData.sequence.trim() === "") {
@@ -1122,319 +1129,180 @@ export default function Sequences() {
                         ))}
                     </select>
                 </div>
-                <div className="flex flex-row space-x-6 p-3">
-                    {query.value === "motif-on-promoter" && (
-                        <>
-                            <div className="flex flex-col">
+                <div className="flex flex-col p-3">
+                    <div className="flex flex-row space-x-6">
+                        {query.value === "motif-on-promoter" && (
+                            <>
+                                <div className="flex flex-col">
+                                    <Textarea
+                                        id="motifmop"
+                                        label="DNA Motif"
+                                        size={motifTextareaSize}
+                                        value={formData.motifmop}
+                                        handler={handleForm}
+                                    />
+                                    <SelectHorizontal
+                                        id="substitutionsmop"
+                                        label="Substitutions"
+                                        size="max-w-24"
+                                        value={formData.substitutionsmop}
+                                        valueArray={substitutions}
+                                        handler={handleForm}
+                                    />
+                                </div>
                                 <Textarea
-                                    id="motifmop"
+                                    id="genesmop"
+                                    label="ORF/Gene"
+                                    size="max-w-24 min-h-32 max-h-32"
+                                    value={formData.genesmop}
+                                    handler={handleForm}
+                                />
+                            </>
+                        )}
+                        {query.value === "tfbs-by-motif" && (
+                            <div className="flex flex-col gap-2">
+                                <TextInput
+                                    id="motiftbm"
                                     label="DNA Motif"
-                                    size={motifTextareaSize}
-                                    value={formData.motifmop}
+                                    size="w-72"
+                                    value={formData.motiftbm}
                                     handler={handleForm}
                                 />
                                 <SelectHorizontal
-                                    id="substitutionsmop"
+                                    id="substitutionstbm"
                                     label="Substitutions"
                                     size="max-w-24"
-                                    value={formData.substitutionsmop}
+                                    value={formData.substitutionstbm}
                                     valueArray={substitutions}
                                     handler={handleForm}
                                 />
                             </div>
-                            <Textarea
-                                id="genesmop"
-                                label="ORF/Gene"
-                                size="max-w-24 min-h-32 max-h-32"
-                                value={formData.genesmop}
-                                handler={handleForm}
-                            />
-                        </>
-                    )}
-                    {query.value === "tfbs-by-motif" && (
-                        <div className="flex flex-col gap-2">
-                            <TextInput
-                                id="motiftbm"
-                                label="DNA Motif"
-                                size="w-72"
-                                value={formData.motiftbm}
-                                handler={handleForm}
-                            />
-                            <SelectHorizontal
-                                id="substitutionstbm"
-                                label="Substitutions"
-                                size="max-w-24"
-                                value={formData.substitutionstbm}
-                                valueArray={substitutions}
-                                handler={handleForm}
-                            />
-                        </div>
-                    )}
-                    {query.value === "tfbs-on-seq" && (
-                        <>
-                            <Textarea
-                                id="motiftos"
-                                label="DNA Motif"
-                                size="max-w-24 min-h-32 max-h-32"
-                                value={formData.motiftos}
-                                handler={handleForm}
-                            />
-                            <Textarea
-                                id="sequence"
-                                label="Sequence (FastA format)"
-                                size="w-80 min-h-32 max-h-32"
-                                value={formData.sequence}
-                                handler={handleForm}
-                            />
-                        </>
-                    )}
-                    {query.value === "prom-analysis" && (
-                        <>
-                            <Textarea
-                                id="genespa"
-                                label="ORF/Gene"
-                                size="max-w-24 min-h-32 max-h-32"
-                                value={formData.genespa}
-                                handler={handleForm}
-                            />
-                            <div className="grid grid-rows-2">
-                                <Select
-                                    id="tfbs_species"
-                                    label="Consider TFBS from strain:"
-                                    size="w-full max-w-xs"
-                                    value={formData.tfbs_species}
-                                    valueArray={homologs}
+                        )}
+                        {query.value === "tfbs-on-seq" && (
+                            <>
+                                <Textarea
+                                    id="motiftos"
+                                    label="DNA Motif"
+                                    size="max-w-24 min-h-32 max-h-32"
+                                    value={formData.motiftos}
                                     handler={handleForm}
                                 />
-                                <Select
-                                    id="synteny"
-                                    label="Synteny"
-                                    size="w-full max-w-xs"
-                                    value={formData.synteny}
-                                    valueArray={syntenies}
+                                <Textarea
+                                    id="sequence"
+                                    label="Sequence (FastA format)"
+                                    size="w-80 min-h-32 max-h-32"
+                                    value={formData.sequence}
                                     handler={handleForm}
                                 />
-                            </div>
-                        </>
-                    )}
-                    {query.value === "upstream-seq" && (
-                        <>
-                            <Textarea
-                                id="genesups"
-                                label="ORF/Gene"
-                                size="max-w-24 min-h-32 max-h-32"
-                                value={formData.genesups}
-                                handler={handleForm}
-                            />
-                            <div className="grid grid-rows-2">
-                                <label>
-                                    <div className="label p-0 mb-2">
-                                        <span className="label-text text-color">
-                                            From:
-                                        </span>
-                                    </div>
-                                    <input
-                                        type="number"
-                                        id="from"
-                                        name="from"
-                                        value={formData.from}
-                                        className="input input-bordered input-primary input-sm max-w-20 text-color"
-                                        onChange={handleForm}
-                                    />
-                                </label>
-                                <label className="self-end mb-2">
-                                    <div className="label">
-                                        <span className="label-text text-color">
-                                            To
-                                        </span>
-                                    </div>
-                                    <input
-                                        type="number"
-                                        id="to"
-                                        name="to"
-                                        value={formData.to}
-                                        className="input input-bordered input-primary input-sm max-w-20 text-color"
-                                        onChange={handleForm}
-                                    />
-                                </label>
-                            </div>
-                        </>
-                    )}
-                    {/* {query.value !== "prom-analysis" &&
-                        query.value !== "tf-consensus" &&
-                        query.value !== "upstream-seq" && (
-                            <div className="flex flex-col">
-                                <label>
-                                    <div className="label p-0 mb-2">
-                                        <span className="label-text text-color">
-                                            DNA Motif
-                                        </span>
-                                    </div>
-                                    <textarea
-                                        id="motif"
-                                        name="motif"
-                                        value={formData.motif}
-                                        className={`textarea textarea-bordered textarea-primary resize-none text-color ${motifTextareaSize} leading-4`}
-                                        onChange={handleForm}
-                                    ></textarea>
-                                </label>
-                                <label className="label cursor-pointer mt-2 p-0">
-                                    <span className="label-text text-color">
-                                        Substitutions
-                                    </span>
-                                    <select
-                                        className="select select-bordered select-primary select-sm max-w-24 mb-2 text-color"
-                                        id="substitutions"
-                                        name="substitutions"
-                                        value={formData.substitutions}
-                                        onChange={handleForm}
-                                    >
-                                        {substitutions.map((option) => (
-                                            <option key={option} value={option}>
-                                                {option}
-                                            </option>
-                                        ))}
-                                    </select>
-                                </label>
-                            </div>
+                            </>
                         )}
-                    {query.value !== "tfbs-by-motif" &&
-                        query.value !== "tfbs-on-seq" &&
-                        query.value !== "tf-consensus" && (
-                            <label>
-                                <div className="label p-0 mb-2">
-                                    <span className="label-text text-color">
-                                        ORF/Gene
-                                    </span>
+                        {query.value === "prom-analysis" && (
+                            <>
+                                <Textarea
+                                    id="genespa"
+                                    label="ORF/Gene"
+                                    size="max-w-24 min-h-32 max-h-32"
+                                    value={formData.genespa}
+                                    handler={handleForm}
+                                />
+                                <div className="grid grid-rows-2">
+                                    <Select
+                                        id="tfbs_species"
+                                        label="Consider TFBS from strain:"
+                                        size="w-full max-w-xs"
+                                        value={formData.tfbs_species}
+                                        valueArray={homologs}
+                                        handler={handleForm}
+                                    />
+                                    <Select
+                                        id="synteny"
+                                        label="Synteny"
+                                        size="w-full max-w-xs"
+                                        value={formData.synteny}
+                                        valueArray={syntenies}
+                                        handler={handleForm}
+                                    />
                                 </div>
-                                <textarea
-                                    id="genes"
-                                    name="genes"
-                                    value={formData.genes}
-                                    className="textarea textarea-bordered textarea-primary resize-none max-w-24 min-h-32 max-h-32 text-color leading-4"
-                                    onChange={handleForm}
-                                ></textarea>
-                            </label>
+                            </>
                         )}
-                        
+                        {query.value === "upstream-seq" && (
+                            <>
+                                <Textarea
+                                    id="genesups"
+                                    label="ORF/Gene"
+                                    size="max-w-24 min-h-32 max-h-32"
+                                    value={formData.genesups}
+                                    handler={handleForm}
+                                />
+                                <div className="grid grid-rows-2">
+                                    <label>
+                                        <div className="label p-0 mb-2">
+                                            <span className="label-text text-color">
+                                                From:
+                                            </span>
+                                        </div>
+                                        <input
+                                            type="number"
+                                            id="from"
+                                            name="from"
+                                            value={formData.from}
+                                            className="input input-bordered input-primary input-sm max-w-20 text-color"
+                                            onChange={handleForm}
+                                        />
+                                    </label>
+                                    <label className="self-end mb-2">
+                                        <div className="label">
+                                            <span className="label-text text-color">
+                                                To
+                                            </span>
+                                        </div>
+                                        <input
+                                            type="number"
+                                            id="to"
+                                            name="to"
+                                            value={formData.to}
+                                            className="input input-bordered input-primary input-sm max-w-20 text-color"
+                                            onChange={handleForm}
+                                        />
+                                    </label>
+                                </div>
+                            </>
+                        )}
+                        {query.value !== "tf-consensus" && (
+                            <div className="flex flex-row gap-1 self-end">
+                                {speciesList[species].dbstrains.map(
+                                    (strain) => (
+                                        <div
+                                            className="tooltip"
+                                            key={strain}
+                                            data-tip={`Sample strain ${strain}`}
+                                        >
+                                            <button
+                                                className="btn btn-xs btn-square"
+                                                type="button"
+                                                id={`${strain}-sample-button`}
+                                                value={strain}
+                                                onClick={setSampleData}
+                                            >
+                                                <SampleDataIcon />
+                                            </button>
+                                        </div>
+                                    )
+                                )}
+                            </div>
+                        )}
+                    </div>
                     {query.value === "tfbs-on-seq" && (
-                        <label>
-                            <div className="label p-0 mb-2">
-                                <span className="label-text text-color">
-                                    Sequence (FastA format)
-                                </span>
-                            </div>
-                            <textarea
-                                id="sequence"
-                                name="sequence"
-                                value={formData.sequence}
-                                className="textarea textarea-bordered textarea-primary resize-none text-color min-h-32 max-h-32 leading-4"
-                                onChange={handleForm}
-                            ></textarea>
-                        </label>
-                    )}
-                    {query.value === "prom-analysis" && (
-                        <div className="grid grid-rows-2">
-                            <label>
-                                <div className="label p-0 mb-2">
-                                    <span className="label-text text-color">
-                                        Consider TFBS from strain:
-                                    </span>
-                                </div>
-
-                                <select
-                                    className="select select-bordered select-primary select-sm w-full max-w-xs mb-3 text-color"
-                                    id="tfbs_species"
-                                    name="tfbs_species"
-                                    value={formData.tfbs_species}
-                                    onChange={handleForm}
-                                >
-                                    {homologs.map((option) => (
-                                        <option value={option}>{option}</option>
-                                    ))}
-                                </select>
-                            </label>
-                            <label className="self-end mb-2">
-                                <div className="label p-0 mb-2">
-                                    <span className="label-text text-color">
-                                        Synteny
-                                    </span>
-                                </div>
-
-                                <select
-                                    className="select select-bordered select-primary select-sm w-full max-w-xs text-color"
-                                    id="synteny"
-                                    name="synteny"
-                                    value={formData.synteny}
-                                    onChange={handleForm}
-                                >
-                                    {syntenies.map(({ option, value }) => (
-                                        <option key={value} value={value}>
-                                            {option}
-                                        </option>
-                                    ))}
-                                </select>
-                            </label>
-
-                        </div>
+                        <small className="text-color flex flex-row">
+                            <InfoIcon />
+                            {`To consider all ${speciesList[species].short} consensus, leave DNA Motif empty`}
+                        </small>
                     )}
                     {query.value === "upstream-seq" && (
-                        <div className="grid grid-rows-2">
-                            <label>
-                                <div className="label p-0 mb-2">
-                                    <span className="label-text text-color">
-                                        From:
-                                    </span>
-                                </div>
-                                <input
-                                    type="number"
-                                    id="from"
-                                    name="from"
-                                    value={formData.from}
-                                    className="input input-bordered input-primary input-sm max-w-20 text-color"
-                                    onChange={handleForm}
-                                />
-                            </label>
-                            <label className="self-end mb-2">
-                                <div className="label">
-                                    <span className="label-text text-color">
-                                        To
-                                    </span>
-                                </div>
-                                <input
-                                    type="number"
-                                    id="to"
-                                    name="to"
-                                    value={formData.to}
-                                    className="input input-bordered input-primary input-sm max-w-20 text-color"
-                                    onChange={handleForm}
-                                />
-                            </label>
-                        </div>
-                    )} */}
-                    {query.value !== "tf-consensus" && (
-                        // <div className="flex flex-col gap-2">
-
-                        <div className="flex flex-row gap-1 self-end">
-                            {speciesList[species].dbstrains.map((strain) => (
-                                <div
-                                    className="tooltip"
-                                    key={strain}
-                                    data-tip={`Sample strain ${strain}`}
-                                >
-                                    <button
-                                        className="btn btn-xs btn-square"
-                                        type="button"
-                                        id={`${strain}-sample-button`}
-                                        value={strain}
-                                        onClick={setSampleData}
-                                    >
-                                        <SampleDataIcon />
-                                    </button>
-                                </div>
-                            ))}
-                        </div>
-                        // </div>
+                        <small className="text-color flex flex-row">
+                            <InfoIcon />
+                            {`To consider all ${speciesList[species].short} genes, leave ORF/Gene empty`}
+                        </small>
                     )}
                 </div>
                 {query.value !== "tf-consensus" && (
@@ -1455,22 +1323,26 @@ export default function Sequences() {
             {showTbmTable && (
                 <div className="px-4 py-2">
                     <h3 className="mb-2 font-semibold">{`Inserted motif inside ${speciesList[species].short} binding sites`}</h3>
-                    <Table
-                        gridRef={tbmGridRef}
-                        colDefs={tbmGridColDefs}
-                        setColDefs={setTbmGridColDefs}
-                        rowData={tbmGridRowData}
-                        charts={true}
-                    />
+                    {tbmGridRowData.length > 0 ? (
+                        <Table
+                            gridRef={tbmGridRef}
+                            colDefs={tbmGridColDefs}
+                            setColDefs={setTbmGridColDefs}
+                            rowData={tbmGridRowData}
+                            charts={true}
+                        />
+                    ) : (
+                        `No matches found`
+                    )}
                     <h3 className="mt-2 font-semibold">{`${speciesList[species].short} binding sites inside inserted motif`}</h3>
+                    {rowData.length === 0 && `No matches found`}
                 </div>
             )}
             {showTos && (
                 <div className="flex">
                     <div className="px-4 py-2 grow-0 flex flex-col items-end">
                         {tosChartData.map((row) => (
-                            <div key={row.seqName}>
-                                <span>{row.seqName}</span>
+                            <div key={row.seqName} className="flex flex-row">
                                 <MatchesChart
                                     key={row.seqName}
                                     data={row.data}
@@ -1484,6 +1356,9 @@ export default function Sequences() {
                                     isMotifFilter={isMotifFilter}
                                     setMotifFilter={setMotifFilter}
                                 />
+                                <span className="self-center ml-2">
+                                    {row.seqName}
+                                </span>
                             </div>
                         ))}
                     </div>

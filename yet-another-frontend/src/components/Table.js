@@ -1,6 +1,7 @@
 import React from "react";
 import DownloadIcon from "../svg/DownloadIcon";
 import HamburgerIcon from "../svg/HamburgerIcon";
+import TrashIcon from "../svg/TrashIcon";
 import { AgGridReact } from "ag-grid-react";
 import "ag-grid-community/styles/ag-grid.css";
 import "ag-grid-community/styles/ag-theme-quartz.css";
@@ -51,6 +52,10 @@ export default function Table({
         gridRef.current.api.exportDataAsCsv();
     }, [gridRef]);
 
+    const onBtnResetFilter = React.useCallback(() => {
+        gridRef.current.api.setFilterModel(null);
+    }, [gridRef]);
+
     return (
         <div className="w-full h-full">
             <div className="p-2 bg-gray-100 rounded-t-lg border-x border-t border-[#e5e7eb] flex gap-5">
@@ -87,7 +92,11 @@ export default function Table({
                 </div>
                 <button className="btn btn-sm" onClick={onBtnExport}>
                     <DownloadIcon />
-                    Download
+                    <span className="hidden md:block">Download</span>
+                </button>
+                <button className="btn btn-sm" onClick={onBtnResetFilter}>
+                    <TrashIcon />
+                    <span className="hidden md:block">Reset Filters</span>
                 </button>
             </div>
             <div

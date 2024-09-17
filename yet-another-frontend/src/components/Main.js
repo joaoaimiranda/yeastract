@@ -25,6 +25,7 @@ import HamburgerIcon from "../svg/HamburgerIcon";
 import NetworkIcon from "../svg/NetworkIcon";
 import TableIcon from "../svg/TableIcon";
 import DownloadIcon from "../svg/DownloadIcon";
+import TrashIcon from "../svg/TrashIcon";
 import { gridAutoSize } from "../utils/utils";
 
 export default function Main() {
@@ -360,9 +361,8 @@ export default function Main() {
             if (res.length === 0) setShowWarning("No regulations found!");
 
             if (!gridVisible) setGridVisible(true);
-            // const genesWidth =
-            //     100 +
-            //     Math.max(...res.map((row) => row.genes.join("").length)) * 8;
+            if (showNetwork) setShowNetwork(false);
+
             // prettier-ignore
             setColDefs([
                 { headerName: "TF", field: "tf", hide: false, rowDrag: true,
@@ -410,11 +410,8 @@ export default function Main() {
             if (res.length === 0) setShowWarning("No GO terms found!");
 
             if (!gridVisible) setGridVisible(true);
-            // const termWidth =
-            //     Math.max(...res.map((row) => row.term.length)) * 8;
-            // const genesWidth =
-            //     100 +
-            //     Math.max(...res.map((row) => row.genes.join("").length)) * 10;
+            if (showNetwork) setShowNetwork(false);
+
             // prettier-ignore
             setColDefs([
                 { headerName: "GO ID", field: "goid", hide: false, 
@@ -468,6 +465,7 @@ export default function Main() {
             });
             console.log(res);
             if (!gridVisible) setGridVisible(true);
+            if (showNetwork) setShowNetwork(false);
 
             // TODO
         } else {
@@ -600,6 +598,10 @@ export default function Main() {
 
     const onBtnExport = React.useCallback(() => {
         gridRef.current.api.exportDataAsCsv();
+    }, []);
+
+    const onBtnResetFilter = React.useCallback(() => {
+        gridRef.current.api.setFilterModel(null);
     }, []);
 
     function getFilteredData() {
@@ -1155,6 +1157,11 @@ export default function Main() {
                                 // negative operator because state is not up to date yet
                                 // updateRowHeight(!showNetwork);
                             }}
+                            disabled={
+                                rowData.length === 0 ||
+                                (rowData.length > 0 &&
+                                    rowData[0].gene === undefined)
+                            }
                         >
                             {showNetwork ? <TableIcon /> : <NetworkIcon />}
                             {/* <NetworkIcon /> */}
@@ -1165,6 +1172,15 @@ export default function Main() {
                         <button className="btn btn-sm" onClick={onBtnExport}>
                             <DownloadIcon />
                             <span className="hidden md:block">Download</span>
+                        </button>
+                        <button
+                            className="btn btn-sm"
+                            onClick={onBtnResetFilter}
+                        >
+                            <TrashIcon />
+                            <span className="hidden md:block">
+                                Reset Filters
+                            </span>
                         </button>
                     </div>
                     {/* {showNetwork ? (

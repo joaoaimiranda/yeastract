@@ -14,7 +14,7 @@ export default function Network({
     const ref = React.useRef();
 
     const [chartData, setChartData] = React.useState(getFilteredData());
-    console.log(chartData);
+    // console.log(chartData);
     React.useEffect(() => {
         const width = 700;
         const height = 700;
