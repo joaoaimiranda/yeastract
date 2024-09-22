@@ -87,9 +87,11 @@ export default function Layout() {
                     >
                         <CloseIcon />
                     </label>
-                    <h1 className="hidden lg:block font-figtree text-2xl">
-                        YEASTRACT+
-                    </h1>
+                    <a href="/">
+                        <h1 className="hidden lg:block font-figtree text-2xl">
+                            YEASTRACT+
+                        </h1>
+                    </a>
 
                     <select
                         className="select select-sm select-bordered w-full max-w-xs mb-4 mt-2 text-color"

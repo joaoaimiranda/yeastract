@@ -154,7 +154,7 @@ export default function Sequences() {
         { headerName: "TF", field: "tfs", maxWidth: 200, autoHeight: true,
         cellRenderer: (p) => p.node.rowPinned ? <BarChart tbm0={true} colName={"tfs"} complex={true} width={200} height={90} getFilter={getFilterTerm} setFilter={setFilter} getFilteredData={getTbmFilteredData} addListener={addListener} removeListener={removeListener} /> :
         p.data.tfs.map((v) => (<span key={v}><a className="link" href={`/${species}/view?orf=${v}`}>{v}</a>{` `}</span>))},
-        { headerName: "For. pos.", field: "F", 
+        { headerName: "Fwr. pos.", field: "F", 
         valueFormatter: (p) => (p.value && Object.keys(p.value).join(", ")),},
         { headerName: "Rev. pos.", field: "R",
         valueFormatter: (p) => (p.value && Object.keys(p.value).join(", ")),},
@@ -167,7 +167,7 @@ export default function Sequences() {
         { headerName: "TF", field: "tfs", maxWidth: 200, autoHeight: true,
         cellRenderer: (p) => p.node.rowPinned ? (<BarChart colName={"tfs"} complex={true} width={200} height={90} getFilter={getFilterTerm} setFilter={setFilter} getFilteredData={getFilteredData} addListener={addListener} removeListener={removeListener} />) : (
         p.data.tfs.map((v) => (<span key={v}><a className="link" href={`/${species}/view?orf=${v}`}>{v}</a>{` `}</span>))),},
-        { headerName: "For. pos.", field: "F",
+        { headerName: "Fwr. pos.", field: "F",
         valueFormatter: (p) => p.value && Object.keys(p.value).join(", "),},
         { headerName: "Rev. pos.", field: "R",
         valueFormatter: (p) => p.value && Object.keys(p.value).join(", "),},
@@ -1457,7 +1457,8 @@ export default function Sequences() {
                             <span>
                                 This is a{" "}
                                 <span className="font-bold">preview</span>. The
-                                full content is available via download.{" "}
+                                full content {`(${upsData.length} sequences)`}{" "}
+                                is available via download.{" "}
                                 <button
                                     className="btn btn-sm"
                                     onClick={sequenceDownload}
