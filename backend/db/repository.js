@@ -11,7 +11,8 @@ function dbspecies(key) {
     if (speciesList[key] === undefined) throw new Error("Species not found");
     let res = [];
     for (let strain of speciesList[key].dbstrains) {
-        res.push(speciesList[key].dbspecies + " " + strain);
+        const str = speciesList[key].dbspecies + " " + strain;
+        res.push(str.replace(/'/g, "\\'"));
     }
     return res.join("','");
 }

@@ -153,7 +153,8 @@ export default function Sequences() {
         cellRenderer: p => !p.node.rowPinned && <p>{p.value.map(v => v)}</p>},
         { headerName: "TF", field: "tfs", maxWidth: 200, autoHeight: true,
         cellRenderer: (p) => p.node.rowPinned ? <BarChart tbm0={true} colName={"tfs"} complex={true} width={200} height={90} getFilter={getFilterTerm} setFilter={setFilter} getFilteredData={getTbmFilteredData} addListener={addListener} removeListener={removeListener} /> :
-        p.data.tfs.map((v) => (<span key={v}><a className="link" href={`/${species}/view?orf=${v}`}>{v}</a>{` `}</span>))},
+        //p.data.tfs.map((v) => (<span key={v}><a className="link" href={`/${species}/view?orf=${v}`}>{v}</a>{` `}</span>))},
+        (p.data.tfs && p.data.tfs.map((v, i) => (<><span key={v}><a className="link" href={`/${species}/view?orf=${v}`}>{v}</a>{` `}</span>{i > 0 && i % 5 === 0 && <br />}</>))),},
         { headerName: "Fwr. pos.", field: "F", 
         valueFormatter: (p) => (p.value && Object.keys(p.value).join(", ")),},
         { headerName: "Rev. pos.", field: "R",
@@ -165,8 +166,9 @@ export default function Sequences() {
         { headerName: "User Inserted Motif", field: "viz",
         cellRenderer: (p) => !p.node.rowPinned && <p>{p.value.map((v) => v)}</p>},
         { headerName: "TF", field: "tfs", maxWidth: 200, autoHeight: true,
-        cellRenderer: (p) => p.node.rowPinned ? (<BarChart colName={"tfs"} complex={true} width={200} height={90} getFilter={getFilterTerm} setFilter={setFilter} getFilteredData={getFilteredData} addListener={addListener} removeListener={removeListener} />) : (
-        p.data.tfs.map((v) => (<span key={v}><a className="link" href={`/${species}/view?orf=${v}`}>{v}</a>{` `}</span>))),},
+        cellRenderer: (p) => p.node.rowPinned ? (<BarChart colName={"tfs"} complex={true} width={200} height={90} getFilter={getFilterTerm} setFilter={setFilter} getFilteredData={getFilteredData} addListener={addListener} removeListener={removeListener} />) : 
+        //p.data.tfs.map((v) => (<span key={v}><a className="link" href={`/${species}/view?orf=${v}`}>{v}</a>{` `}</span>))),},
+        (p.data.tfs && p.data.tfs.map((v, i) => (<><span key={v}><a className="link" href={`/${species}/view?orf=${v}`}>{v}</a>{` `}</span>{i > 0 && i % 5 === 0 && <br />}</>))),},
         { headerName: "Fwr. pos.", field: "F",
         valueFormatter: (p) => p.value && Object.keys(p.value).join(", "),},
         { headerName: "Rev. pos.", field: "R",

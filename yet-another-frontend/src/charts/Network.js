@@ -1,6 +1,11 @@
 import React from "react";
 import * as d3 from "d3";
-// import TextInput from "../components/TextInput";
+import dashedArrow from "../svg/dashedarrow.png";
+import arrow from "../svg/normalarrow.png";
+import green from "../svg/green.png";
+import red from "../svg/red.png";
+import blue from "../svg/blue.png";
+import gray from "../svg/gray.png";
 
 export default function Network({
     // data,
@@ -247,19 +252,42 @@ export default function Network({
     //     }
     //     setChartData(newData);
     // }
-    // prettier-ignore
+
     return (
         <div>
-            {/* <div className="flex flex-row flex-wrap gap-2 px-2 pb-2 bg-gray-100 border-x border-[#e5e7eb]">
-                <TextInput id="tf" labelText="TF" filterState={gridState.filter} handler={handleFilter}/>
-                <TextInput id="gene" labelText="Gene" filterState={gridState.filter} handler={handleFilter}/>
-                <TextInput id="orf" labelText="ORF" filterState={gridState.filter} handler={handleFilter}/>
-                <TextInput id="evidence" labelText="Evidence" filterState={gridState.filter} handler={handleFilter}/>
-                <TextInput id="association" labelText="Association" filterState={gridState.filter} handler={handleFilter}/>
-            </div> */}
-            {/* <div className="border"> */}
-                <svg ref={ref}></svg>
-            {/* </div> */}
+            <div className="absolute right-1 top-2">
+                <div>
+                    <img src={arrow} alt="arrow" />
+                    <span>Binding</span>
+                </div>
+                <div>
+                    <img src={arrow} alt="arrow" />
+                    <span>Binding + Expression</span>
+                </div>
+                <div>
+                    <img src={dashedArrow} alt="dashed-arrow" />
+                    <span>Expression only</span>
+                </div>
+                <br />
+                <div>
+                    <img src={green} alt="green-arrow" />
+                    <span>Positive</span>
+                </div>
+                <div>
+                    <img src={red} alt="red-arrow" />
+                    <span>Negative</span>
+                </div>
+                <div>
+                    <img src={blue} alt="blue-arrow" />
+                    <span>Dual</span>
+                </div>
+                <div>
+                    <img src={gray} alt="gray-arrow" />
+                    <span>N/A</span>
+                </div>
+            </div>
+            {/* THE NETWORK ITSELF */}
+            <svg ref={ref}></svg>
         </div>
     );
 }

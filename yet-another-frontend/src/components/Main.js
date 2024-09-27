@@ -63,7 +63,7 @@ export default function Main() {
         // inhibitor: true,
         // noexprinfo: true,
 
-        // DOESNT WORK BECAUSE OF ASYNC
+        // DOESNT WORK BECAUSE OF ASYNC getEnvCons
         // envconGroup:
         //     searchParams.get("envconGroup") &&
         //     Object.keys(envcons).includes(searchParams.get("envconGroup"))
@@ -115,8 +115,6 @@ export default function Main() {
         { option: "BLAST Best-Scores + at least 2 neighbor", value: 2 },
         { option: "BLAST Best-Scores + at least 3 neighbor", value: 3 },
     ];
-
-    // const homologs = ["c. albicans", "c. auris", "c. glabrata"];
 
     const [rowData, setRowData] = React.useState([]);
 
@@ -374,9 +372,11 @@ export default function Main() {
                 cellRenderer: (p) => p.node.rowPinned && p.data.id === "stats" ? (<Histogram data={res.map((row) => row.setPer)} width={150} height={95} />) : (p.data.setPer + "%"),},
                 { headerName: `% in ${speciesList[species].short}`, field: "dbPer", filter: 'agNumberColumnFilter', hide: false, maxWidth: 150,
                 cellRenderer: (p) => p.node.rowPinned && p.data.id === "stats" ? (<Histogram data={res.map((row) => row.dbPer)} width={150} height={95} />) : (p.data.dbPer + "%"),},
-                { headerName: "p-value", field: "pvalue", filter: 'agNumberColumnFilter', hide: false},
-                { headerName: "Target Genes", field: "genes", hide: false, maxWidth: 500, autoHeight: true, rowDrag: true,
-                cellRenderer: (p) => !p.node.rowPinned && (p.data.genes && p.data.genes.map((v) => (<span key={v}><a className="link" href={`/${species}/view?orf=${v}`}>{v}</a>{` `}</span>))),},
+                { headerName: "p-value", field: "pvalue", filter: 'agNumberColumnFilter', hide: false, maxWidth: 150,
+                cellRenderer: (p) => p.node.rowPinned && p.data.id === "stats" ? (<Histogram data={res.map((row) => row.pvalue)} width={150} height={95} />) : (p.data.pvalue),},
+                { headerName: "Target Genes", field: "genes", hide: false, autoHeight: true, rowDrag: true,
+                cellRenderer: (p) => p.node.rowPinned && p.data.id === "stats" ? <BarChart colName={"genes"} complex={true} width={130} height={75} getFilter={getFilterTerm} setFilter={setFilter} getFilteredData={getFilteredData} addListener={addListener} removeListener={removeListener} /> 
+                : (p.data.genes && p.data.genes.map((v, i) => (<><span key={v}><a className="link" href={`/${species}/view?orf=${v}`}>{v}</a>{` `}</span>{i > 0 && i % 7 === 0 && <br />}</>))),},
             ]);
             setRowData(res);
             setTimeout(() => gridAutoSize(gridRef), 100);
@@ -419,7 +419,7 @@ export default function Main() {
             setColDefs([
                 { headerName: "GO ID", field: "goid", hide: false, 
                 cellRenderer: (p) => p.node.rowPinned && p.data.id === "stats" ? (<></>) : (<a className="link" target="_blank" rel="noopener noreferrer" href={`${constants.geneOntologyUrl}${p.data.goid}`}>{p.data.goid}</a>),},
-                { headerName: "GO Term", field: "term", hide: false, maxWidth: 500, autoHeight: true,
+                { headerName: "GO Term", field: "term", hide: false, maxWidth: 300, autoHeight: true,
                 cellRenderer: (p) => p.node.rowPinned && p.data.id === "stats" ? (<></>) : (<a className="link text-wrap leading-5" href={`/${species}/view?goid=${p.data.goid}`}>{p.data.term}</a>),},
                 { headerName: "Depth level", field: "depth", filter: 'agNumberColumnFilter', hide: false, maxWidth: 150,
                 cellRenderer: p => p.node.rowPinned && p.data.id === "stats" ? <BarChart data={res} colName={"depth"} width={150} height={95} getFilter={getFilterTerm} setFilter={setFilter} getFilteredData={getFilteredData} addListener={addListener} removeListener={removeListener} /> : p.data.depth},
@@ -427,9 +427,11 @@ export default function Main() {
                 cellRenderer: (p) =>p.node.rowPinned && p.data.id === "stats" ? (<Histogram data={res.map((row) => row.setPer)} width={150} height={95} />) : (p.data.setPer + "%"),},
                 { headerName: `% in ${speciesList[species].short}`, field: "dbPer", filter: 'agNumberColumnFilter', hide: false, maxWidth: 150,
                 cellRenderer: (p) => p.node.rowPinned && p.data.id === "stats" ? (<Histogram data={res.map((row) => row.dbPer)} width={150} height={95} />) : (p.data.dbPer + "%"),},
-                { headerName: "p-value", field: "pvalue", filter: 'agNumberColumnFilter', hide: false},
-                { headerName: "Genes", field: "genes", hide: false, maxWidth: 500, autoHeight: true, rowDrag: true,
-                cellRenderer: (p) => p.node.rowPinned && p.data.id === "stats" ? (<></>) : (p.data.genes && <span className="text-wrap leading-6">{p.data.genes.map((v) => (<a key={v} className="link" href={`/${species}/view?orf=${v}`}>{`${v} `}</a>))}</span>),},
+                { headerName: "p-value", field: "pvalue", filter: 'agNumberColumnFilter', hide: false, maxWidth: 150,
+                cellRenderer: (p) => p.node.rowPinned && p.data.id === "stats" ? (<Histogram data={res.map((row) => row.pvalue)} width={150} height={95} />) : (p.data.pvalue),},
+                { headerName: "Target Genes", field: "genes", hide: false, autoHeight: true, rowDrag: true,
+                cellRenderer: (p) => p.node.rowPinned && p.data.id === "stats" ? <BarChart colName={"genes"} complex={true} width={130} height={75} getFilter={getFilterTerm} setFilter={setFilter} getFilteredData={getFilteredData} addListener={addListener} removeListener={removeListener} /> 
+                : (p.data.genes && p.data.genes.map((v, i) => (<><span key={v}><a className="link" href={`/${species}/view?orf=${v}`}>{v}</a>{` `}</span>{i > 0 && i % 5 === 0 && <br />}</>))),},
             ]);
             setRowData(res);
             setTimeout(() => gridAutoSize(gridRef), 100);

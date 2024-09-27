@@ -170,7 +170,7 @@ export async function rankTF(params) {
     else {
         throw new Error("No orf/genes provided");
     }
-
+    // TODO CHANGE TO MEGA REGULATIONS
     const regs = await getRegulations(
         tfIdList.join(", "),
         geneIdList.join(", "),

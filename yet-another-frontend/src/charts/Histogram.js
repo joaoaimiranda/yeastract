@@ -68,7 +68,7 @@ export default function Histogram({ data, width, height }) {
                 //     .style("stroke-opacity", "1");
                 d3.select(this).style("fill", "orange");
                 d3.select(tooltipRef.current).text(
-                    `${d.x0}%-${d.x1}%: ${d.length}`
+                    `${d.x0}-${d.x1}: ${d.length}`
                 );
             })
             .on("mouseout", function () {
