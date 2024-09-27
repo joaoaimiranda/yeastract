@@ -252,12 +252,13 @@ export default function Main() {
                     { headerName: "ORF", field: "orf", hide: false, maxWidth: 200,
                     cellRenderer: p => p.node.rowPinned && p.data.id === "stats" ? <BarChart colName={"orf"} width={200} height={90} getFilter={getFilterTerm} setFilter={setFilter} getFilteredData={getFilteredData} addListener={addListener} removeListener={removeListener} /> 
                     : <a className="link" href={`/${species}/view?orf=${p.data.orf}`}>{p.data.orf}</a> },
-                    { headerName: "TF", field: "tf", hide: false, maxWidth: 150, rowDrag: true,
+                    { headerName: "TF", field: "tf", hide: false, maxWidth: 200, rowDrag: true,
                     // cellRenderer: p => p.node.rowPinned && p.data.id === "stats" ? <p className="text-lg font-semibold text-wrap">{`${(new Set(res.map(row => row.tf))).size} unique TFs`}</p> 
                     // : <a className="link" href={`/${species}/view?orf=${p.data.tf}`}>{p.data.tf}</a> },
-                    cellRenderer: p => <a className="link" href={`/${species}/view?orf=${p.data.tf}`}>{p.data.tf}</a> },
+                    cellRenderer: p => p.node.rowPinned && p.data.id === "stats" ? <BarChart colName={"tf"} width={200} height={90} getFilter={getFilterTerm} setFilter={setFilter} getFilteredData={getFilteredData} addListener={addListener} removeListener={removeListener} /> 
+                    : <a className="link" href={`/${species}/view?orf=${p.data.tf}`}>{p.data.tf}</a> },
                     { headerName: "Evidence", field: "evidence", hide: false, maxWidth: 170, 
-                    cellRenderer: p => p.node.rowPinned && p.data.id === "stats" ? <BarChart colName={"evidence"} width={105} height={75} getFilter={getFilterTerm} setFilter={setFilter} getFilteredData={getFilteredData} addListener={addListener} removeListener={removeListener} /> 
+                    cellRenderer: p => p.node.rowPinned && p.data.id === "stats" ? <BarChart colName={"evidence"} width={170} height={92} getFilter={getFilterTerm} setFilter={setFilter} getFilteredData={getFilteredData} addListener={addListener} removeListener={removeListener} /> 
                     : p.data.evidence},
                     { headerName: "Association Type", field: "association", hide: false, maxWidth: 140, 
                     cellRenderer: p => p.node.rowPinned && p.data.id === "stats" ? <BarChart colName={"association"} width={140} height={97} getFilter={getFilterTerm} setFilter={setFilter} getFilteredData={getFilteredData} addListener={addListener} removeListener={removeListener} /> 
@@ -288,16 +289,18 @@ export default function Main() {
                     : p.node.rowPinned && p.data.id === "network" ? 
                     <>{res.length > 500 ? `Dataset too big! Network unavailable` : <Network getFilteredData={getFilteredData} addListener={addListener} removeListener={removeListener} />}</>
                     : <a className="link" href={`/${species}/view?orf=${p.data.tf}`}>{p.data.tf}</a> },
-                    { headerName: "Gene", field: "gene", hide: false, maxWidth: 150, rowDrag: true, 
+                    { headerName: "Gene", field: "gene", hide: false, maxWidth: 200, rowDrag: true, 
                     // cellRenderer: p => p.node.rowPinned && p.data.id === "stats" ? <p className="text-lg font-semibold text-wrap">{`${(new Set(res.map(row => row.gene))).size} unique Genes`}</p>
                     // : <a className="link" href={`/${species}/view?orf=${p.data.orf}`}>{p.data.gene}</a> },
-                    cellRenderer: p => <a className="link" href={`/${species}/view?orf=${p.data.orf}`}>{p.data.gene}</a> },
-                    { headerName: "ORF", field: "orf", hide: false, maxWidth: 150,
+                    cellRenderer: p => p.node.rowPinned && p.data.id === "stats" ? <BarChart colName={"gene"} width={200} height={90} getFilter={getFilterTerm} setFilter={setFilter} getFilteredData={getFilteredData} addListener={addListener} removeListener={removeListener} /> 
+                    : <a className="link" href={`/${species}/view?orf=${p.data.orf}`}>{p.data.gene}</a> },
+                    { headerName: "ORF", field: "orf", hide: false, maxWidth: 200,
                     // cellRenderer: p => p.node.rowPinned && p.data.id === "stats" ? <p className="text-lg font-semibold text-wrap">{`${(new Set(res.map(row => row.orf))).size} unique ORFs`}</p> 
                     // : <a className="link" href={`/${species}/view?orf=${p.data.orf}`}>{p.data.orf}</a> },
-                    cellRenderer: p => <a className="link" href={`/${species}/view?orf=${p.data.orf}`}>{p.data.orf}</a> },
+                    cellRenderer: p => p.node.rowPinned && p.data.id === "stats" ? <BarChart colName={"orf"} width={200} height={90} getFilter={getFilterTerm} setFilter={setFilter} getFilteredData={getFilteredData} addListener={addListener} removeListener={removeListener} /> 
+                    : <a className="link" href={`/${species}/view?orf=${p.data.orf}`}>{p.data.orf}</a> },
                     { headerName: "Evidence", field: "evidence", hide: false, maxWidth: 170, 
-                    cellRenderer: p => p.node.rowPinned && p.data.id === "stats" ? <BarChart colName={"evidence"} width={105} height={75} getFilter={getFilterTerm} setFilter={setFilter} getFilteredData={getFilteredData} addListener={addListener} removeListener={removeListener} />
+                    cellRenderer: p => p.node.rowPinned && p.data.id === "stats" ? <BarChart colName={"evidence"} width={170} height={90} getFilter={getFilterTerm} setFilter={setFilter} getFilteredData={getFilteredData} addListener={addListener} removeListener={removeListener} />
                     : p.data.evidence},
                     { headerName: "Association Type", field: "association", hide: false, maxWidth: 140, 
                     cellRenderer: p => p.node.rowPinned && p.data.id === "stats" ? <BarChart colName={"association"} width={140} height={97} getFilter={getFilterTerm} setFilter={setFilter} getFilteredData={getFilteredData} addListener={addListener} removeListener={removeListener} /> 

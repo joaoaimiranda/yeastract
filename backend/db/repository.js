@@ -196,7 +196,10 @@ function formatRegulations(regs) {
             else if (row["code"] === "Indirect") ev = "Expression";
             else ev = "N/A";
             xd[row["regulationid"]] = {
-                gene: row["gene"],
+                gene:
+                    row["gene"] === "Uncharacterized"
+                        ? row["orf"]
+                        : row["gene"],
                 orf: row["orf"],
                 tf: row["protein"],
                 association: row["association"],
