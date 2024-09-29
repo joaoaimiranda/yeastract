@@ -181,7 +181,8 @@ export default function Sequences() {
     const tosColDefs = [
         { headerName: "Seq. Name", field: "seqName", maxWidth: 200,
         cellRenderer: p => p.node.rowPinned ? <BarChart colName={"seqName"} width={200} height={90} getFilter={getFilterTerm} setFilter={setFilter} getFilteredData={getFilteredData} addListener={addListener} removeListener={removeListener} /> : p.value},
-        { headerName: "Binding Site", field: "motif" },
+        { headerName: "Binding Site", field: "motif",
+        cellRenderer: p => p.node.rowPinned ? <BarChart colName={"motif"} width={200} height={75} getFilter={getFilterTerm} setFilter={setFilter} getFilteredData={getFilteredData} addListener={addListener} removeListener={removeListener} /> : p.value},
         { headerName: "TF", field: "tfs", maxWidth: 200, autoHeight: true, 
         cellRenderer: p => p.node.rowPinned ? <BarChart colName={"tfs"} complex={true} width={200} height={90} getFilter={getFilterTerm} setFilter={setFilter} getFilteredData={getFilteredData} addListener={addListener} removeListener={removeListener} /> :
         p.data.tfs.map((v, i) => (<span key={`${v}${i}`}><a className="link" href={`/${species}/view?orf=${v}`}>{v}</a>{` `}</span>))},
@@ -492,48 +493,48 @@ export default function Sequences() {
             // first table
             if (!showTbmTable) setShowTbmTable(true);
 
-            // prettier-ignore
-            // const tableData = [{divider: true, title: `Inserted motif inside ${species} binding sites${res[0].length === 0 ? " (no matches)" : ""}`}, ...res[0], {divider: true, title: `${species} binding sites inside inserted motif${res[1].length === 0 ? " (no matches)" : ""}`}, ...res[1]]
-
             for (let i = 0; i <= 1; i++) {
-            for (let row of res[i]) {
-                const intervals = [];
-                const str = i === 1 ? inputStr : row.seq
-                if (row.F)
-                    for (let entry of Object.entries(row.F)) {
-                        const [pos, size] = entry;
-                        intervals.push({
-                            start: Number(pos),
-                            end: Number(pos) + Number(size),
-                        });
+                for (let row of res[i]) {
+                    const intervals = [];
+                    const str = i === 1 ? inputStr : row.seq;
+                    if (row.F)
+                        for (let entry of Object.entries(row.F)) {
+                            const [pos, size] = entry;
+                            intervals.push({
+                                start: Number(pos),
+                                end: Number(pos) + Number(size),
+                            });
+                        }
+                    if (row.R)
+                        for (let entry of Object.entries(row.R)) {
+                            const [pos, size] = entry;
+                            const start =
+                                str.length - Number(pos) - Number(size);
+                            const end = str.length - Number(pos);
+                            intervals.push({ start: start, end: end });
+                        }
+                    const concatIntervals = mergeIntervals(intervals);
+                    const jsxs = [str.slice(0, concatIntervals[0].start)];
+                    for (let i = 0; i < concatIntervals.length; i++) {
+                        const itv = concatIntervals[i];
+                        const nextItv = concatIntervals[i + 1];
+                        jsxs.push(
+                            <span
+                                key={`${itv.start}-${itv.end}`}
+                                className="bg-green-500"
+                            >
+                                {str.slice(itv.start, itv.end)}
+                            </span>
+                        );
+                        jsxs.push(
+                            nextItv
+                                ? str.slice(itv.end, nextItv.start)
+                                : str.slice(itv.end)
+                        );
                     }
-                if (row.R)
-                    for (let entry of Object.entries(row.R)) {
-                        const [pos, size] = entry;
-                        const start =
-                            str.length - Number(pos) - Number(size);
-                        const end = str.length - Number(pos);
-                        intervals.push({ start: start, end: end });
-                    }
-                const concatIntervals = mergeIntervals(intervals);
-                const jsxs = [str.slice(0, concatIntervals[0].start)];
-                for (let i = 0; i < concatIntervals.length; i++) {
-                    const itv = concatIntervals[i];
-                    const nextItv = concatIntervals[i + 1];
-                    jsxs.push(
-                        <span key={`${itv.start}-${itv.end}`} className="bg-green-500">
-                            {str.slice(itv.start, itv.end)}
-                        </span>
-                    );
-                    jsxs.push(
-                        nextItv
-                            ? str.slice(itv.end, nextItv.start)
-                            : str.slice(itv.end)
-                    );
+                    row.viz = jsxs;
                 }
-                row.viz = jsxs;
             }
-        }
             console.log(res);
 
             // second table

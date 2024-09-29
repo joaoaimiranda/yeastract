@@ -154,6 +154,7 @@ export async function findTFBS(params) {
     } else {
         // TODO
         // identify motifs
+        return {};
     }
 }
 

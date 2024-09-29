@@ -198,6 +198,7 @@ export default function TFBSModal(props) {
                                 }}
                             >
                                 <AgGridReact
+                                    ref={gridRef}
                                     rowData={info}
                                     columnDefs={colDefs}
                                     defaultColDef={defaultColDef}
