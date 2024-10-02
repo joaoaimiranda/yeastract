@@ -207,6 +207,7 @@ export default function Modal(props) {
                                 }}
                             >
                                 <AgGridReact
+                                    ref={gridRef}
                                     rowData={info}
                                     columnDefs={colDefs}
                                     defaultColDef={defaultColDef}
