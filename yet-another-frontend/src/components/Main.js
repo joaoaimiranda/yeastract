@@ -247,7 +247,7 @@ export default function Main() {
                     { headerName: "Gene", field: "gene", hide: false, maxWidth: 200, rowDrag: true, colSpan: p => p.node.rowPinned && p.data.id === "network" ? 6 : 1,
                     cellRenderer: p => p.node.rowPinned && p.data.id === "stats" ? <BarChart colName={"gene"} width={200} height={90} getFilter={getFilterTerm} setFilter={setFilter} getFilteredData={getFilteredData} addListener={addListener} removeListener={removeListener} /> 
                     : p.node.rowPinned && p.data.id === "network" ? 
-                    <>{res.length > 500 ? `Dataset too big! Network unavailable` : <Network getFilteredData={getFilteredData} addListener={addListener} removeListener={removeListener} />}</>
+                    <>{res.length > 600 ? `Dataset too big! Network unavailable` : <Network getFilteredData={getFilteredData} addListener={addListener} removeListener={removeListener} />}</>
                     : <a className="link" href={`/${species}/view?orf=${p.data.orf}`}>{p.data.gene}</a> },
                     { headerName: "ORF", field: "orf", hide: false, maxWidth: 200,
                     cellRenderer: p => p.node.rowPinned && p.data.id === "stats" ? <BarChart colName={"orf"} width={200} height={90} getFilter={getFilterTerm} setFilter={setFilter} getFilteredData={getFilteredData} addListener={addListener} removeListener={removeListener} /> 
@@ -287,7 +287,7 @@ export default function Main() {
                     { headerName: "TF", field: "tf", hide: false, maxWidth: 200, rowDrag: true, colSpan: p => p.node.rowPinned && p.data.id === "network" ? 6 : 1,
                     cellRenderer: p => p.node.rowPinned && p.data.id === "stats" ? <BarChart colName={"tf"} width={200} height={90} getFilter={getFilterTerm} setFilter={setFilter} getFilteredData={getFilteredData} addListener={addListener} removeListener={removeListener} />
                     : p.node.rowPinned && p.data.id === "network" ? 
-                    <>{res.length > 500 ? `Dataset too big! Network unavailable` : <Network getFilteredData={getFilteredData} addListener={addListener} removeListener={removeListener} />}</>
+                    <>{res.length > 600 ? `Dataset too big! Network unavailable` : <Network getFilteredData={getFilteredData} addListener={addListener} removeListener={removeListener} />}</>
                     : <a className="link" href={`/${species}/view?orf=${p.data.tf}`}>{p.data.tf}</a> },
                     { headerName: "Gene", field: "gene", hide: false, maxWidth: 200, rowDrag: true, 
                     // cellRenderer: p => p.node.rowPinned && p.data.id === "stats" ? <p className="text-lg font-semibold text-wrap">{`${(new Set(res.map(row => row.gene))).size} unique Genes`}</p>

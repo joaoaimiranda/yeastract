@@ -90,6 +90,7 @@ export async function seqRetrieval(params) {
     }
     // TODO CONSIDER ALL GENES OPTION
     // CURRENTLY ONLY WORKS IF GENES ARE PROVIDED
+    // ITS FIXED I THINK
     const geneNames = params.genes
         ? params.genes.trim().split(/[\s\t\n\r\0,;|]+/)
         : "";
@@ -118,6 +119,7 @@ export async function promoterAnalysis(params) {
     }
     const geneNames = params.genes.trim().split(/[\s\t\n\r\0,;|]+/);
     // TODO
+    return {};
 }
 
 export async function tfConsensus(params) {
