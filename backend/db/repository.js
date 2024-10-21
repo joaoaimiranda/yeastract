@@ -319,6 +319,7 @@ export async function getAllRegulations(biggroup, subgroup, evidence, pos, neg, 
         ` where R.tfid in (select orfid from orfgene where species in ('${dbspecies(species)}'))` +
         getEnvconQuery(biggroup, subgroup) +
         getEvidenceQuery(evidence, pos, neg, NA);
+        
     // if (envconQuery !== "" && evidenceQuery !== "") q += ` where ${envconQuery} and ${evidenceQuery}`;
     // else if (envconQuery !== "") q += ` where ${envconQuery}`;
     // else if (evidenceQuery !== "") q += ` where ${evidenceQuery}`;
